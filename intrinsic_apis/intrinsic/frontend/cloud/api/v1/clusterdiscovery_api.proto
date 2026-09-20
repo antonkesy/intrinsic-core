@@ -1,0 +1,93 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.frontend.v1;
+
+import "intrinsic/kubernetes/generator/proto/auth_options.proto";
+
+option go_package = "intrinsic/frontend/cloud/api/v1/clusterdiscovery_api_go_proto";
+
+// State of a solution.
+enum SolutionState {
+  SOLUTION_STATE_UNSPECIFIED = 0;
+  SOLUTION_STATE_NOT_RUNNING = 1;
+  SOLUTION_STATE_RUNNING_ON_HW = 2;
+  SOLUTION_STATE_RUNNING_IN_SIM = 3;
+}
+
+// Details about a cluster.
+message ClusterDescription {
+  // The unique name/ID of the cluster within its project.
+  string cluster_name = 1;
+
+  // K8s context of the cluster. Usually the same as 'cluster_name'.
+  string k8s_context = 2;
+
+  // The region the cluster is located in. Can be used, e.g., for grouping
+  // clusters for display purposes.
+  string region = 3;
+
+  // True if cluster is powerful enough to run a simulated workcell.
+  bool can_do_sim = 4;
+
+  // True if cluster can access real hardware.
+  bool can_do_real = 5;
+
+  // True if cluster has a GPU.
+  // This field is not updated if the GPU is removed or added after
+  // registration. Use GetClusterHardware() instead.
+  bool has_gpu = 6 [deprecated = true];
+
+  // Name/ID of the currently running solution. Empty if no solution is running.
+  string solution_name = 7;
+
+  // Display name of the currently running solution. Empty if no solution is
+  // running.
+  string solution_display_name = 8;
+
+  // State of the running solution. If a solution is currently running, equal to
+  // one of the running states (e.g., SOLUTION_STATE_RUNNING_IN_SIM). Equal to
+  // SOLUTION_STATE_UNSPECIFIED if no solution is running.
+  SolutionState solution_state = 9;
+
+  // The Display Name of the cluster used by the frontend.
+  string display_name = 10;
+}
+
+message ListClusterDescriptionsRequest {
+  // Room for filtering options which are currently not provided.
+}
+
+message ListClusterDescriptionsResponse {
+  // Details about the clusters matching the filter criteria of the request,
+  // sorted lexicographically by cluster region and 'cluster_name'.
+  repeated ClusterDescription clusters = 1;
+}
+
+// Provides information about the available clusters in a project.
+service ClusterDiscoveryService {
+  // Auth annotations for consumption by the following helm_chart:
+  //   cs/symbol://intrinsic/frontend/cloud:frontend
+  option (intrinsic_proto.auth.service_options).auth_methods =
+      AUTH_METHOD_API_KEY;
+  option (intrinsic_proto.auth.backend_options).backend_service = "frontend";
+  option (intrinsic_proto.auth.backend_options).backend_port = 8081;
+
+  // Returns a list of clusters registered to the org which is provided via the
+  // gRPC context (as the value of an HTTP cookie with name "org-id").
+  rpc ListClusterDescriptions(ListClusterDescriptionsRequest)
+      returns (ListClusterDescriptionsResponse) {}
+}

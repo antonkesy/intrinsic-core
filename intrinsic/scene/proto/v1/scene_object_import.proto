@@ -1,0 +1,210 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.scene_object.v1;
+
+import "google/api/annotations.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/any.proto";
+import "intrinsic/geometry/processing/pipeline_config.proto"; 
+import "intrinsic/geometry/proto/v1/material.proto";
+import "intrinsic/kubernetes/generator/proto/auth_options.proto";
+import "intrinsic/math/proto/quaternion.proto";
+import "intrinsic/math/proto/vector3.proto";
+import "intrinsic/scene/proto/v1/geometry_stats.proto";
+import "intrinsic/scene/proto/v1/scene_object.proto";
+
+option go_package = "intrinsic/scene/proto/v1/scene_object_import_go_proto";
+
+// SceneObjectImport provides APIs to import external scene
+// representations like CAD files, SDF files and other formats into an Intrinsic
+// SceneObject proto representation for use in a solution.
+service SceneObjectImport {
+  // Auth annotations for consumption by the following helm_chart:
+  //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+  option (intrinsic_proto.auth.service_options).auth_methods =
+      AUTH_METHOD_API_KEY;
+
+  // Imports a scene file as a SceneObject.
+  //
+  // Returns a longrunning.Operation where metadata reports the progress of the
+  // import and the response contains the imported SceneObject.
+  rpc ImportSceneObject(ImportSceneObjectRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/sceneObjectImport/v1:import"
+      body: "*"
+    };
+    option (google.longrunning.operation_info) = {
+      metadata_type: "ImportSceneObjectMetadata"
+      response_type: "ImportSceneObjectResponse"
+    };
+  }
+}
+
+// Request message for ImportSceneObject.
+message ImportSceneObjectRequest {
+  // The scene file data to import.
+  SceneFileData file = 1;
+
+  // Configuration for the import process.
+  optional ImportSceneObjectConfig config = 2;
+}
+
+message ImportSceneObjectMetadata {
+
+  // TODO(b/404902543): Report the progress of both the file parsing progress
+  // and post processing progress in a single reasonable way.
+
+}
+
+// Response message for ImportSceneObject.
+message ImportSceneObjectResponse {
+  // The imported scene object.
+  SceneObject scene_object = 1;
+
+  // Statistics for the object's visual geometry.
+  // If the object has multiple links (and therefore multiple
+  // visual geometries) or multiple visual meshes for a single link, these
+  // statistics are aggregated across all of them.
+  GeometryStats visual_stats = 2;
+  // Statistics for the object's collision geometry.
+  // If the object has multiple links (and therefore multiple
+  // collision geometries) or multiple collision meshes for a single link, these
+  // statistics are aggregated across all of them.
+  GeometryStats collision_stats = 3;
+}
+
+// The contents of a scene file.
+message SceneFileData {
+  reserved 1;
+  reserved "file_name";
+
+  // The raw data of the scene file.
+  bytes data = 2;
+
+  enum Type {
+    // If unspecified, the service will treat the file as a ZIP_BUNDLE.
+    UNSPECIFIED = 0;
+    // Zipped bundle of SDF files or a single supported file type zipped.
+    ZIP_BUNDLE = 1;
+    // An OBJ file.
+    OBJ = 2;
+    // A STL file.
+    STL = 3;
+    // A GLTF file.
+    GLTF = 4;
+    // A GLB file.
+    GLB = 5;
+    // A STEP file.
+    STEP = 6;
+    // A SDF file.
+    SDF = 7;
+
+    // Different USD file formats (.usdz, .usda, .usdc, and .usd)
+    // See docs:
+    // https://docs.nvidia.com/learn-openusd/latest/stage-setting/usd-file-formats.html
+    USDZ = 8;
+    USDA = 9;
+    USDC = 10;
+    USD = 11;
+    // A Parasolid file (.x_t text or .x_b binary transmit format).
+    PARASOLID = 12;
+
+  }
+  // The type of the scene file.
+  Type file_type = 3;
+}
+
+// Configurations for a ImportSceneObject operation.
+message ImportSceneObjectConfig {
+  // Applies length unit conversion on imported geometry. Only supported in file
+  // types that are unit less (e.g., obj, stl, gltf).
+  optional LengthUnitConversion length_unit_conversion = 1;
+
+  // Geometry operations to apply to the imported geometry.
+  optional GeometryOperations geometry_operations = 2;
+
+  // Transforms to apply to the imported scene object.
+  optional TransformSceneObject transform_scene_object = 3;
+
+  // Geometry import resolution for non-mesh geometry types. Determines the
+  // fidelity of the converted mesh geometry.
+  optional GeometryImportResolution geometry_import_resolution = 4;
+
+  // Material properties to apply to all imported geometries.
+  optional intrinsic_proto.geometry.v1.MaterialProperties material_properties =
+      5;
+
+  // If present, the imported SceneObject will be named by this name.
+  optional string scene_object_name = 6;
+
+  // Optional user data to associate with the imported scene object.
+  map<string, google.protobuf.Any> user_data = 7;
+
+
+  // TODO(b/404902543): Consider adding the bounding box size check here to warn
+  // user about potential large or small geometries.
+
+}
+
+// Specifies how an import operation should adjust for length unit differences.
+message LengthUnitConversion {
+  // Scale factor to be applied to the length properties in the scene object.
+  // Intrinsic SceneObject length units are by default in meters.
+  // For example, to convert a scene file in millimeters, set this to 0.001.
+  double scale_factor = 1;
+}
+
+// Transforms applied to the imported scene object relative to the origin.
+message TransformSceneObject {
+  // Scale applied to the imported scene object.
+  optional double uniform_scale = 1;
+
+  // Rotation to apply to the imported scene object. The rotation is applied to
+  // the scene object after scaling.
+  optional intrinsic_proto.Quaternion rotation = 2;
+
+  // Translation to apply to the imported scene object. The translation is
+  // applied after scaling and rotation.
+  optional intrinsic_proto.Vector3 translation = 3;
+}
+
+// Geometry operations to apply to the imported geometries in the scene object.
+message GeometryOperations {
+
+  // Operations to apply for each type of geometry.
+  map<string, intrinsic_proto.geometry.PipelineConfiguration> operations = 1;
+
+
+  // Geometry types to remove. Usually used to remove collision
+  // geometries (Intrinsic_Collision) when collision are not needed.
+  repeated string remove_types = 2;
+}
+
+// Specifies the resolution of non-mesh to mesh geometry conversion to create
+// the imported scene object. For example when tessellating BRep in CAD files
+// to triangular mesh.
+message GeometryImportResolution {
+  // The resolution to use for the conversion.
+  enum Resolution {
+    // Defaults to COARSE.
+    RESOLUTION_UNSPECIFIED = 0;
+    COARSE = 1;
+    FINE = 2;
+  }
+  Resolution resolution = 1;
+}

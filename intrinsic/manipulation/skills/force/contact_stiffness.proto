@@ -1,0 +1,55 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.manipulation.skills;
+
+option go_package = "intrinsic/manipulation/skills/force/contact_stiffness_go_proto";
+
+// ContactStiffnessValues contains a preset of mechanical_stiffness_at_contact
+// suitable foer most applications.
+enum ContactStiffnessValues {
+  CONTACT_STIFFNESS_UNSPECIFIED = 0;
+
+  // Low contact stiffness is tuned for soft tools or surfaces. An example is a
+  // suction gripper with rubber tip. Value is 5,000 N/m.
+  CONTACT_STIFFNESS_LOW = 1;
+
+  // Medium contact stiffness is tuned for hard tools combined with hard
+  // surfaces. Work well in general. Value is 60,000 N/m.
+  CONTACT_STIFFNESS_MEDIUM = 2;
+
+  // High contact stiffness should be used with very stiff robots with a hard
+  // tool, mounted in a very stiff workcell. Value is 100,000 N/m.
+  CONTACT_STIFFNESS_HIGH = 3;
+}
+
+message ContactStiffnessParams {
+  // The contact stiffness influences the contact dynamics and observed contact
+  // force response. A lower stiffness will result in a faster approach but can
+  // create oscillations of the contact force.
+  oneof contact_stiffness {
+    // Mechanical stiffness (in `N/m`) when the robot is in contact with its
+    // environment. For example, the presence of a mechanical compliance device
+    // on the arm's EOAT, or a soft surface on which the system tool is making
+    // contact should be modeled here. Typically in the range from 1000 to
+    // 200,000.
+    double mechanical_stiffness_at_contact = 1;
+
+    // Predefined stiffness values which should handle most applications. Set
+    // mechanical_stiffness_at_contact if fine tuning the skill is required.
+    ContactStiffnessValues default_contact_stiffness = 2;
+  }
+}

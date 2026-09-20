@@ -1,0 +1,45 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "intrinsic/assets/proto/field_metadata.proto";
+import "intrinsic/assets/proto/v1/resolved_dependency.proto";
+
+option go_package = "intrinsic/icon/skills/disable_realtime_control_go_proto";
+
+message DisableRealtimeControlParams {
+  intrinsic_proto.assets.v1.ResolvedDependency robot = 2
+      [(intrinsic_proto.assets.field_metadata).dependency = {
+        requires: "grpc://intrinsic_proto.icon.v1.IconApi",
+        skill_annotations: {
+          always_provide_connection_info: true
+          fallback_manifest_dependency_key: "robot"
+        }
+      }];
+
+  // If true, cell control hardware remains enabled (if it is enabled), and
+  // only operational hardware is disabled.
+  //
+  // Cell control hardware are hardware modules configured with
+  // `IconMainConfig.hardware_config.cell_control_hardware`.
+  // One use case is to integrate cell-level control where operational robot
+  // hardware can be paused such that automatic mode is not needed, while still
+  // reading/writing input/output on a fieldbus hardware module for cell-level
+  // control.
+  // By default, all hardware is disabled.
+  optional bool skip_cell_control_hardware = 1;
+}

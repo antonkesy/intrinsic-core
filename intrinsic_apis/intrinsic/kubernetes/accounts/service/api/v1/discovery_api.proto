@@ -1,0 +1,72 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.accountsdiscovery.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "intrinsic/kubernetes/accounts/service/api/v1/discoveryapi_go_proto";
+
+message PingResponse {}
+
+message Organization {
+  // Unique name of the organization
+  string name = 1;
+  // GCP project of the organization
+  string project = 2;
+  // Human readable organization name
+  string display_name = 3;
+}
+
+message Member {
+  string name = 1;
+}
+
+message ListOrganizationsResponse {
+  repeated Organization organizations = 1;
+}
+
+message ListMembersRequest {
+  string organization = 1;
+}
+
+message ListMembersResponse {
+  repeated Member members = 1;
+}
+
+// AccountsDiscoveryService provides user-scoped and read-only access to
+// information stored on accounts.
+service AccountsDiscoveryService {
+  // ListOrganizations lists the organizations the signed in user has access to.
+  rpc ListOrganizations(google.protobuf.Empty)
+      returns (ListOrganizationsResponse) {
+    option (google.api.http) = {
+      get: "/v1/accountsdiscovery/organizations"
+    };
+  }
+
+  // ListMembers lists the members of an organization.
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse) {
+    option (google.api.http) = {
+      get: "/v1/accountsdiscovery/organizations/{organization}/members"
+    };
+  }
+
+  // Ping returns a static response. Can be used for latency and availability
+  // probes.
+  rpc Ping(google.protobuf.Empty) returns (PingResponse) {}
+}

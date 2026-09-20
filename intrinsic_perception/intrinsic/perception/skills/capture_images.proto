@@ -1,0 +1,78 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "google/protobuf/duration.proto";
+import "intrinsic/perception/proto/v1/camera_settings.proto";
+import "intrinsic/perception/proto/v1/capture_data.proto";
+import "intrinsic/perception/proto/v1/post_processing.proto";
+import "intrinsic/platform/pubsub/storage_location.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/perception/skills/capture_images_go_proto";
+
+message CaptureImagesParams {
+  // Specifies where to store the capture result. If not provided, defaults to
+  // the `capture_results` in-memory store (this store currently must not be
+  // altered by users) and a key corresponding to the hash of the camera
+  // identifier. If multiple `capture_images` skill instances are running with
+  // the same camera, by default each skill call will overwrite the others'
+  // results. By manually providing a key for each skill instance this can be
+  // avoided.
+  optional kvstore.StorageLocation capture_result_location = 1;
+  // Specifies the sensor ids to capture images from. If empty, the skill
+  // captures images from all sensors.
+  repeated int64 sensor_ids = 2;
+  // A map from sensor id to post processing options such as undistortion,
+  // cropping, and resizing. If empty, all images will be undistorted by default
+  // (if the respective sensor configs contain distortion parameters or the
+  // camera distortion is factory-calibrated).
+  map<int64, perception.v1.SensorImagePostProcessing>
+      post_processing_by_sensor_id = 3;
+  // Maximum duration to wait for capturing images from the associated camera.
+  // If not provided, defaults to 5s.
+  optional google.protobuf.Duration timeout = 4;
+  // Camera settings to append to the camera settings coming from the camera
+  // config for skill execution.
+  repeated perception.v1.CameraSetting camera_settings_to_append = 5;
+  // Capturing will be repeated until the specified conditional camera
+  // settings are met. You may need to increase the
+  // <a href="#timeout">`timeout`</a>, if you expect to wait for a long time. If
+  // empty, the skill will execute exactly one capture call.
+  repeated perception.v1.CameraSetting camera_settings_to_wait_for = 6;
+  // Camera settings to be returned in the result.
+  repeated string camera_settings_to_return = 7;
+  // Whether to log the captured images.
+  bool log_debug_data = 8;
+  // Optional reference frame to compute and return the transform from the
+  // camera frame to the reference frame (reference_t_camera) in
+  // CaptureData (i.e. the pose of the camera in the reference frame). If not
+  // provided, reference_t_camera is not set. Note that world_t_camera is always
+  // expressed in the world root frame.
+  optional world.TransformNodeReference reference_frame = 9;
+}
+
+message CaptureImagesResult {
+  // The capture data returned by the skill, containing the capture result
+  // location and the camera pose. This can be connected to other skills, which
+  // can retrieve the capture result using the key value store. See the
+  // <a href="#usage-example">usage example</a> for more details.
+  perception.v1.CaptureData capture_data = 1;
+  // Camera settings specified by
+  // <a href="#camera_settings_to_return">`camera_settings_to_return`</a>.
+  repeated perception.v1.CameraSetting camera_settings = 2;
+}

@@ -1,0 +1,162 @@
+# proto-file: intrinsic/scene/proto/v1/scene_object_updates.proto
+# proto-message: intrinsic_proto.scene_object.v1.SceneObjectUpdates
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# TODO(b/428162437): tune the acceleration and jerk limits.
+# Position and velocity limits were taken from the IRB 1300 10/1.15 Product 
+# Specification.
+
+updates: {
+  update_joints {
+    joint_system_limits: {
+      key: "joint_a1"
+      value: {
+        min_position: -3.141592654  # -180 degrees
+        max_position: 3.141592654  # 180 degrees
+        max_velocity: 4.886921906  # 280 degrees/s
+        max_acceleration: 7.9
+        max_jerk: 43
+        max_effort: 100
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a2"
+      value: {
+        min_position: -1.658062789  # -95 degrees
+        max_position: 2.705260341  # 155 degrees
+        max_velocity: 3.979350695  # 228 degrees/s
+        max_acceleration: 3.9
+        max_jerk: 21
+        max_effort: 100
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a3"
+      value: {
+        min_position: -3.665191429  # -210 degrees
+        max_position: 1.134464014  # 65 degrees
+        max_velocity: 5.864306287  # 336 degrees/s 
+        max_acceleration: 3.9
+        max_jerk: 21
+        max_effort: 100
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a4"
+      value: {
+        min_position: -4.01425728  # -230 degrees
+        max_position: 4.01425728  # 230 degrees
+        max_velocity: 8.72664626  # 500 degrees/s
+        max_acceleration: 15
+        max_jerk: 84
+        max_effort: 100
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a5"
+      value: {
+        min_position: -2.268928028  # -130 degrees
+        max_position: 2.268928028  # 130 degrees
+        max_velocity: 7.243116396  # 415 degrees/s
+        max_acceleration: 15
+        max_jerk: 84
+        max_effort: 100
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a6"
+      value: {
+        min_position: -6.981317008  # -400 degrees
+        max_position: 6.981317008  # 400 degrees
+        max_velocity: 12.56637061  # 720 degrees/s
+        max_acceleration: 17
+        max_jerk: 96
+        max_effort: 100
+      }
+    }
+
+    # Joint application limits
+    # Position limits are 0.1 rad from the system limits. Dynamic limits are
+    # 90% of system limits, rounded down
+    joint_application_limits: {
+      key: "joint_a1"
+      value: {
+        min_position: -3.041592654
+        max_position: 3.041592654
+        max_velocity: 4.398229715
+        max_acceleration: 7.5
+        max_jerk: 40
+        max_effort: 95
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a2"
+      value: {
+        min_position: -1.558062789
+        max_position: 2.605260341
+        max_velocity: 3.581415625
+        max_acceleration: 3.7
+        max_jerk: 19
+        max_effort: 95
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a3"
+      value: {
+        min_position: -3.565191429
+        max_position: 1.034464014
+        max_velocity: 5.277875658
+        max_acceleration: 3.7
+        max_jerk: 19
+        max_effort: 95
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a4"
+      value: {
+        min_position: -3.91425728
+        max_position: 3.91425728
+        max_velocity: 7.853981634
+        max_acceleration: 14
+        max_jerk: 79
+        max_effort: 95
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a5"
+      value: {
+        min_position: -2.168928028
+        max_position: 2.168928028
+        max_velocity: 6.518804756
+        max_acceleration: 14
+        max_jerk: 79
+        max_effort: 95
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a6"
+      value: {
+        min_position: -6.881317008
+        max_position: 6.881317008
+        max_velocity: 11.30973355
+        max_acceleration: 16
+        max_jerk: 91
+        max_effort: 95
+      }
+    }
+  }
+}

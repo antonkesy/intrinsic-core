@@ -1,0 +1,38 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.config;
+
+import "intrinsic/resources/proto/resource_instance.proto";
+import "intrinsic/world/proto/object_world_updates.proto";
+
+option go_package = "intrinsic/config/proto/resource_set_go_proto";
+
+// Describes a set of resources (typically a workcell).
+message ResourceSet {
+  // Resources associated with this resource set.
+  repeated ResourceInstance resource_instances = 8;
+
+  // Contains graph structure how resource instances are integrated into the
+  // world and collision exclusion pairs.
+  intrinsic_proto.world.ObjectWorldUpdates object_world_updates = 9;
+
+  reserved 1, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15;
+  reserved "cameras", "data_files", "init_behavior_trees", "hw_cluster_id",
+      "hw_cluster_id_regexp", "hw_cluster_uri", "metadata",
+      "run_behavior_trees", "spec", "spec_cas_id", "workcell_spec", "world",
+      "world_store", "world_uri";
+}

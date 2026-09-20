@@ -1,0 +1,468 @@
+# proto-file: intrinsic/world/public/proto/object_world_updates.proto
+# proto-message: intrinsic_proto.world.ObjectWorldUpdates
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+entity_updates {
+  move_group {
+    old_group_id: "iris692::tool"
+    new_group_id: "iris692"
+  }
+}
+entity_updates {
+  move_group {
+    old_group_id: "iris622::tool"
+    new_group_id: "iris622"
+  }
+}
+entity_updates {
+  move_group {
+    old_group_id: "agilus-03::tool"
+    new_group_id: "agilus-03"
+  }
+}
+entity_updates {
+  move_group {
+    old_group_id: "agilus-04::tool"
+    new_group_id: "agilus-04"
+  }
+}
+
+entity_updates {
+  add_label {
+    entities {
+      by_labels {
+        label_ids: "iris692::tool"
+        entity_name: "tool_contact_point"
+      }
+    }
+    labels_to_add: "gripper"
+  }
+}
+entity_updates {
+  add_label {
+    entities {
+      by_labels {
+        label_ids: "iris622::tool"
+        entity_name: "tool_contact_point"
+      }
+    }
+    labels_to_add: "gripper"
+  }
+}
+entity_updates {
+  add_label {
+    entities {
+      by_labels {
+        label_ids: "agilus-03::tool"
+        entity_name: "tool_contact_point"
+      }
+    }
+    labels_to_add: "gripper"
+  }
+}
+entity_updates {
+  add_label {
+    entities {
+      by_labels {
+        label_ids: "agilus-04::tool"
+        entity_name: "tool_contact_point"
+      }
+    }
+    labels_to_add: "gripper"
+  }
+}
+entity_updates {
+  add_label {
+    entities {
+      by_labels {
+        label_ids: "iris692"
+        entity_name: "base_link"
+      }
+    }
+    labels_to_add: "urdf_root"
+  }
+}
+entity_updates {
+  add_label {
+    entities {
+      by_labels {
+        label_ids: "iris622"
+        entity_name: "base_link"
+      }
+    }
+    labels_to_add: "urdf_root"
+  }
+}
+entity_updates {
+  add_label {
+    entities {
+      by_labels {
+        label_ids: "agilus-03"
+        entity_name: "base_link"
+      }
+    }
+    labels_to_add: "urdf_root"
+  }
+}
+entity_updates {
+  add_label {
+    entities {
+      by_labels {
+        label_ids: "agilus-04"
+        entity_name: "base_link"
+      }
+    }
+    labels_to_add: "urdf_root"
+  }
+}
+
+entity_updates {
+  set_robot_ik_solver_key {
+    entities {
+      by_labels {
+        label_ids: "iris692"
+        entity_name: "tool0"
+      }
+    }
+    solver_key: "spherical_wrist"
+    override_tip_entity {
+      by_labels {
+        label_ids: "iris692"
+        entity_name: "tool0"
+      }
+    }
+  }
+}
+entity_updates {
+  set_robot_ik_solver_key {
+    entities {
+      by_labels {
+        label_ids: "iris622"
+        entity_name: "tool0"
+      }
+    }
+    solver_key: "spherical_wrist"
+    override_tip_entity {
+      by_labels {
+        label_ids: "iris622"
+        entity_name: "tool0"
+      }
+    }
+  }
+}
+entity_updates {
+  set_robot_ik_solver_key {
+    entities {
+      by_labels {
+        label_ids: "agilus-03"
+        entity_name: "tool0"
+      }
+    }
+    solver_key: "spherical_wrist"
+    override_tip_entity {
+      by_labels {
+        label_ids: "agilus-03"
+        entity_name: "tool0"
+      }
+    }
+  }
+}
+entity_updates {
+  set_robot_ik_solver_key {
+    entities {
+      by_labels {
+        label_ids: "agilus-04"
+        entity_name: "tool0"
+      }
+    }
+    solver_key: "spherical_wrist"
+    override_tip_entity {
+      by_labels {
+        label_ids: "agilus-04"
+        entity_name: "tool0"
+      }
+    }
+  }
+}
+
+entity_updates {
+  set_dof_values {
+    robot_id: "iris622"
+    dof_values: 0
+    dof_values: -2
+    dof_values: 2
+    dof_values: 0
+    dof_values: 0
+    dof_values: 0
+  }
+}
+entity_updates {
+  set_dof_values {
+    robot_id: "iris692"
+    dof_values: 0
+    dof_values: -2
+    dof_values: 2
+    dof_values: 0
+    dof_values: 0
+    dof_values: 0
+  }
+}
+entity_updates {
+  set_dof_values {
+    robot_id: "agilus-03"
+    dof_values: 0
+    dof_values: -2
+    dof_values: 2
+    dof_values: 0
+    dof_values: 0
+    dof_values: 0
+  }
+}
+entity_updates {
+  set_dof_values {
+    robot_id: "agilus-04"
+    dof_values: 0
+    dof_values: -2
+    dof_values: 2
+    dof_values: 0
+    dof_values: 0
+    dof_values: 0
+  }
+}
+
+entity_updates { self_exclusions { robot_id: "iris692" } }
+entity_updates { self_exclusions { robot_id: "iris622" } }
+entity_updates { self_exclusions { robot_id: "agilus-03" } }
+entity_updates { self_exclusions { robot_id: "agilus-04" } }
+
+entity_updates { collision_exclusions { entity_a { by_labels { label_ids: "table" entity_name: "table_base" } } entity_b { by_labels { label_ids: "workpiece" entity_name: "table_cube_link" } } } }
+entity_updates { collision_exclusions { entity_a { by_labels { label_ids: "iris622::tool" entity_name: "tool_base" } } entity_b { by_labels { label_ids: "iris622" entity_name: "link_5" } } } }
+entity_updates { collision_exclusions { entity_a { by_labels { label_ids: "iris622::tool" entity_name: "tool_base" } } entity_b { by_labels { label_ids: "iris622" entity_name: "link_6" } } } }
+entity_updates { collision_exclusions { entity_a { by_labels { label_ids: "iris692::tool" entity_name: "tool_base" } } entity_b { by_labels { label_ids: "iris692" entity_name: "link_5" } } } }
+entity_updates { collision_exclusions { entity_a { by_labels { label_ids: "iris692::tool" entity_name: "tool_base" } } entity_b { by_labels { label_ids: "iris692" entity_name: "link_6" } } } }
+entity_updates { collision_exclusions { entity_a { by_labels { label_ids: "agilus-03::tool" entity_name: "tool_base" } } entity_b { by_labels { label_ids: "agilus-03" entity_name: "link_5" } } } }
+entity_updates { collision_exclusions { entity_a { by_labels { label_ids: "agilus-03::tool" entity_name: "tool_base" } } entity_b { by_labels { label_ids: "agilus-03" entity_name: "link_6" } } } }
+entity_updates { collision_exclusions { entity_a { by_labels { label_ids: "agilus-04::tool" entity_name: "tool_base" } } entity_b { by_labels { label_ids: "agilus-04" entity_name: "link_5" } } } }
+entity_updates { collision_exclusions { entity_a { by_labels { label_ids: "agilus-04::tool" entity_name: "tool_base" } } entity_b { by_labels { label_ids: "agilus-04" entity_name: "link_6" } } } }
+
+entity_updates {
+  set_alias {
+    entities {
+      by_labels {
+        label_ids: "table"
+        entity_name: "table_base"
+      }
+    }
+    alias: "quad_table"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "table::northeast_plate"
+        entity_name: "body"
+      }
+    }
+    alias: "northeast_plate"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "table::northwest_plate"
+        entity_name: "northwest_plate"
+      }
+    }
+    alias: "northwest_plate"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "table::southeast_plate"
+        entity_name: "southeast_plate"
+      }
+    }
+    alias: "southeast_plate"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "table::southwest_plate"
+        entity_name: "southwest_plate"
+      }
+    }
+    alias: "southwest_plate"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "agilus-03"
+        entity_name: "agilus-03"
+      }
+    }
+    alias: "agilus-03"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "agilus-04"
+        entity_name: "agilus-04"
+      }
+    }
+    alias: "agilus-04"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "iris622"
+        entity_name: "iris622"
+      }
+    }
+    alias: "iris622"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "iris692"
+        entity_name: "iris692"
+      }
+    }
+    alias: "iris692"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "agilus-03::tool"
+        entity_name: "tool"
+      }
+    }
+    alias: "agilus-03::tool"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "agilus-04::tool"
+        entity_name: "tool"
+      }
+    }
+    alias: "agilus-04::tool"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "iris622::tool"
+        entity_name: "tool"
+      }
+    }
+    alias: "iris622::tool"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "iris692::tool"
+        entity_name: "tool"
+      }
+    }
+    alias: "iris692::tool"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "workpiece"
+        entity_name: "workpiece"
+      }
+    }
+    alias: "workpiece"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "table"
+        entity_name: "table"
+      }
+    }
+    alias: "table"
+  }
+}
+
+entity_updates: {
+  set_alias: {
+    entities: {
+      by_labels: {
+        label_ids: "11140_agilus_cell"
+        entity_name: "11140_agilus_cell"
+      }
+    }
+    alias: "11140_agilus_cell"
+  }
+}
+
+updates: {
+  create_frame: {
+    parent_object_with_filter: { reference: {
+      by_name: {
+        object_name: "agilus-04::tool"
+      }
+    } }
+    new_frame_name: "gripper"
+    parent_t_new_frame: {
+      position: { x: 0.04849 y: 0.0 z: 0.152411 }
+      orientation: { x: 0 y: 0.34202028835303799 z: 0 w: 0.93969256800025025 }
+      #orientation: {x: 0 y: 0 z: 0 w: 1}
+    }
+  }
+}

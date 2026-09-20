@@ -1,0 +1,155 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//bazel:go_macros.bzl", "go_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["data/ssh_config"])
+
+go_library(
+    name = "apputil",
+    srcs = ["app_util.go"],
+    importpath = "intrinsic/tools/inctl/cmd/apputil",
+    deps = [
+        "//intrinsic/tools/inctl/auth",
+        "@com_github_golang_glog//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@org_golang_google_grpc//metadata:go_default_library",
+    ],
+)
+
+go_library(
+    name = "chartstop",
+    srcs = ["chart_stop.go"],
+    importpath = "intrinsic/tools/inctl/cmd/chartstop",
+    deps = [
+        "//intrinsic/kubernetes:chartapply",
+        "//intrinsic/kubernetes/workcell_spec:chartassignment",
+        "//intrinsic/tools/inctl/util:gcpauth",
+        "//intrinsic/tools/internal:k8sclientutil",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@com_github_spf13_pflag//:go_default_library",
+    ],
+)
+
+go_library(
+    name = "lint",
+    srcs = ["lint.go"],
+    data = ["//intrinsic/kubernetes:lint_wrapped"],
+    importpath = "intrinsic/tools/inctl/cmd/lint",
+    deps = [
+        "//intrinsic/tools/inctl/util:resolve",
+        "//intrinsic/util/go:set",
+        "//intrinsic/util/path_resolver:pathresolver",
+        "@cat_dario_mergo//:go_default_library",
+        "@com_github_googlecloudrobotics_core_src//go/pkg/apis/apps/v1alpha1:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@io_k8s_sigs_yaml//:go_default_library",
+        "@io_opencensus_go//trace:go_default_library",
+    ],
+)
+
+go_library(
+    name = "gpio",
+    srcs = [
+        "gpio.go",
+        "gpio_list_signals.go",
+        "gpio_read_signals.go",
+        "gpio_write_signal.go",
+    ],
+    importpath = "intrinsic/tools/inctl/cmd/gpio",
+    deps = [
+        ":root",
+        "//intrinsic/assets:clientutils",
+        "//intrinsic/assets:cmdutils",
+        "//intrinsic/tools/inctl/util:cobrautil",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@intrinsic_apis//intrinsic/hardware/gpio/v1:gpio_service_go_proto",
+        "@intrinsic_apis//intrinsic/hardware/gpio/v1:signal_go_proto",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes:go_default_library",
+        "@org_golang_google_grpc//metadata:go_default_library",
+        "@org_golang_google_protobuf//encoding/prototext:go_default_library",
+    ],
+)
+
+go_library(
+    name = "icon",
+    srcs = [
+        "icon.go",
+        "icon_clear_faults.go",
+        "icon_config.go",
+        "icon_disable.go",
+        "icon_enable.go",
+        "icon_list_actions.go",
+        "icon_list_parts.go",
+        "icon_status.go",
+    ],
+    importpath = "intrinsic/tools/inctl/cmd/icon",
+    deps = [
+        ":root",
+        "//intrinsic/assets:clientutils",
+        "//intrinsic/assets:cmdutils",
+        "//intrinsic/tools/inctl/util:cobrautil",
+        "//intrinsic_control/intrinsic/icon/go:icon",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@intrinsic_apis//intrinsic/icon/proto/v1:types_go_proto",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//metadata:go_default_library",
+        "@org_golang_google_protobuf//encoding/prototext:go_default_library",
+    ],
+)
+
+go_library(
+    name = "root",
+    srcs = [
+        "full_help.go",
+        "root.go",
+    ],
+    importpath = "intrinsic/tools/inctl/cmd/root",
+    deps = [
+        "//intrinsic/production:intrinsic",
+        "//intrinsic/skills/tools/skill/cmd:dialerutil",
+        "//intrinsic/tools/inctl/util:agents",
+        "//intrinsic/tools/inctl/util:orgutil",
+        "//intrinsic/tools/inctl/util:printer",
+        "//intrinsic/tools/inctl/util:traceutil",
+        "@com_github_golang_glog//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@com_google_cloud_go_compute_metadata//:metadata",
+        "@io_k8s_apimachinery//pkg/api/errors:go_default_library",
+        "@io_opencensus_go//trace:go_default_library",
+        "@org_golang_google_grpc//codes:go_default_library",
+        "@org_golang_google_grpc//status:go_default_library",
+        "@org_golang_x_exp//slices",
+    ],
+)
+
+go_library(
+    name = "markdown",
+    srcs = ["markdown.go"],
+    importpath = "intrinsic/tools/inctl/cmd/markdown",
+    deps = [
+        ":root",
+        "//intrinsic/util/archive:tartooling",
+        "@com_github_google_safearchive//tar",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@com_github_spf13_cobra//doc:go_default_library",
+    ],
+)

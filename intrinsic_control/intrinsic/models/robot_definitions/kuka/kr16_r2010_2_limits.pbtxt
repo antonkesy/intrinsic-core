@@ -1,0 +1,180 @@
+# proto-file: intrinsic/scene/proto/v1/scene_object_updates.proto
+# proto-message: intrinsic_proto.scene_object.v1.SceneObjectUpdates
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+updates {
+  update_joints {
+    joint_positions {
+      key: "joint_a1"
+      value: 0.0
+    }
+    joint_positions {
+      key: "joint_a2"
+      value: -1.5707963267948966
+    }
+    joint_positions {
+      key: "joint_a3"
+      value: 0.0
+    }
+    joint_positions {
+      key: "joint_a4"
+      value: 0.0
+    }
+    joint_positions {
+      key: "joint_a5"
+      value: 1.5707963267948966
+    }
+    joint_positions {
+      key: "joint_a6"
+      value: 0.0
+    }
+    joint_system_limits {
+      key: "joint_a1"
+      value {
+        min_position: -3.22886
+        max_position: 3.22886
+        max_velocity: 3.49066
+        max_acceleration: 7.51
+        max_jerk: 1137.22
+        max_effort: 200  # Effort limits are not tuned to this robot.
+      }
+    }
+    joint_system_limits {
+      key: "joint_a2"
+      value {
+        min_position: -3.22886
+        max_position: 1.13446
+        max_velocity: 3.05433
+        max_acceleration: 1.38
+        max_jerk: 204.59
+        max_effort: 200  # Effort limits are not tuned to this robot.
+      }
+    }
+    joint_system_limits {
+      key: "joint_a3"
+      value {
+        min_position: -2.40855
+        max_position: 3.05433
+        max_velocity: 3.31613
+        max_acceleration: 13.43
+        max_jerk: 2032.17
+        max_effort: 200  # Effort limits are not tuned to this robot.
+      }
+    }
+    joint_system_limits {
+      key: "joint_a4"
+      value {
+        min_position: -6.10865
+        max_position: 6.10865
+        max_velocity: 7.50492
+        max_acceleration: 99.53
+        max_jerk: 15077.95
+        max_effort: 200  # Effort limits are not tuned to this robot.
+      }
+    }
+    joint_system_limits {
+      key: "joint_a5"
+      value {
+        min_position: -2.26893
+        max_position: 2.26893
+        max_velocity: 7.50492
+        max_acceleration: 95.97
+        max_jerk: 14538.98
+        max_effort: 200  # Effort limits are not tuned to this robot.
+      }
+    }
+    joint_system_limits {
+      key: "joint_a6"
+      value {
+        min_position: -6.10865
+        max_position: 6.10865
+        max_velocity: 10.9956
+        max_acceleration: 120.04
+        max_jerk: 18189.37
+        max_effort: 200  # Effort limits are not tuned to this robot.
+      }
+    }
+
+    # All application limits have been set at 10% below system limits.
+    joint_application_limits {
+      key: "joint_a1"
+      value {
+        min_position: -3.12886
+        max_position: 3.12886
+        max_velocity: 3.14159
+        max_acceleration: 6.76
+        max_jerk: 1023.50
+        max_effort: 180  # Effort limits are not tuned to this robot.
+      }
+    }
+    joint_application_limits {
+      key: "joint_a2"
+      value {
+        min_position: -3.12886
+        max_position: 1.03446
+        max_velocity: 2.7489
+        max_acceleration: 1.24
+        max_jerk: 184.13
+        max_effort: 180  # Effort limits are not tuned to this robot.
+      }
+    }
+    joint_application_limits {
+      key: "joint_a3"
+      value {
+        min_position: -2.30855
+        max_position: 2.95433
+        max_velocity: 2.98452
+        max_acceleration: 12.08
+        max_jerk: 1828.96
+        max_effort: 180  # Effort limits are not tuned to this robot.
+      }
+    }
+    joint_application_limits {
+      key: "joint_a4"
+      value {
+        min_position: -6.00865
+        max_position: 6.00865
+        max_velocity: 6.75443
+        max_acceleration: 89.58
+        max_jerk: 13570.16
+        max_effort: 180  # Effort limits are not tuned to this robot.
+      }
+    }
+    joint_application_limits {
+      key: "joint_a5"
+      value {
+        min_position: -2.16893
+        max_position: 2.16893
+        max_velocity: 6.75443
+        max_acceleration: 86.37
+        max_jerk: 13085.08
+        max_effort: 180  # Effort limits are not tuned to this robot.
+      }
+    }
+    joint_application_limits {
+      key: "joint_a6"
+      value {
+        min_position: -6.00865
+        max_position: 6.00865
+        max_velocity: 9.89604
+        max_acceleration: 108.04
+        max_jerk: 16370.43
+        max_effort: 180  # Effort limits are not tuned to this robot.
+      }
+    }
+  }
+}

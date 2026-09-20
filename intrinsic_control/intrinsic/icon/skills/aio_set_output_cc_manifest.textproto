@@ -1,0 +1,51 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: Manifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "aio_set_output"
+}
+display_name: "AIO set output"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+    "This skill can be used to set specific analog outputs."
+    " This skill does *not* wait until the values have been set.\n\n"
+    "For 'Adio', select the real-time control service that controls the "
+    "analog outputs. When the analog output is provided by a robot control box"
+    " or EtherCAT, this is usually named 'robot_controller'."
+}
+options {
+  supports_cancellation: false
+  cc_config {
+    create_skill: "::intrinsic::skills::AioSetOutput::CreateSkill"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "adio"
+    value {
+      capability_names: "Icon2AdioPart"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.AioSetOutputParams"
+}

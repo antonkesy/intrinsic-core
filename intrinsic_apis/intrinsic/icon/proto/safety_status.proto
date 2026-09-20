@@ -1,0 +1,55 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.icon;
+
+option go_package = "intrinsic/icon/proto/safety_status_go_proto";
+
+enum ModeOfSafeOperation {
+  MODE_OF_SAFE_OPERATION_UNKNOWN = 0;
+  MODE_OF_SAFE_OPERATION_AUTOMATIC = 1;
+  MODE_OF_SAFE_OPERATION_TEACHING_1 = 2;
+  MODE_OF_SAFE_OPERATION_TEACHING_2 = 3;
+  MODE_OF_SAFE_OPERATION_CONFIGURATION = 4;
+  MODE_OF_SAFE_OPERATION_UPDATING = 5;
+}
+
+enum ButtonStatus {
+  BUTTON_STATUS_UNKNOWN = 0;
+  // The button is physically not available in this setup.
+  BUTTON_STATUS_NOT_AVAILABLE = 1;
+  BUTTON_STATUS_ENGAGED = 2;
+  BUTTON_STATUS_DISENGAGED = 3;
+}
+
+enum RequestedBehavior {
+  REQUESTED_BEHAVIOR_UNKNOWN = 0;
+  REQUESTED_BEHAVIOR_NORMAL_OPERATION = 1;
+  REQUESTED_BEHAVIOR_SAFE_STOP_1_TIME_MONITORED = 2;
+  REQUESTED_BEHAVIOR_SAFE_STOP_2_TIME_MONITORED = 3;
+  REQUESTED_BEHAVIOR_SAFE_STOP_0 = 4;
+  REQUESTED_BEHAVIOR_PAUSE = 5;
+
+  reserved "REQUESTED_BEHAVIOR_HARDWARE_STOP_TIME_MONITORED",
+      "REQUESTED_BEHAVIOR_CONTROLLED_STOP_TIME_MONITORED";
+}
+
+message SafetyStatus {
+  ModeOfSafeOperation mode_of_safe_operation = 1;
+  ButtonStatus estop_button_status = 2;
+  ButtonStatus enable_button_status = 3;
+  RequestedBehavior requested_behavior = 4;
+}

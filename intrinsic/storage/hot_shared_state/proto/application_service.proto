@@ -1,0 +1,103 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.hot_shared_state.v1;
+
+import "intrinsic/config/proto/application.proto";
+
+option go_package = "intrinsic/storage/hot_shared_state/proto/application_service_go_proto";
+
+service HotSharedStateApplicationService {
+  // Get the current application proto, i.e. the application
+  // running in the current cluster.
+  rpc GetCurrentApplication(GetCurrentApplicationRequest)
+      returns (GetCurrentApplicationResponse) {}
+
+  // Set the current application proto.
+  rpc SetCurrentApplication(SetCurrentApplicationRequest)
+      returns (SetCurrentApplicationResponse) {}
+}
+
+message GetCurrentApplicationRequest {
+  // Empty, for future additions.
+}
+
+message GetCurrentApplicationResponse {
+  intrinsic_proto.config.Application application = 1;
+
+  // An equality-comparable revision token that is used for optimistic
+  // concurrency control. If you want to modify/update the current application,
+  // you need to perform a `GetCurrentApplication` call first and provide this
+  // token in the subsequent `SetCurrentApplication` request. Treat this token
+  // as an opaque string, i.e. do not rely on its length or structure, and do
+  // not modify it.
+  string revision_token = 2;
+}
+
+message SetCurrentApplicationRequest {
+  intrinsic_proto.config.Application application = 1;
+
+  // An optional revision token. Provide it if you want to update a document.
+  // There are five possible scenarios:
+  //
+  // 1. No token is provided: This call is treated as a "Create Current
+  // Application" call.
+  //
+  //    1a. There is no current application. Then, barring any other errors, the
+  //        call should succeed, create the current application, and return the
+  //        `OK` code.
+  //    1b. The specified document exists. Then, the call fails (cannot create
+  //        a document if it already exists) and returns the `ALREADY_EXISTS`
+  //        code.
+  //        Exception: If the `overwrite` flag is set to `true`, then the
+  //        document is updated even though the token is empty.
+  //
+  // 2. A non-empty token from a previous `GetCurrentApplication`
+  //    request is provided: This call is treated as an "Update Current
+  //    Application" call.
+  //
+  //    2a. The specified document does not exist. Then, the call fails
+  //        (the document has been deleted in the meantime) and returns the
+  //        `NOT_FOUND` code.
+  //        Exception: If the `overwrite` flag is set to `true`, then the
+  //        document is created.
+  //    2b. The document exists and its revision matches the provided token
+  //        provided. Then, barring any other errors, the call should succeed,
+  //        update the application, and
+  //        return the `OK` code.
+  //    2c. The document exists and its revision token differs from the
+  //        provided token: Then, the call fails (the document has been updated
+  //        in the meantime) and returns the `ABORTED` code. The client should
+  //        retry with a new token by running the
+  //        `GetCurrentApplication`-`SetCurrentApplication` sequence again.
+  //        Exception: If the `overwrite` flag is set to `true`, then the update
+  //        is performed even though the token does not match.
+  // Also see go/canonical-codes for the return code semantics.
+  string revision_token = 2;
+
+  // If true, overwrite the contents of any existing document or force-create
+  // it.
+  bool overwrite = 3;
+}
+
+message SetCurrentApplicationResponse {
+  // The created or updated current application. This proto is obtained
+  // non-atomically after the `Set` operation and might be different from
+  // the one in the request message in case of high write load!
+  intrinsic_proto.config.Application application = 1;
+
+  string revision_token = 2;
+}

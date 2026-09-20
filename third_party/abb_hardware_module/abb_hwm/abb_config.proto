@@ -1,0 +1,160 @@
+
+
+// LINT: LEGACY_NAMES
+syntax = "proto3";
+
+package intrinsic_proto.icon;
+
+import "intrinsic/icon/proto/joint_position_pid_velocity_controller_config.proto";
+
+// Exposed configuration parameters for ABB EGM that can be configured via the
+// ABB HwM.
+message EgmConfig {
+  // Flag indicating if the EGM controller should apply extra filtering on the
+  // EGM corrections. If true: Applies extra filtering on the corrections, but
+  // also introduces some extra delays and latency. Else: Raw corrections will
+  // be used. [WARNING: THIS CAN DAMAGE YOUR HARDWARE, USE WITH CAUTION]
+  // Recommendation: As long as the desired joint positions are smooth and
+  // respect robot limits on velicty, accleration and jerk, it is recommended to
+  // set this to false.
+  optional bool setup_uc_use_filtering = 1;
+
+  // Communication timeout [s].
+  // Recommendation: In practice this is not an issue, and during the
+  // development of the ABB HwM we never once expereienced communication
+  // glitches. If you see communication timeout errors on the ABB controller,
+  // you may want to set this to a higher value.
+  optional float setup_uc_comm_timeout = 2;
+
+  // Condition value [deg] for when the EGM correction is considered to be
+  // finished. The condition is fulfilled when the joints are within
+  // [-cond_min_max, cond_min_max]. Recommendation: This is a problematic
+  // function of EGM. It will abort the EGM motion once a target has been
+  // reached and held for at least run_cond_time seconds. It is recommneded to
+  // effectively disable this feature by setting the limits to a narrow range.
+  // But more important is to set a high value for run_cond_tim, see further
+  // down.
+  optional float activate_cond_min_max = 3;
+  // Low pass filer bandwidth of the EGM controller [Hz].
+  // Note that this filter is always applied, even if you set
+  // setup_uc_use_filtering to false. This is another filter, which can't be
+  // disabled. Recommendation: If the reference trajectories are smooth and
+  // respect robot limits, which they should when coming from ICON, this filter
+  // is only a nuisance. It can't be fully disabled but its effect can be
+  // minimized by setting the cutoff frequency to the highest allowed value of
+  // 100 Hz.
+  optional float activate_lp_filter = 4;
+  // Sample rate for the EGM communication [ms].
+  // Note: Only multiples of 4 are allowed (i.e. 4, 8, 16, etc...).
+  // Recommendation: EGM runs at maximum 250Hz, and we see no reason why one
+  // would want to run it slower than that. Just stick to 4ms and never change
+  // this value.
+  optional uint32 activate_sample_time = 5;
+
+  // This is the "maximum speed deviation" allowed for the EGM controller. This
+  // confusingly named parameter is actually a limit on the velocities that can
+  // be achieved via EGM. Recommendation: This is a very important variable. We
+  // recommend setting a value slighly below the minimum rated joint velocity
+  // limit for the robot you intend to control.
+  optional float activate_max_speed_deviation = 10;
+
+  // Condition time [s].
+  // If the joints are within activate_cond_min_max for this time, the EGM
+  // correction is considered to be finished, and the motion will abort.
+  // Recommendation: To ensure correct operation of ABB HwM, it is important
+  // that this value does not trigger during normal operation. This can be
+  // achieved by setting run_cond_time to a high value. During the development
+  // of the ABB HwM, we have used 180 seconds.
+  optional float run_cond_time = 6;
+  // Ramp in time [s].
+  // The EGM controller will ramp in the motion over this time.
+  // Recommendation: We recommend minimizing the influence of this ramp by
+  // setting this parameter to the minimum allowed value of 0.005 seconds.
+  optional float run_ramp_in_time = 7;
+
+  // Position correction gain of the EGM controller. range: [0, 20]
+  // Recommendation: Because ICON provides feedforward velocities, it is
+  // possible to achieve very high trajectory following performance even with
+  // low value for this parameter. We expect this parameter to be more important
+  // if the robot tool is not correctly modelled in the ABB controller. We
+  // recommend using a value of 10 and adjusting if you notice performance
+  // issues.
+  optional float run_pos_corr_gain = 8;
+  // Desired duration for ramping out EGM motions [s].
+  // EGM will ramp out the motion over this time.
+  // Recommendation: We recommend minimizing the influence of this ramp by
+  // setting this parameter to the minimum allowed value of 0.005 seconds.
+  optional float stop_ramp_out_time = 9;
+}
+
+// This is a list of known robot types that have default configurations.
+enum RobotType {
+  // The default robot type. This is used if no robot type is specified.
+  UNKNOWN = 0;
+  // The IRB 1100-4/0.58 6DOF robot.
+  IRB_1100_4_058 = 1;
+  // The IRB 1300-10/1.15
+  IRB_1300_10_115 = 2;
+}
+
+message AbbConfig {
+  // Number of degrees of freedom. Defaults to 6 if not specified.
+  // Note: only 6 dofs are currently supported, so if you set this value to
+  // anything else, the ABB HwM will not start.
+  optional int32 num_dof = 1;
+  // IP address of the robot controller. You can find this by inspecting the
+  // network settings on the teach pendant.
+  optional string robot_controller_ip = 2;
+  // Port number to listen for incoming EGM traffic from the robot. Must match
+  // the port configured on the ABB OmniCore controller. Refer to the ABB HwM
+  // setup guide for more information.
+  optional int32 egm_port = 3;
+
+  // The model type of the robot. This is used to select the default
+  // configuration parameters when available. If a successful connection via
+  // RWS is made, the robot type is checked against this value and an error is
+  // returned if they do not match. If a custom EGM and either NoAdvancedControl
+  // or CustomAdvancedControl is used, this field can be left unset or UNKNOWN.
+  optional RobotType robot_type = 14;
+
+  // Configuration parameters for the EGM controller. Refer to the EgmConfig
+  // message for more information. If not set, the default values will be used
+  // when the robot type is set.
+  optional EgmConfig egm_config = 6;
+
+  // The port that the ABB controller serves RWS on. For a real controller, this
+  // should normally be 443. For virtual controller in RobotStudio, it is
+  // important to fix the port according to the video instructions here:
+  // https://youtu.be/ehmZEmf7GwE?si=7x04K1qP6_AUJmtr&t=54.
+  optional int32 rws_port = 7;
+
+  // The ABB Hardware module relies on a non-realtime streaming interface EGM.
+  // This parameter controls the tolerated number of repeated or missed messages
+  // from the robot.
+  optional int32 egm_sequence_tolerance = 10;
+
+  // No advance control is used. Commands are sent directly via the EGM
+  // interface.
+  message NoAdvancedControl {}
+
+  // Uses Intrinsic's default advanced control for the ABB robot, if
+  // available for the specific robot model.
+  message DefaultAdvancedControl {}
+
+  // Uses a custom advanced control implementation.
+  message CustomAdvancedControl {
+    intrinsic_proto.icon.JointPositionPidVelocityControllerConfig
+        joint_position_pid_velocity_controller_config = 1;
+  }
+
+  // Advanced control options for the ABB Hardware module. Defaults to
+  // `default_advanced_control` if unset. If `default_advanced_control` is not
+  // supported by a robot model `no_advanced_control` has to be set explicitly.
+  oneof advanced_control_options {
+    NoAdvancedControl no_advanced_control = 11;
+    DefaultAdvancedControl default_advanced_control = 12;
+    CustomAdvancedControl custom_advanced_control = 13;
+  }
+
+  reserved 4, 5, 8, 9;
+}

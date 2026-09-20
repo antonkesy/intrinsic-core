@@ -1,0 +1,207 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.force;
+
+import "intrinsic/icon/control/primitives/force_control/proto/controller_params.proto";
+import "intrinsic/math/proto/pose.proto";
+import "intrinsic/math/proto/vector3.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/icon/control/primitives/force_control/proto/force_primitives_go_proto";
+
+// A direction in 3D space.
+message Direction {
+  // Some easy to use directions.
+  enum TranslationalAxis {
+    NOT_SET = 0;
+    X = 1;
+    Y = 2;
+    Z = 3;
+    MINUS_X = 4;
+    MINUS_Y = 5;
+    MINUS_Z = 6;
+  }
+  oneof direction {
+    TranslationalAxis axis = 1;
+    Vector3 vector = 2;
+  }
+}
+
+// A reference frame. The frame can be a frame in the world, a pose relative to
+// the task frame or the task frame itself.
+message ReferenceFrame {
+  message TaskFrame {}
+
+  oneof transform {
+    // A reference in the world.
+    world.TransformNodeReference reference = 1;
+
+    // A pose relative to the task frame.
+    Pose task_frame_t_reference_frame = 2;
+
+    // Use the task frame.
+    TaskFrame task_frame = 3;
+  }
+}
+
+message DirectionAndForce {
+  // The direction in which the force is applied. The magnitude of the
+  // direction is ignored.
+  Direction direction = 1;
+
+  // The applied force in Newtons.
+  // For a compliant grasp, set the force to 0 to make the robot compliant in
+  // the defined direction.
+  double force = 2;
+}
+
+message AxisAndTorque {
+  // The axis around which the torque is applied. The magnitude of the axis is
+  // ignored.
+  Direction axis = 1;
+
+  // The applied torque in Newton-meters.
+  double torque = 2;
+}
+
+// Apply forces and torques in up to three directions.
+message ApplyForce {
+  // Up to three forces to apply.
+  repeated DirectionAndForce forces = 1;
+
+  // Up to three torques to apply.
+  repeated AxisAndTorque torques = 3;
+
+  // Parameters that define the force controller.
+  optional ControllerParams controller_params = 2;
+}
+
+// Make contact with a surface.
+message MakeContact {
+  // The tool is moved in this direction.
+  Direction motion_direction = 1;
+  // The maximum force that the tool is allowed to apply to the surface.
+  double max_contact_force = 2;
+
+  // Parameters that define the force controller.
+  optional ControllerParams controller_params = 3;
+}
+
+// Align the orientation of the tool with a reference frame.
+//
+// The robot will move the tool to be aligned with the reference frame. The
+// reference frame can be defined in the world or relative to the task frame.
+message AlignRotationWithFrame {
+  // The reference frame to align the tool with.
+  ReferenceFrame reference_frame = 1;
+
+  // The force to apply to the reference frame. If unset no force is applied.
+  optional DirectionAndForce force = 2;
+
+  message ControllerParams {
+    // The rotational stiffness of the tool around the task_frame x axis in
+    // Nm/rad. Defaults to 100 Nm/rad.
+    optional double rotational_stiffness_rx = 1;
+    // The rotational stiffness of the tool around the task_frame y axis in
+    // Nm/rad. Defaults to 100 Nm/rad.
+    optional double rotational_stiffness_ry = 2;
+    // The rotational stiffness of the tool around the task_frame z axis in
+    // Nm/rad. Defaults to 100 Nm/rad.
+    optional double rotational_stiffness_rz = 3;
+  }
+
+  optional ControllerParams controller_params = 3;
+}
+
+// Push the tool in a direction.
+//
+// A force is applied in one direction. In addition an oscillation can be
+// applied around the motion direction axis or orthogonal to the motion
+// direction axis. Both oscillations can be used together or separately. This is
+// useful to avoid jamming the tool when pushing something into a slot.
+message Push {
+  // The tool is moved in this direction.
+  Direction motion_direction = 1;
+  // The force to apply in the motion direction.
+  double push_force = 2;
+
+  message RotationalOscillationParams {
+    // The frequency of the oscillation in Hz. Defaults to 1 Hz.
+    optional double frequency = 1;
+
+    // The amplitude of the oscillation in radians. Defaults to 0.01 radians.
+    optional double amplitude = 2;
+  }
+
+  message TranslationalOscillationParams {
+    // The amplitude of the oscillation in meters. Defaults to 0.5 mm.
+    optional double amplitude = 1;
+
+    // The maximum velocity of the oscillation in meters/s. Defaults to 5 mm/s.
+    optional double motion_velocity = 2;
+  }
+
+  message ControllerParams {
+    // The rotational stiffness of the tool around the motion direction axis in
+    // Nm/rad. Defaults to 2 Nm/rad.
+    optional double rotational_stiffness = 1;
+
+    // The translational stiffness of the tool orthogonal to the motion
+    // direction axis in N/m. Defaults to 10 N/m.
+    optional double translational_stiffness = 2;
+  }
+
+  // An oscillation around the motion direction axis. Useful to avoid jamming
+  // the tool. Disabled by default. If `rotational_stiffness` is set but empty,
+  // the default values in `RotationalOscillationParams` are used.
+  optional RotationalOscillationParams rotational_oscillation = 3;
+
+  // An oscillation orthogonal to the motion direction axis. Useful to avoid
+  // jamming the tool. Disabled by default. If `translational_stiffness` is set
+  // but empty, the default values in `TranslationalOscillationParams` are used.
+  optional TranslationalOscillationParams translational_oscillation = 4;
+
+  optional ControllerParams controller_params = 5;
+}
+
+// Hold the current pose while accepting streaming inputs.
+message Hold {
+  // Parameters that define the force controller.
+  optional ControllerParams controller_params = 1;
+}
+
+// The force primitives using the CartesianAdmittance action.
+message ForcePrimitive {
+  oneof primitive {
+    MakeContact make_contact = 1;
+    ApplyForce apply_force = 2;
+    AlignRotationWithFrame align_rotation_with_frame = 4;
+    Hold hold = 5;
+  }
+
+  reserved 3;
+}
+
+// All force primitives.
+message AllForcePrimitives {
+  oneof primitive {
+    MakeContact make_contact = 1;
+    ApplyForce apply_force = 2;
+    AlignRotationWithFrame align_rotation_with_frame = 3;
+    Hold hold = 5;
+  }
+}

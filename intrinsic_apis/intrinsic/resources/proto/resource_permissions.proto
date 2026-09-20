@@ -1,0 +1,52 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+syntax = "proto3";
+
+package intrinsic_proto.config;
+
+option go_package = "intrinsic/resources/proto/resource_permissions_go_proto";
+
+// ResourceRequirements describes the compute resource requirements for the
+// image.
+message ResourceRequirements {
+  // The maximum of a particular resource an image can use. Is also used as the
+  // requested amount of resources by default.
+  map<string, string> limits = 1;
+  // The minimum of a particular resource an image can use. If both limits and
+  // requests are specified for `cpu` and `memory`, the requests must be less
+  // than or equal to the limits. For extended resources, both must be equal,
+  // unless the extended resource is a GPU, where a zero request is allowed. A
+  // zero request in this case means that the resource is not required and if no
+  // GPU is available in the cluster it will not be requested.
+  map<string, string> requests = 2;
+}
+
+// SecurityContext defines security related permissions the resources will be
+// given.
+// See:
+// https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+message SecurityContext {
+  Capabilities capabilities = 1;
+  // b/278929843: remove privileged when another method of local root escalation
+  // exists.
+  bool privileged = 2;
+}
+
+message Capabilities {
+  // POSIX capabilities to be granted to the resource.
+  repeated string add = 1;
+}
+

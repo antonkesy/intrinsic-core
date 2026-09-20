@@ -1,0 +1,133 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+option go_package = "intrinsic/world/proto/entity_search_go_proto";
+
+// Search criteria for finding relevant entities to apply an update to.
+message EntitySearchCriteria {
+
+  // Search for an entity by the names present in the attachment graph
+  // hierarchy.
+  message ByPath {
+    // Search the attachment tree for the following names. If we find the first
+    // name the second name search begins using that entity as the root.
+    repeated string names = 1;
+    // If true, it allows skipping any entities that are not specifically called
+    // out in the names list but exist within the hierarchy of the attachment
+    // tree between the given names. For example if the tree looks like: A -> B
+    // -> C and the names specified are just A and C, the search will fail
+    // because B is not called out. However if can_skip is true we will ignore B
+    // and still find the right entity "C".
+    bool can_skip = 2;
+  }
+
+
+  // Search for an entity using its entity id.
+  message ById {
+    // The entity id to search for.
+    uint32 entity_id = 1;
+  }
+
+  // Search for an entity using an alias.
+  message ByAlias {
+    string alias = 1;
+  }
+
+
+  // Search for an entity using labels
+  message ByLabels {
+    // The labels to search with
+    repeated string label_ids = 1;
+
+    // TODO(stoyang): Remove as this is redundant
+    // Optional local name of the target entity (or entities).
+    // DEPRECATED: Use
+    //    by_and: {
+    //      by_labels: { label_ids: "some_label" }
+    //      by_path: {
+    //        names: "some_name"
+    //        can_skip: true
+    //      }
+    //    }
+    // instead."
+    string entity_name = 2 [deprecated = true];
+  }
+
+  // Search for an entity by the combination of its name and the names of
+  // collections in its attachment graph hierarchy.
+  message ByCollectionPath {
+    // Ordered sequence of collection entities' names that must be part of the
+    // path to the target entity (or entities). (These names must be encountered
+    // in this order but not necessarily contiguously. In an analogy to regex,
+    // the search performed with an implicit ".*" before and after each value.)
+    repeated string collection_names = 1;
+
+    // TODO(stoyang): Remove as this is redundant
+    // Local name of the target entity (or entities).
+    // DEPRECATED: Use
+    //    by_and: {
+    //      by_collection_path: { collection_names: "some_collection_name" }
+    //      by_path: {
+    //        names: "some_name"
+    //        can_skip: true
+    //      }
+    //    }
+    // instead."
+    string entity_name = 2 [deprecated = true];
+  }
+
+  // Search by presence or absence of components on an entity
+  message ByComponents {
+    enum ComponentState {
+      COMPONENT_STATE_UNSPECIFIED = 0;
+      PRESENT = 1;
+      ABSENT = 2;
+    }
+
+    // NOTE: Add others as needed
+    ComponentState collections_component = 1;
+    ComponentState collections_member_component = 2;
+    ComponentState robot_component = 3;
+  }
+
+  // Search by combining multiple search criteria using logical AND operation.
+  // Any entity returned must meet all of the individual criteria.
+  message ByAnd {
+    repeated EntitySearchCriteria criteria = 1;
+  }
+
+  // Search by combining multiple search criteria using logical OR operation.
+  // Any entity returned must meet at least one of the individual criteria.
+  message ByOr {
+    repeated EntitySearchCriteria criteria = 1;
+  }
+
+
+  oneof search_type {
+    ByPath by_path = 1;  
+    ById by_id = 2;
+    ByAlias by_alias = 3;
+
+    ByLabels by_labels = 4;
+    ByCollectionPath by_collection_path = 5;
+    ByComponents by_components = 6;
+    ByAnd by_and = 7;
+    ByOr by_or = 8;
+
+  }
+}

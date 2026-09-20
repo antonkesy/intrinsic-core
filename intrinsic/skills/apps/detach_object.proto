@@ -1,0 +1,35 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/skills/apps/detach_object_go_proto";
+
+message DetachObjectParams {
+  // Gripper reference from which the object will be detached.
+  world.ObjectReference gripper_entity = 1;
+
+  // Object reference to detach from the gripper.
+  world.ObjectReference object_entity = 2;
+
+  // For advanced use: if true, the collision between the object and the gripper
+  // will *not* be re-enabled after detaching. Use with caution as it can result
+  // in collision between the object and the robot. The default behavior is to
+  // enable the collision checking between the object and the robot.
+  optional bool skip_collision_enable = 3;
+}

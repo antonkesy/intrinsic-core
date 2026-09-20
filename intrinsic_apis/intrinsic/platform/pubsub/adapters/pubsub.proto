@@ -1,0 +1,61 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.pubsub;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+option go_package = "intrinsic/platform/pubsub/adapters/pubsub_go_proto";
+
+message NewPublisher {
+  string topic = 1;
+  string type_name = 2;
+  int64 retention_period_bytes = 3;
+}
+
+message PubSubPacket {
+  // The message that got published.
+  google.protobuf.Any payload = 1;
+
+  // The time at which Publish was called.
+  google.protobuf.Timestamp publish_time = 2;
+
+  // The following two fields represent the OpenCensus trace context that this
+  // message was published from. It is populated automatically in
+  // pubsub::Publish.
+  uint64 trace_id = 4;
+  uint64 span_id = 5;
+
+  reserved 3;
+}
+
+message PubSubQueryRequest {
+  google.protobuf.Any request = 1;
+
+  // The following two fields represent the OpenCensus trace context that this
+  // request was sent from. It is populated automatically in pubsub::Query.
+  optional uint64 trace_id = 2;
+  optional uint64 span_id = 3;
+}
+
+message PubSubQueryResponse {
+  oneof result {
+    google.protobuf.Any response = 1;
+    google.rpc.Status error = 2;
+  }
+}

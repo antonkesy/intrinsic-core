@@ -1,0 +1,32 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.gripper_service;
+
+import "intrinsic/hardware/gripper/service_asset/gripper_service_signals.proto";
+
+option go_package = "intrinsic/hardware/gripper/service_asset/suction_gripper_opcua_service_config_go_proto";
+
+// This is the service configuration for suction grippers that are controlled
+// using an OPC UA server.
+message SuctionGripperOpcuaServiceConfig {
+  // A collection of signal maps whose keys are OPC UA node ids in XML notation
+  // and whose values are the values to be set for each suction gripper action.
+  SuctionGripperSignals signals = 1;
+
+  // Full address of the remote OP CUA server to connect to.
+  string opcua_server_address = 2;
+}

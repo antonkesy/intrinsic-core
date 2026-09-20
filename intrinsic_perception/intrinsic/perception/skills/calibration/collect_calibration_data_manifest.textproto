@@ -1,0 +1,90 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: SkillManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "collect_calibration_data"
+}
+display_name: "Collect calibration data"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+  "The `collect_calibration_data` skill automates the process of capturing data points for calibration.\n"
+  "It iterates through a provided list of robot waypoints. At each waypoint, it performs the following steps:\n"
+  "  1. Directly plans and executes the motion to the target pose.\n"
+  "  2. Waits for motion to settle and senses the actual joint positions from the motor-encoders.\n"
+  "  3. Calls `CaptureData` on the unified `CalibrationService`, passing the sensed robot pose. The service handles\n"
+  "     image acquisition and pattern detection.\n"
+  "  4. Optionally, returns the robot to a safe initial position before proceeding to avoid collisions (if requested).\n"
+  "\n"
+  "The following typical camera cases are supported:\n"
+  "  - `CAMERA_TO_ROBOT_CALIBRATION_TYPE_STATIONARY_CAMERA`: The camera has a fixed position in the workcell\n"
+  "  and the calibration object is mounted on the robot\'s flange.\n"
+  "  - `CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA`: The camera is mounted on the robot\'s flange and the\n"
+  "  calibration object has a fixed position in the workcell.\n"
+  "\n"
+  "The data collection can be performed with collision detection or without.\n"
+  "The mode without collision detection is useful when the model of the world\n"
+  "is not accurate, but we are still certain that the provided waypoints can\n"
+  "be safely reached.\n"
+}
+extended_documentation {
+  prerequisites:
+  "Before running `collect_calibration_data`, make sure the robot is in a collision-free "
+  "configuration.\n"
+  "\n"
+  "Additionally, a calibration session must have been initialized in the `CalibrationService` "
+  "by calling the `initialize_calibration` skill. This setup step ensures that the service is ready "
+  "to collect data points that will be later used for intrinsic, camera-to-robot and/or "
+  "camera-to-camera calibration.\n"
+  "\n"
+  "Optionally, if you wish to apply a pseudo-random sampling strategy for selecting waypoints, "
+  "you can call the `sample_calibration_poses` skill to generate the waypoints passed to "
+  "`collect_calibration_data`."
+}
+options {
+  supports_cancellation: true
+  cancellation_ready_timeout {
+    seconds: 30
+  }
+  cc_config {
+    create_skill: "::intrinsic::skills::CollectCalibrationData::CreateSkill"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "robot"
+    value {
+      capability_names: "intrinsic_proto.icon.v1.IconApi"
+      capability_names: "Icon2PositionPart"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.CollectCalibrationDataParams"
+  default_value {
+    [type.googleapis.com/intrinsic_proto.skills.CollectCalibrationDataParams] {
+      disable_collision_checking: false
+    }
+  }
+}
+return_type {
+  message_full_name: "intrinsic_proto.skills.CollectCalibrationDataResult"
+}

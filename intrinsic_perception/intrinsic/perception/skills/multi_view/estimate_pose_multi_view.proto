@@ -1,0 +1,119 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "intrinsic/geometry/proto/oriented_bounding_box.proto";
+import "intrinsic/math/proto/pose.proto";
+import "intrinsic/perception/proto/v1/capture_data.proto";
+import "intrinsic/perception/proto/v1/pose_estimate_in_root.proto";
+import "intrinsic/perception/proto/v1/pose_estimator_id.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/perception/skills/multi_view/estimate_pose_multi_view_go_proto";
+
+enum VisibilityScoreComputation {
+  POSE_BASED = 0;
+  KEYPOINT_BASED = 1;
+}
+
+message UpdateObjectPose {
+  // Whether to update the object pose. If multiple instances of the same object
+  // are in the scene, the pose with the highest detection score will be
+  // updated.
+  bool update_pose = 1;
+  // Which world object to be updated.
+  intrinsic_proto.world.ObjectReference object_to_update = 2;
+}
+
+message VisibilityScoreParams {
+  option deprecated = true;
+
+  // Compute visibility score for each estimated pose.
+  bool compute_visibility_score = 1;
+  // Whether to render and show images with poses and visibility score.
+  bool render_visibility_score = 5;
+  // How to compute visibility score. Can choose between POSE_BASED that only
+  // computes the score based on the object poses. This approach is slightly
+  // slower but it may overestimate scores if some poses are missed. The other
+  // alternative is KEYPOINT_BASED that computes the visibility score based on
+  // the visibility of the keypoints of the detected object. If this value is
+  // left unset, the skill does not compute visibility score for the pose
+  // estimates.
+  VisibilityScoreComputation visibility_score_type = 4;
+  // Object used to calculate the visibility score.
+  intrinsic_proto.world.ObjectReference object_instance = 2;
+  // Depth tolerance used for visibility score computation.
+  // The higher it is, the more the score will be overestimated.
+  optional float depth_absolute_tolerance = 3;
+}
+
+message RegionOfInterest {
+  // Set this to true to filter out poses and point of point cloud that lie
+  // outside the bounding box. Default is False.
+  bool remove_points_outside_region_of_interest = 4;
+  // Set this to true to visualize the Region of Interest in the world. Setting
+  // this value to true might help the user in defining the right ROI parameters
+  // for the application. Default is False.
+  bool visualize_region_of_interest = 2 [deprecated = true];
+  // Parameters for the ROI. Define the dimensions and the position with respect
+  // to the world coordinate system.
+  geometry.OrientedBoundingBox3 roi_params = 3;
+}
+
+message EstimatePoseMultiViewParams {
+  // Id of the pose estimator.
+  perception.v1.PoseEstimatorId pose_estimator = 1;
+
+  reserved 2, 3;
+  // Minimal number of instances that must be detected. Skill fails if not
+  // enough instances can be found. Leaving this value unset will default to 0.
+  optional int32 min_num_instances = 4;
+  // Update pose for a single object. If multiple instances of the same object
+  // are in the scene, the pose with the highest detection score will be
+  // updated.
+  optional UpdateObjectPose update_object_pose = 5;
+  // Optional parameter to compute visibility score for pose estimates.
+  // DEPRECATED.
+  optional VisibilityScoreParams visibility_score_params = 6
+      [deprecated = true];
+  // Optional parameter to log images and metadata for debugging purposes.
+  optional bool log_debug_data = 7;
+  // If specified, the skill uses the `capture_result_location`s within to
+  // retrieve images captured earlier.
+  //
+  // If not specified, the skill captures new images directly from the cameras.
+  repeated perception.v1.CaptureData capture_data = 8;
+  // Maximum allowed time in seconds to run the pose estimation inference. This
+  // includes the pose estimator creation and the actual pose estimation.
+  optional int64 inference_timeout_sec = 9;
+  // If set, the pose estimator will restrict the search space to the region of
+  // interest.
+  optional RegionOfInterest region_of_interest = 10;
+  // If set to true, publish annotated image so that it can be viewed in
+  // load sequence list
+  optional bool publish_annotated_image = 11;
+}
+
+message EstimatePoseMultiViewResult {
+  // Pose estimates returned by the pose estimator.
+  repeated perception.v1.PoseEstimateInRoot estimates = 1;
+
+  // Poses of the returned pose estimates. Note that this is redundant to the
+  // poses returned in 'estimates' but allows easier use in combination with
+  // other skills like `sync_product_objects`.
+  repeated intrinsic_proto.Pose root_ts_target = 2;
+}

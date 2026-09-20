@@ -1,0 +1,82 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world.internal;
+
+import "intrinsic/world/proto/attachment_component.proto";
+import "intrinsic/world/proto/collections_component.proto";
+import "intrinsic/world/proto/collections_member_component.proto";
+import "intrinsic/world/proto/collision_component.proto";
+import "intrinsic/world/proto/projector_component.proto";
+import "intrinsic/world/proto/robot_component.proto";
+import "intrinsic/world/proto/user_data_component.proto";
+import "intrinsic/world/proto/geometry_component.proto";
+import "intrinsic/world/proto/kinematics_component.proto";
+import "intrinsic/world/proto/physics_component.proto";
+import "intrinsic/world/proto/ppr_component.proto";
+import "intrinsic/world/proto/sensor_component.proto";
+import "intrinsic/world/proto/simulation_component.proto";
+
+option go_package = "intrinsic/world/proto/world_entity_go_proto";
+
+// Next tag: 25
+message WorldEntity {
+  // Human-readable name. No guarantees are made about the uniqueness of this
+  // name.
+  // TODO(stoyang): Rename to display_name or remove
+  string name = 1;
+
+  // Labels enable user-specified addressing of arbitrary sets of Entities.
+  //
+  // Currently, we only support labeling through name strings. If you add a new
+  // labeling method that is orthogonal, create a oneof with the existing "name"
+  // field and your new data.
+  message Label {
+    string name = 1;
+  }
+  repeated Label labels = 2;
+
+  // A local name to help differentiate this entity from its siblings. Can be
+  // used for searching through parantage.
+  string local_name = 12;
+
+  // An option but unique (within a world) alias associated with this entity.
+  string alias = 13;
+
+  // ---------------------------------------------------------------------------
+  // Components
+  intrinsic_proto.world.AttachmentComponent attachment_component = 3;
+  intrinsic_proto.world.CollectionsComponent collections_component = 14;
+  intrinsic_proto.world.CollectionsMemberComponent
+      collections_member_component = 15;
+  intrinsic_proto.world.CollisionComponent collision_component = 4;
+  intrinsic_proto.world.GeometryComponent geometry_component = 5;
+  intrinsic_proto.world.KinematicsComponent kinematics_component = 6;
+  intrinsic_proto.world.PhysicsComponent physics_component = 7;
+  intrinsic_proto.world.PPRComponent ppr_component = 19;
+  intrinsic_proto.world.ProjectorComponent projector_component = 22;
+  intrinsic_proto.world.RobotComponent robot_component = 8;
+  intrinsic_proto.world.SensorComponent sensor_component = 11;
+  intrinsic_proto.world.SimulationComponent simulation_component = 20;
+  intrinsic_proto.world.UserDataComponent user_data_component = 10;
+
+  // ---------------------------------------------------------------------------
+
+  reserved 9, 16, 17, 18, 21, 23, 24;
+  reserved "motion_component", "equipment_component", "robot_part_component",
+      "gripper_component", "regions_component", "spawner_component",
+      "outfeed_component";
+}

@@ -1,0 +1,82 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: Manifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "dio_set_output"
+}
+display_name: "DIO set output"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+    "The `dio_set_output` skill is used to write digital values to\n"
+    "a Digital Input/Output device.\nThe skill user specifies one or more\n"
+    "digital outputs to write when the skill is executed."
+    "\n\n"
+    ":::note\n"
+    "The skill does not block on writing the digital output values.\n"
+    "Users should not depend on the values being set at the end\n"
+    "of the skill execution.\n:::\n"
+}
+extended_documentation {
+  prerequisites:
+    "* A real-time control service that controls the digital outputs."
+    "\n\n"
+    "* The skill user must know the `Block name` of the relevant digital "
+    "outputs to set. The `Block name` can be found in the "
+    "*I/O Mapping Panel* of the `realtime_control_service`."
+    "\n\n"
+    "* The skill user must know the index of the relevant digital "
+    "outputs to set. The indices can be found in the *I/O Mapping Panel* "
+    "of the `realtime_control_service`."
+  usage_example:
+    "1. Choose the desired `Adio` device from the list of available "
+    "hardware devices. When the digital output is provided by a robot "
+    "control box or EtherCAT, this is usually named `robot_controller`."
+    "\n\n"
+    "2. Specify an array of `DioOutputBlock`, in which each entry "
+    "consists of:\n"
+    "    * The `block_name`, which is the name of the Digital Input/Output "
+    "block to which values will be written."
+    "\n"
+    "    * The `indices`, the indices to set within the Digital Input/Output "
+    "block. Indices are 0-based. The maximum number of indices is 64, "
+    "and the maximum allowed index is 63."
+    "\n"
+    "    * The `values`, the values to set within the Digital Input/Output "
+    "block. `values` must have the same size as `indices`."
+}
+options {
+  supports_cancellation: false
+  cc_config {
+    create_skill: "::intrinsic::skills::DioSetOutput::CreateSkill"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "adio"
+    value {
+      capability_names: "Icon2AdioPart"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.DioSetOutputParams"
+}

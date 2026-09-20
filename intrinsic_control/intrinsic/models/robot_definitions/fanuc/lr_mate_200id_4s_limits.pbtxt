@@ -1,0 +1,165 @@
+# proto-file: intrinsic/scene/proto/v1/scene_object_updates.proto
+# proto-message: intrinsic_proto.scene_object.v1.SceneObjectUpdates
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# According to B-83574EN_07, there are different versions with different limits
+# for the LR Mate 200iD/4S. We took here the largest possible joint limits.
+# This corresponds to the limits that can also be found on the technical data
+# sheet.
+# The maximum acceleration, jerk and effort limits have been read out from the
+# robot but I am unsure whether these are meaningful for the R-50iA controller.
+# The torque limits were obtained as $PARAM_GROUP[1].TORQUE_CONS[i]/
+# $PARAM_GROUP[1].$GEAR_RATIO[i].
+updates: {
+  update_joints {
+    joint_system_limits: {
+      key: "joint_a1"
+      value: {
+        min_position: -3.141592654
+        max_position: 3.141592654
+        max_velocity: 8.028514559
+        max_acceleration: 40.68503954
+        max_jerk: 412.348387
+        max_effort: 381.2490
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a2"
+      value: {
+        min_position: -1.919862177
+        max_position: 2.094395102
+        max_velocity: 4.01425728
+        max_acceleration: 20.34251977
+        max_jerk: 206.1741935
+        max_effort: 402.5594
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a3"
+      value: {
+        min_position: -1.204277184
+        max_position: 3.577924967
+        max_velocity: 4.537856055
+        max_acceleration: 22.99589321
+        max_jerk: 233.0664959
+        max_effort: 161.8855
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a4"
+      value: {
+        min_position: -3.316125579
+        max_position: 3.316125579
+        max_velocity: 9.773843811
+        max_acceleration: 49.52961483
+        max_jerk: 501.9893496
+        max_effort: 60.9981
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a5"
+      value: {
+        min_position: -2.094395102
+        max_position: 2.094395102
+        max_velocity: 9.773843811
+        max_acceleration: 49.52961483
+        max_jerk: 501.9893496
+        max_effort: 70.4750
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a6"
+      value: {
+        min_position: -6.283185307
+        max_position: 6.283185307
+        max_velocity: 15.70796327
+        max_acceleration: 79.60116912
+        max_jerk: 806.7686293
+        max_effort: 34.9945
+      }
+    }
+
+    # Joint position limits are set 0.1 rad below system limits.
+    # All other application limits have been set at 10% below system limits.
+    joint_application_limits: {
+      key: "joint_a1"
+      value: {
+        min_position: -3.041592654
+        max_position: 3.041592654
+        max_velocity: 7.225663103
+        max_acceleration: 36.61653558
+        max_jerk: 371.1135483
+        max_effort: 343.1241008
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a2"
+      value: {
+        min_position: -1.819862177
+        max_position: 1.994395102
+        max_velocity: 3.612831552
+        max_acceleration: 18.30826779
+        max_jerk: 185.5567742
+        max_effort: 362.3034748
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a3"
+      value: {
+        min_position: -1.104277184
+        max_position: 3.477924967
+        max_velocity: 4.08407045
+        max_acceleration: 20.69630389
+        max_jerk: 209.7598463
+        max_effort: 145.6969203
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a4"
+      value: {
+        min_position: -3.216125579
+        max_position: 3.216125579
+        max_velocity: 8.79645943
+        max_acceleration: 44.57665335
+        max_jerk: 451.7904147
+        max_effort: 54.89827895
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a5"
+      value: {
+        min_position: -1.994395102
+        max_position: 1.994395102
+        max_velocity: 8.79645943
+        max_acceleration: 44.57665335
+        max_jerk: 451.7904147
+        max_effort: 63.4274775
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a6"
+      value: {
+        min_position: -6.183185307
+        max_position: 6.183185307
+        max_velocity: 14.13716694
+        max_acceleration: 71.64105221
+        max_jerk: 726.0917663
+        max_effort: 31.49501897
+      }
+    }
+  }
+}

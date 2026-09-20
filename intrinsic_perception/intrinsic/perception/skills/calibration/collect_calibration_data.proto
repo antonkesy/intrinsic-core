@@ -1,0 +1,117 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "intrinsic/assets/proto/field_metadata.proto";
+import "intrinsic/assets/proto/v1/resolved_dependency.proto";
+import "intrinsic/motion_planning/proto/v1/geometric_constraints.proto";
+import "intrinsic/perception/proto/v1/camera_to_robot_calibration.proto";
+import "intrinsic/skills/proto/skill_parameter_metadata.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/perception/skills/calibration/collect_calibration_data_go_proto";
+
+enum MotionType {
+  MOTION_TYPE_AUTO = 0;
+  MOTION_TYPE_PLANNED = 1;
+  MOTION_TYPE_JOINT = 2;
+  MOTION_TYPE_LINEAR = 3;
+}
+
+// Next ID: 19
+message CollectCalibrationDataParams {
+  // The `MotionPlannerService` (MPS) Asset specification.
+  intrinsic_proto.assets.v1.ResolvedDependency
+      motion_planner_service = 17 [(intrinsic_proto.assets.field_metadata)
+                                       .dependency = {
+    requires: "grpc://intrinsic_proto.motion_planning.v1.MotionPlannerService",
+    skill_annotations: { always_provide_connection_info: true }
+  }];
+
+  // The type of camera-to-robot calibration.
+  intrinsic_proto.perception.v1.CameraToRobotCalibrationType calibration_type =
+      2;
+
+  // Uniquely identifies the object used for calibration. Typically a
+  // calibration pattern, but - with an appropriate pose estimator - all kinds
+  // of objects can be used.
+  intrinsic_proto.world.ObjectReference calibration_object = 3;
+
+  // Robot waypoints that will be used for data collection.
+  repeated intrinsic_proto.motion_planning.v1.GeometricConstraint waypoints = 5;
+
+  // Set to true to run without collision checking. This enables cases where the
+  // exact camera position is unknown, or the world is not accurately modelled.
+  // If set to false, it is worth setting the collision margins to a higher
+  // value if you are unsure about the exact positions of the objects in your
+  // world. For instance, for a stationary camera, you can explicitly increase
+  // the collision margin for the calibration object, while for a moving camera,
+  // you can increase the collision margin for the camera itself. These margins
+  // can be again reduced once data collection is completed.
+  optional bool disable_collision_checking = 7;
+
+  // Determines the type of robot motion used to collect the data. Defaults to a
+  // planned move.
+  MotionType motion_type = 13;
+
+  // Indicates if we want to return to the base robot pose after visiting the
+  // individual waypoints. Using the return-to-base strategy can help to
+  // increase robustness, e.g. in presence of a dress-pack.
+  optional bool skip_return_to_base_between_waypoints = 14;
+
+  // Name of the ICON arm part to control. If not provided but only a single
+  // arm part is present in the ICON instance, that part will be used.
+  optional intrinsic_proto.world.ObjectReference arm_part = 15
+      [(intrinsic_proto.skills.skill_parameter_metadata) = {
+        is_icon2_position_part: true
+      }];
+
+  // The calibration service.
+  intrinsic_proto.assets.v1.ResolvedDependency calibration_service = 18
+      [(intrinsic_proto.assets.field_metadata).dependency = {
+        requires: "grpc://intrinsic_proto.perception.v1.CalibrationService"
+      }];
+
+  reserved 1;
+  reserved "pose_estimation_config_filename";
+
+  reserved 4;
+  reserved "perception_grpc";
+
+  reserved 6;
+  reserved "minimum_margin";
+
+  reserved 8;
+  reserved "ensure_same_branch_ik";
+
+  reserved 9, 10;
+  reserved "pose_estimator", "pattern_detection_config";
+
+  reserved "use_camera_rendering_in_draft_mode_sim";
+  reserved 11;
+
+  reserved "camera_rendering_grpc";
+  reserved 12;
+
+  reserved "use_unified_calibration_service";
+  reserved 16;
+}
+
+message CollectCalibrationDataResult {
+  reserved 1;
+  reserved "hand_eye_calibration_request";
+}

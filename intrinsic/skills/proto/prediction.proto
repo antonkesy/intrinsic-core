@@ -1,0 +1,54 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "intrinsic/world/proto/object_world_updates.proto";
+
+option go_package = "intrinsic/skills/proto/prediction_go_proto";
+
+message TimedWorldUpdate {
+  // Time at which the update is expected to start.
+  //
+  // If omitted, the update is assumed to start immediately at the end of the
+  // previous update, or at the beginning of skill execution if there is no
+  // previous update.
+  google.protobuf.Timestamp start_time = 3;
+
+  // The expected duration of the update.
+  google.protobuf.Duration time_until_update = 1;
+
+  // World updates to apply.
+  intrinsic_proto.world.ObjectWorldUpdates world_updates = 2;
+}
+
+message Prediction {
+  // Probability that this prediction will happen.
+  double probability = 1;
+
+  // The expected return values from the skill. Has the same caveats as the
+  // result in intrinsic_proto.skills.ExecuteResult.
+  google.protobuf.Any result = 2;
+
+  // The expected world states during the execution of the skill. Updates
+  // are ordered such that each subsequent update should be applied to the
+  // previous one after the elapsed number of seconds. The first update should
+  // be applied to the initial world used for generating the prediction.
+  repeated TimedWorldUpdate expected_states = 3;
+}

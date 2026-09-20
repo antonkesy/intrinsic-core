@@ -1,0 +1,146 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.executive;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "intrinsic/executive/proto/executive_config_go_proto";
+
+// Executive configuration data passed to ClipsExecutor for initialization.
+// Next tag: 53
+message ExecutiveConfig {
+  // Desired minimum time per loop of the executive.
+  // Loop will be slowed to this time if faster, required.
+  uint32 loop_time_ms = 1;
+
+  // Time interval in which the executive regularly prints out status
+  // information, e.g., about currently running actions.
+  google.protobuf.Duration report_active_actions_timeout = 39;
+
+  // Maximum number of CLIPS rules activations per run.
+  // Uses a reasonable default, if set to 0.
+  uint32 clips_run_limit = 43;
+
+  // Skill and resource registries to interact with the
+  // skill run-time, required.
+  string skill_registry_address = 3;
+  string resource_registry_address = 45;
+
+  // Address to call the InstalledAssets service.
+  string installed_assets_service_address = 51;
+
+  // Address to call the AssetInfoInternal service. Required.
+  string asset_info_internal_service_address = 52;
+
+  // Address to call the CodeExecution service for task nodes with execute_code.
+  string code_execution_service_address = 48;
+
+  // World service address to interact with the world, required to load world
+  // via world_id.
+  string world_service_address = 18;
+
+  // World updater address to pause/resume the updater.
+  string world_updater_address = 44;
+
+  // Solution service address for retrieving workcell information.
+  string solution_service_address = 50;
+
+  // Simulation service address to invoke simulation visualization of previews.
+  string simulation_service_address = 41;
+
+  // Conductor service address to synchronize the executive with the conductor.
+  string conductor_service_address = 47;
+
+  // If set, the cloud project to use for, e.g., tracing links.
+  string google_cloud_project = 33;
+
+  // Generate tracing info in the state proto.
+  bool tracing_add_info_to_state = 40;
+
+  // If true, add child link traces via opencensus.
+  bool tracing_link_opencensus = 34;
+
+  // If true, internal calls of the executive (e.g. gRPC calls) are traced.
+  bool tracing_show_internal_calls = 35;
+  // If true and tracing_show_internal_calls is enabled, show internal CLIPS
+  // runs.
+  bool tracing_show_internal_clips_runs_leaking_memory = 36;
+
+  // True to only check that the given plan is valid and exit immediately with
+  // the status indicating validity or failure.
+  bool validate_plan_only = 12;
+
+  // Generally used timeout for gRPC client connections. If not set, defaults to
+  // intrinsic::connect::kGrpcClientConnectDefaultTimeout.
+  google.protobuf.Duration grpc_client_connection_timeout = 13;
+
+  // CLIPS files to load during initialization. Files without directory are
+  // looked for in the directories specified in 'clips_dirs'. Files are loaded
+  // in the given order.
+  repeated string clips_init_files = 14;
+
+  // Directories to search when loading CLIPS files as a runfiles path (e.g.
+  // intrinsic/executive/clips). First path must contain CLIPS base files
+  // (utils.clp, file_load.clp, time.clp, and flags.clp).
+  repeated string clips_dirs = 15;
+
+  // ID of the world in the World Service.
+  // This setting can be overwritten by --world_id from the command-line.
+  // The initial world is read-only from the perspective of the executive.
+  string world_id = 26;
+
+  // If set, write all CLIPS tracing information to this log file.
+  string clips_trace_logfile = 30;
+
+  // Time interval in which the executive polls the conductor service for the
+  // status of a pending client operation.
+  google.protobuf.Duration conductor_client_operation_poll_interval = 49;
+
+  message Flag {
+    // Valid CLIPS symbol, i.e., must match [[:alpha:]][a-zA-Z0-9_-]+
+    string name = 1;
+    oneof value {
+      string string_value = 2;
+      int64 int_value = 3;
+      double double_value = 4;
+      bool bool_value = 5;
+      string symbol_value = 6;
+    }
+  }
+  repeated Flag flags = 24;
+
+  message NoOpAction {
+    // A NoOp Action configures an action which will succeed despite not having
+    // a matching skill configured to back it for execution. If a NoOp action
+    // is not configured such an action would fail.
+    string name = 1;
+  }
+
+  repeated NoOpAction noop_actions = 29;
+
+  reserved 4, 5, 6, 7, 8, 9, 10, 11, 16, 17, 19, 20, 22, 25, 31, 37, 27, 42, 21,
+      28, 38, 46, 23, 32;
+  reserved "edit_world_id", "exec_world_id", "geometry_service_address",
+      "init_world_id", "world_pbtxt_filename", "world_gzf_filename",
+      "clips_action_library_file", "engine_type", "enable_clips_tracing",
+      "plan_file", "plan_type", "belief_world_updater",
+      "pre_exec_snapshot_world_id", "enable_predict_based_draft_sim", "inflows",
+      "equipment_registry_address", "equipment_registry_pbtxt",
+      "task_planner_address", "installer_service_address",
+      "use_extended_status_only", "clips_enable_is_holding",
+      "domain_pbtxt_file", "skill_registry_pbtxt", "data_service_address";
+}

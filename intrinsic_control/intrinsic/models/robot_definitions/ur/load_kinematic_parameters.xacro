@@ -1,0 +1,67 @@
+<!--
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<sdf version='1.9' xmlns:xacro='http://www.ros.org/wiki/xacro'>
+
+  <!-- This macro loads kinematic parameters as properties from a yaml file. The values describe
+       the origin of each joint relative to their parent link -->
+  <xacro:macro name="load_kinematic_parameters" params="kinematic_parameters_path">
+
+    <xacro:property name="kinematic_params" value="${load_yaml(kinematic_parameters_path)}"/>
+
+    <xacro:property name="shoulder_pan_x" value="${kinematic_params['shoulder_pan']['x']}" scope="parent"/>
+    <xacro:property name="shoulder_pan_y" value="${kinematic_params['shoulder_pan']['y']}" scope="parent"/>
+    <xacro:property name="shoulder_pan_z" value="${kinematic_params['shoulder_pan']['z']}" scope="parent"/>
+    <xacro:property name="shoulder_pan_roll" value="${kinematic_params['shoulder_pan']['roll']}" scope="parent"/>
+    <xacro:property name="shoulder_pan_pitch" value="${kinematic_params['shoulder_pan']['pitch']}" scope="parent"/>
+    <xacro:property name="shoulder_pan_yaw" value="${kinematic_params['shoulder_pan']['yaw']}" scope="parent"/>
+
+    <xacro:property name="shoulder_lift_x" value="${kinematic_params['shoulder_lift']['x']}" scope="parent"/>
+    <xacro:property name="shoulder_lift_y" value="${kinematic_params['shoulder_lift']['y']}" scope="parent"/>
+    <xacro:property name="shoulder_lift_z" value="${kinematic_params['shoulder_lift']['z']}" scope="parent"/>
+    <xacro:property name="shoulder_lift_roll" value="${kinematic_params['shoulder_lift']['roll']}" scope="parent"/>
+    <xacro:property name="shoulder_lift_pitch" value="${kinematic_params['shoulder_lift']['pitch']}" scope="parent"/>
+    <xacro:property name="shoulder_lift_yaw" value="${kinematic_params['shoulder_lift']['yaw']}" scope="parent"/>
+
+    <xacro:property name="elbow_x" value="${kinematic_params['elbow']['x']}" scope="parent"/>
+    <xacro:property name="elbow_y" value="${kinematic_params['elbow']['y']}" scope="parent"/>
+    <xacro:property name="elbow_z" value="${kinematic_params['elbow']['z']}" scope="parent"/>
+    <xacro:property name="elbow_roll" value="${kinematic_params['elbow']['roll']}" scope="parent"/>
+    <xacro:property name="elbow_pitch" value="${kinematic_params['elbow']['pitch']}" scope="parent"/>
+    <xacro:property name="elbow_yaw" value="${kinematic_params['elbow']['yaw']}" scope="parent"/>
+
+    <xacro:property name="wrist_1_x" value="${kinematic_params['wrist_1']['x']}" scope="parent"/>
+    <xacro:property name="wrist_1_y" value="${kinematic_params['wrist_1']['y']}" scope="parent"/>
+    <xacro:property name="wrist_1_z" value="${kinematic_params['wrist_1']['z']}" scope="parent"/>
+    <xacro:property name="wrist_1_roll" value="${kinematic_params['wrist_1']['roll']}" scope="parent"/>
+    <xacro:property name="wrist_1_pitch" value="${kinematic_params['wrist_1']['pitch']}" scope="parent"/>
+    <xacro:property name="wrist_1_yaw" value="${kinematic_params['wrist_1']['yaw']}" scope="parent"/>
+
+    <xacro:property name="wrist_2_x" value="${kinematic_params['wrist_2']['x']}" scope="parent"/>
+    <xacro:property name="wrist_2_y" value="${kinematic_params['wrist_2']['y']}" scope="parent"/>
+    <xacro:property name="wrist_2_z" value="${kinematic_params['wrist_2']['z']}" scope="parent"/>
+    <xacro:property name="wrist_2_roll" value="${kinematic_params['wrist_2']['roll']}" scope="parent"/>
+    <xacro:property name="wrist_2_pitch" value="${kinematic_params['wrist_2']['pitch']}" scope="parent"/>
+    <xacro:property name="wrist_2_yaw" value="${kinematic_params['wrist_2']['yaw']}" scope="parent"/>
+
+    <xacro:property name="wrist_3_x" value="${kinematic_params['wrist_3']['x']}" scope="parent"/>
+    <xacro:property name="wrist_3_y" value="${kinematic_params['wrist_3']['y']}" scope="parent"/>
+    <xacro:property name="wrist_3_z" value="${kinematic_params['wrist_3']['z']}" scope="parent"/>
+    <xacro:property name="wrist_3_roll" value="${kinematic_params['wrist_3']['roll']}" scope="parent"/>
+    <xacro:property name="wrist_3_pitch" value="${kinematic_params['wrist_3']['pitch']}" scope="parent"/>
+    <xacro:property name="wrist_3_yaw" value="${kinematic_params['wrist_3']['yaw']}" scope="parent"/>
+  </xacro:macro>
+
+</sdf>

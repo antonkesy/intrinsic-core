@@ -1,0 +1,94 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.frontend.v1;
+
+import "intrinsic/frontend/cloud/api/v1/clusterdiscovery_api.proto";
+import "intrinsic/kubernetes/generator/proto/auth_options.proto";
+
+option go_package = "intrinsic/frontend/cloud/api/v1/solutiondiscovery_api_go_proto";
+
+// Details about a solution.
+message SolutionDescription {
+  // The unique name/ID of the solution. For a human readable name, see
+  // 'display_name'.
+  string name = 1;
+
+  // The name of the solution under which it should be displayed.
+  string display_name = 2;
+
+  // The current state of the solution.
+  SolutionState state = 3;
+
+  // Name of the cluster this solution is deployed to. Only filled if solution
+  // is running (see 'state').
+  string cluster_name = 4;
+}
+
+message ListSolutionDescriptionsRequest {
+  // Only return solutions which have any of the given states. If empty, return
+  // all solutions.
+  repeated SolutionState filters = 1;
+
+  // The maximum number of versioned solutions to return. The service may return
+  // fewer than this value. If unspecified, at most 20 versioned solutions will
+  // be returned. The maximum value is 200; values above 200 will be coerced to
+  // 200.
+  int64 page_size = 2;
+
+  // A page token, received from a previous `ListSolutionDescriptions` call.
+  // Provide this to retrieve the subsequent page.
+  string next_page_token = 3;
+}
+
+message ListSolutionDescriptionsResponse {
+  // Details about the solutions matching the filter criteria of the request,
+  // sorted by 'update_time' in descending order.
+  repeated SolutionDescription solutions = 1;
+
+  // A token, which can be sent as `next_page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message GetSolutionDescriptionRequest {
+  // The name/ID of the solution to return.
+  string name = 1;
+}
+
+message GetSolutionDescriptionResponse {
+  // Details about the solution matching the request.
+  SolutionDescription solution = 1;
+}
+
+// Provides information about a user's solutions in a project.
+service SolutionDiscoveryService {
+  // Auth annotations for consumption by the following helm_chart:
+  //   cs/symbol://intrinsic/frontend/cloud:frontend
+  option (intrinsic_proto.auth.service_options).auth_methods =
+      AUTH_METHOD_API_KEY;
+  option (intrinsic_proto.auth.backend_options).backend_service = "frontend";
+  option (intrinsic_proto.auth.backend_options).backend_port = 8081;
+
+  // Returns a list of the user's solutions which satisfy the given filter
+  // criteria.
+  rpc ListSolutionDescriptions(ListSolutionDescriptionsRequest)
+      returns (ListSolutionDescriptionsResponse) {}
+
+  // Returns information about a specific solution.
+  rpc GetSolutionDescription(GetSolutionDescriptionRequest)
+      returns (GetSolutionDescriptionResponse) {}
+}

@@ -1,0 +1,34 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "intrinsic/math/proto/pose.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/skills/apps/attach_object_to_robot_go_proto";
+
+message AttachObjectToRobotParams {
+  // Gripper reference to which the object will be attached.
+  world.ObjectReference gripper_entity = 1;
+
+  // Object reference to attach to the gripper.
+  world.ObjectReference object_entity = 2;
+
+  // Optional pose, or transform, of the object in respect to the gripper. If
+  // specified, the position of the object will be updated in the object world.
+  optional intrinsic_proto.Pose gripper_t_object = 3;
+}

@@ -1,0 +1,161 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.resources;
+
+import "google/protobuf/wrappers.proto";
+
+option go_package = "intrinsic/resources/proto/runtime_db_go_proto";
+
+// This service implements a simple key-value store. This store is used to hold
+// runtime data for resources used in an application. Key-value pairs will live
+// until they are deleted. Typically, this store is wiped clean before an
+// application is deployed. There is support for namespacing via the bucket
+// field in each request message. For now, a single bucket will be used to hold
+// all resource data. We provide namespacing support in case this store is
+// needed for another use case in the future.
+//
+// Please note that this DB does not properly support mutable entries. Two Put
+// requests for the same key and bucket may result in having either the first or
+// second value stored unless additional synchronization is handled by clients.
+// A future implementation using revision tokens will better handle this use
+// case.
+service RuntimeDb {
+  // Put adds an element to the DB.
+  rpc Put(PutRequest) returns (PutResponse) {}
+
+  // Get retrieves an element from the DB. Note that if a Get and Delete request
+  // come in at the same time (for the same key and bucket), the data may have
+  // been deleted before the Get could retrieve its value.
+  rpc Get(GetRequest) returns (GetResponse) {}
+
+  // List returns all elements from the DB. Note that a subsequent Get request
+  // may return NotFound if a Delete request was received in between.
+  rpc List(ListRequest) returns (ListResponse) {}
+
+  // Delete removes an element from the DB.
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {}
+
+  // Clear removes all entries from the DB.
+  rpc Clear(ClearRequest) returns (ClearResponse) {}
+
+  // Sets the current state of the bucket, optionally leaving some values
+  // unchanged.
+  rpc Patch(PatchRequest) returns (PatchResponse);
+
+  // BatchPut adds or updates elements in the DB.
+  rpc BatchPut(BatchPutRequest) returns (BatchPutResponse) {}
+
+  // BatchGet retrieves multiple elements.
+  rpc BatchGet(BatchGetRequest) returns (BatchGetResponse) {}
+
+  // BatchDelete removes elements from the DB.
+  rpc BatchDelete(BatchDeleteRequest) returns (BatchDeleteResponse) {}
+}
+
+message PutRequest {
+  // The bucket (namespace) to put this entry into. Collisions only occur when
+  // the same key is referenced in the same bucket. In that case, the old data
+  // will be overwritten with the new value.
+  string bucket = 1;
+  string key = 2;
+  // The value to store. The maximum data size is limited by the underlying
+  // bolt DB implementation (~ 2GB) and the size of the DB file on disk.
+  bytes value = 3;
+}
+
+message PutResponse {}
+
+message GetRequest {
+  // The bucket (namespace) to pull this entry from.
+  string bucket = 1;
+  string key = 2;
+}
+
+message GetResponse {
+  bytes value = 1;
+}
+
+message ListRequest {
+  // The bucket (namespace) to list all entries from.
+  string bucket = 1;
+}
+
+message ListResponse {
+  repeated string keys = 1;
+}
+
+message DeleteRequest {
+  // The bucket (namespace) to delete.
+  string bucket = 1;
+  // The key to delete. Note that deleting a key that does not exist will still
+  // return an OK status.
+  string key = 2;
+}
+
+message DeleteResponse {}
+
+message ClearRequest {
+  // The bucket (namespace) to clear.
+  string bucket = 1;
+}
+
+message ClearResponse {}
+
+message PatchRequest {
+  // The bucket (namespace) to patch.
+  string bucket = 1;
+
+  // The values that will be in the patched bucket upon completion.  If a key is
+  // not present in this field, it will be removed from the bucket.  If a
+  // BytesValue message is not specified for a key that is present, then the
+  // value is left unchanged.  An error will be triggered in this case if a key
+  // is not already specified in the bucket.  BytesValue is used since optional
+  // values are not valid as map parameters.
+  map<string, google.protobuf.BytesValue> values = 2;
+}
+
+message PatchResponse {}
+
+message BatchPutRequest {
+  // The bucket (namespace) to put this entry into. Collisions only occur when
+  // the same key is referenced in the same bucket. In that case, the old data
+  // will be overwritten with the new value.
+  string bucket = 1;
+  map<string, bytes> values = 2;
+}
+
+message BatchPutResponse {}
+
+message BatchGetRequest {
+  // The bucket (namespace) to pull this entry from.
+  string bucket = 1;
+  repeated string keys = 2;
+}
+
+message BatchGetResponse {
+  map<string, bytes> values = 1;
+}
+
+message BatchDeleteRequest {
+  // The bucket (namespace) to delete.
+  string bucket = 1;
+  // The keys to delete. Note that deleting a key that does not exist will still
+  // return an OK status.
+  repeated string keys = 2;
+}
+
+message BatchDeleteResponse {}

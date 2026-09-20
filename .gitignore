@@ -1,0 +1,69 @@
+# IntelliJ files
+.project/
+.idea/
+
+# Emacs
+\#*\#
+*~
+.#*
+
+# Python
+.cache/
+*.pyc
+env/
+# Created by adk cli (Agent Development Kit)
+.adk/
+
+# Jujutsu / prek temporary fix workspaces
+.tmp_jj_fix*
+
+# Bazel
+bazel-*
+buildprofile.out
+buildprofile.out.html
+MODULE.bazel.lock
+WORKSPACE
+WORKSPACE.bzlmod
+# Allows specifying local overrides for defaults.
+local.bazelrc
+# Generated fuzztest.bazelrc for running fuzztest locally with additional flags
+fuzztest.bazelrc
+
+# C++
+# github.com/hedronvision/bazel-compile-commands-extractor and vscode-clangd
+compile_commands.json*
+/external
+
+# Go workspace maintenance
+go.work
+go.work.sum
+
+# TSJS
+node_modules/
+.pnpm-store/
+dist/
+*.tsbuildinfo
+
+# Vscode
+*vscode-test*
+.devcontainer/versions.env
+*.vsix
+
+# bazel/workspace_status.sh
+.workspace_status_additions
+
+# Vim
+# Swap files
+.*.sw[a-p]
+.*.s[a-v][a-z]
+!_*.sw[a-p]
+!_*.s[a-v][a-z]
+
+# Session files
+Session.vim
+Sessionx.vim
+
+# Temporary/Backup files
+*~
+*.un~
+.netrwhist

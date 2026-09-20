@@ -1,0 +1,31 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic.proto;
+
+import "intrinsic/motion_planning/path_planning/validators_config.proto";
+
+option go_package = "intrinsic/motion_planning/path_planning/planners/joint_interpolation_configs_go_proto";
+
+// Used to configure the Joint Interpolation Path Planner.
+message JointInterpolationPathPlannerConfig {
+  // If zero defaults to 180 sec.
+  double timeout_seconds = 1;
+  // Specifies the edge validator that will be used by this planner.
+  EdgeValidatorSpecification edge_validator_spec = 2;
+  // Specifies the point validator that will be used by this planner.
+  PointValidatorSpecification point_validator_spec = 3;
+}

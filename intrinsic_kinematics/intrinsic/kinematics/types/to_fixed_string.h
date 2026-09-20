@@ -1,0 +1,123 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef INTRINSIC_KINEMATICS_TYPES_TO_FIXED_STRING_H_
+#define INTRINSIC_KINEMATICS_TYPES_TO_FIXED_STRING_H_
+
+#include <cstddef>
+#include <ostream>
+
+#include "intrinsic/eigenmath/types.h"
+#include "intrinsic/icon/utils/fixed_string.h"
+#include "intrinsic/kinematics/types/cartesian_limits.h"
+#include "intrinsic/kinematics/types/joint_limits.h"
+#include "intrinsic/kinematics/types/state_rn.h"
+#include "intrinsic/math/pose3.h"
+
+namespace intrinsic {
+
+// absl::AlphaNum formats double in a "%.6g". So we need 9 character for each
+// numbers: 7 digits (when whole number is 0, we have 6 decimals), dot and
+// negative sign. For small negative numbers with scientific notation 6 digits,
+// a minus, a comma and 4 characters for the exponent are needed.
+constexpr size_t kDoubleStrSize = 12;
+
+// We need N-1 commas.
+constexpr size_t kVectorNdStrSize =
+    kDoubleStrSize * eigenmath::MAX_EIGEN_VECTOR_SIZE +
+    (eigenmath::MAX_EIGEN_VECTOR_SIZE - 1);
+
+// 9 values plus row and column separators.
+constexpr size_t kMatrix3dStrSize = kDoubleStrSize * 9 + 8;
+
+// We need to had the prefix to the vector.
+constexpr size_t kStateStrSize = 3 + kVectorNdStrSize;
+
+// We need 10 fields that include min_,max_ in front of the prefix.
+constexpr size_t kLimitStrSize = 10 * (7 + kVectorNdStrSize);
+
+// A quaternion is 4 doubles separated by 3 commas.
+constexpr size_t kQuaternionStrSize = kDoubleStrSize * 4 + 3;
+// A pose is 3 position values and one quaternion, separated by 3 commas.
+constexpr size_t kPose3dStrSize = kQuaternionStrSize + kDoubleStrSize * 3 + 3;
+
+// We have 8 Vector3d and their prefix and 3 doubles and their prefix.
+constexpr size_t kCartLimitStrSize =
+    8 * ((3 * kDoubleStrSize) + 7) + 3 * (kDoubleStrSize + 10);
+
+namespace eigenmath {
+
+icon::FixedString<kVectorNdStrSize> ToFixedString(
+    const eigenmath::VectorNd& vec);
+
+icon::FixedString<kPose3dStrSize> ToFixedString(const Pose3d& pose);
+
+icon::FixedString<kQuaternionStrSize> ToFixedString(const Quaterniond& q);
+
+icon::FixedString<kMatrix3dStrSize> Matrix3dToFixedString(
+    const eigenmath::Matrix3d& matrix);
+
+}  // namespace eigenmath
+
+icon::FixedString<kStateStrSize> ToFixedString(const StateRnP& state);
+
+icon::FixedString<kStateStrSize> ToFixedString(const StateRnV& state);
+
+icon::FixedString<kStateStrSize> ToFixedString(const StateRnA& state);
+
+icon::FixedString<kStateStrSize> ToFixedString(const StateRnJ& state);
+
+icon::FixedString<kStateStrSize> ToFixedString(const StateRnT& state);
+
+icon::FixedString<2 * kStateStrSize> ToFixedString(const StateRnPV& state);
+
+icon::FixedString<3 * kStateStrSize> ToFixedString(const StateRnPVA& state);
+
+icon::FixedString<3 * kStateStrSize> ToFixedString(const StateRnPVT& state);
+
+icon::FixedString<4 * kStateStrSize> ToFixedString(const StateRnPVAJ& state);
+
+icon::FixedString<4 * kStateStrSize> ToFixedString(const StateRnPVAT& state);
+
+icon::FixedString<2 * kStateStrSize> ToFixedString(const StateRnVA& state);
+
+icon::FixedString<3 * kStateStrSize> ToFixedString(const StateRnVAJ& state);
+
+icon::FixedString<kLimitStrSize> ToFixedString(const JointLimits& limits);
+
+icon::FixedString<kCartLimitStrSize> ToFixedString(
+    const CartesianLimits& limits);
+
+// These 'PrintTo()' functions exist in order to print output values in gtest
+// matchers. Use 'PrintTo()' instead of << operators in order to guard RT
+// safety. See also
+// go/gunitadvanced#teaching-googletest-how-to-print-your-values
+void PrintTo(const JointLimits& joint_limits, std::ostream* os);
+
+void PrintTo(const StateRnP& state, std::ostream* os);
+void PrintTo(const StateRnV& state, std::ostream* os);
+void PrintTo(const StateRnA& state, std::ostream* os);
+void PrintTo(const StateRnJ& state, std::ostream* os);
+void PrintTo(const StateRnT& state, std::ostream* os);
+void PrintTo(const StateRnPV& state, std::ostream* os);
+void PrintTo(const StateRnPVA& state, std::ostream* os);
+void PrintTo(const StateRnPVT& state, std::ostream* os);
+void PrintTo(const StateRnPVAJ& state, std::ostream* os);
+void PrintTo(const StateRnPVAT& state, std::ostream* os);
+void PrintTo(const StateRnVA& state, std::ostream* os);
+void PrintTo(const StateRnVAJ& state, std::ostream* os);
+
+}  // namespace intrinsic
+
+#endif  // INTRINSIC_KINEMATICS_TYPES_TO_FIXED_STRING_H_

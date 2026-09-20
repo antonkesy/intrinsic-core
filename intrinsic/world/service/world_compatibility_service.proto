@@ -1,0 +1,104 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+import "intrinsic/logging/proto/context.proto";
+import "intrinsic/math/proto/pose.proto";
+import "intrinsic/world/proto/world_entity.proto";
+import "intrinsic/world/proto/collision_settings.proto";
+import "intrinsic/world/proto/object_world_service.proto";
+
+option go_package = "intrinsic/world/service/world_compatibility_service_go_proto";
+
+// Internal helpers for translating and migrating between entity-based and
+// object-based view onto the world.
+service WorldCompatibilityService {
+  // Returns all objects and corresponding entities in a world.
+  //
+  // This is an advanced variant of ObjectWorldService.ListObjects which
+  // enriches the response with the entities corresponding to returned objects.
+  // It is meant as a internal solution until we include the entities (in a
+  // simplified form) in the Object message itself. Then this endpoint can be
+  // fully replaced by ObjectWorldService.ListObjects.
+  rpc GetWorldWithEntities(GetWorldWithEntitiesRequest)
+      returns (WorldWithEntities) {}
+
+  // Gets a simplified world state for a given world. This includes only things
+  // that are considered state, such as dof values of kinematic objects or poses
+  // like parent_t_this of entities.s
+  rpc GetWorldState(GetWorldStateRequest) returns (GetWorldStateResponse) {}
+}
+
+message GetWorldWithEntitiesRequest {
+  // Id of the world to be queried.
+  string world_id = 1;
+}
+
+// A set of entities in a world.
+message WorldEntitiesById {
+  // Entities keyed by their entity id.
+  map<uint32, intrinsic_proto.world.internal.WorldEntity> entities = 1;
+}
+
+message WorldWithEntities {
+  // Additional world-level metadata.
+  WorldMetadata world_metadata = 3;
+
+  // All world objects (which contain the frames in the world). Always
+  // populated according to ObjectView==FULL.
+  repeated Object objects = 1;
+
+  // The entities corresponding to each object or frame. The map is keyed with
+  // the resource id's from the object world API (see Object.id and Frame.id).
+  map<string, WorldEntitiesById> entities_by_object_world_resource_id = 2;
+
+  // The set of collision rules in use with this world.
+  CollisionSettings collision_settings = 4;
+}
+
+message EntityPose {
+  // The id for this entity
+  uint32 entity_id = 1;
+
+  // Pose of this Entity in the parent's space.
+  intrinsic_proto.Pose parent_t_this = 5;
+}
+
+message KinematicObjectJoints {
+  // The id of the kinematic object.
+  string object_id = 1;
+
+  // Joint positions in radians (for revolute joints) or meters (for prismatic
+  // joints).
+  repeated double joint_positions = 2;
+}
+
+message GetWorldStateRequest {
+  // Id of the world to be queried.
+  string world_id = 1;
+}
+
+message GetWorldStateResponse {
+  // Additional world-level metadata.
+  WorldMetadata world_metadata = 1;
+
+  // The poses of entities in the world.
+  repeated EntityPose entity_poses = 2;
+
+  // The joint values for the kinematic objects in the world.
+  repeated KinematicObjectJoints kinematic_object_joints = 3;
+}

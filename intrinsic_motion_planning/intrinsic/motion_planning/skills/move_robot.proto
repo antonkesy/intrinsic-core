@@ -1,0 +1,294 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "intrinsic/assets/proto/field_metadata.proto";
+import "intrinsic/assets/proto/v1/resolved_dependency.proto";
+import "intrinsic/icon/proto/joint_space.proto";
+import "intrinsic/icon/proto/v1/condition_types.proto";
+import "intrinsic/kinematics/types/joint_limits.proto";
+import "intrinsic/motion_planning/proto/v1/geometric_constraints.proto";
+import "intrinsic/motion_planning/proto/v1/motion_blending_parameter.proto";
+import "intrinsic/motion_planning/proto/v1/motion_planner_config.proto";
+import "intrinsic/motion_planning/proto/v1/motion_planning_limits.proto";
+import "intrinsic/skills/proto/skill_parameter_metadata.proto";
+import "intrinsic/world/proto/collision_checker_config.proto";
+import "intrinsic/world/proto/collision_settings.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/motion_planning/skills/move_robot_go_proto";
+
+message PlanningParameters {
+  // Maximum planning time for finding a collision free path. This does
+  // only check for time outs in the path planner itself, i.e., time
+  // out if no valid path can be found. Additional overhead might occur for
+  // shortcutting and trajectory generation. Unit: seconds. Default value is
+  // 30 seconds.
+  optional double max_planning_time_in_sec = 1;
+
+  optional double path_planner_step_size = 3;
+
+  // Configuration for locking planned motions.
+  // When setting this with a SaveMotionCommand under an ID, the planned motion
+  // (if exists) will be saved to a persistent storage.
+  // When setting this with a LoadMotionCommand under an ID, instead of planning
+  // a new motion, this skill uses a saved motion under the given ID or
+  // returns an error if such motion does not exist.
+  optional intrinsic_proto.motion_planning.v1.LockMotionConfiguration
+      lock_motion_configuration = 2;
+
+  // If true, the cache will not check for fuzzy matches. Default to false.
+  // By default, motion planner service will cache previous planning results
+  // and return them if the new planning request is "close enough" to the
+  // cached request. One criteria of determining if two requests are "close
+  // enough" is to check whether two worlds are sufficiently close. This is
+  // done by checking the distance between objects in two world's.
+  // This check can be expensive, especially when the world contains many
+  // objects. If the user knows that the world is going to change between
+  // requests, they can set this flag to true to skip this check and plan a new
+  // motion every time.
+  optional bool skip_fuzzy_cache_check = 4;
+
+  // If true, the joint_shortcutter will combine multiple collinear segments
+  // into a single segment. This speeds up planning time but can result in
+  // longer trajectories.
+  optional bool shortcutting_combine_collinear_segments = 5;
+
+  // Users can override the default collision checker configuration with this
+  // setting.
+  optional intrinsic_proto.world.CollisionCheckerConfig
+      collision_checker_config = 6;
+
+  // LINT.IfChange(collision_check_spacing)
+
+  // Spacing between collision checks (in the joint space of the robot). If this
+  // value is unset, motion planning will use a default value of 0.01. If
+  // additional accuracy is required, this value can be set with a value smaller
+  // than the default. Setting this to a value greater than the default will
+  // result in a motion planning error.
+  optional double collision_check_spacing_override = 8;
+
+  // LINT.ThenChange(//intrinsic_motion_planning/intrinsic/motion_planning/motion_planner/motion_planner_flags.h:collision_check_spacing)
+
+  // By default, if the motion planner detects that a trajectory would get too
+  // close to an obstacle, the planner will generate a highly accurate, but
+  // slow, fallback trajectory. But if this option is set to `false`, this
+  // situation will instead cause the motion planner to return an error. It may
+  // be useful to disable this option while designing a process.
+  optional bool enable_strict_trajectory_fallback = 9;
+}
+
+message MoveUntilSignalParameters {
+  // The name of the dio_block in which the DIO signal is in. This field is
+  // deprecated. Use `move_until_signal_condition` instead.
+  string dio_block = 1 [deprecated = true];
+
+  // The index of the DIO signal in `dio_block`. This field is deprecated. Use
+  // `move_until_signal_condition` instead.
+  uint32 signal_index = 2 [deprecated = true];
+
+  // The signal that triggers motion to stop. Defaults to True, i.e., the signal
+  // starts with False and if it changes to True, the motion will stop. This
+  // field is deprecated. Use `move_until_signal_condition` instead.
+  optional bool value_of_signal = 3 [deprecated = true];
+
+  // Name of ICON adio part.
+  // This field can be omitted if only one adio part is available in the icon
+  // instance. If multiple adio parts are available, the caller should specify
+  // one of them using this field. This field is deprecated. Use
+  // `move_until_signal_condition` instead.
+  optional string adio_part_name = 10 [deprecated = true];
+
+  // An ICON condition that is evaluated at every control cycle. If the
+  // condition evaluates to True, the motion will stop.
+  optional intrinsic_proto.icon.v1.Condition move_until_signal_condition = 4;
+}
+message ExecutionParameters {
+  // Specify whether or not to ignore the is_settled criterion during motion
+  // execution. The settling
+  // criterion is a dynamic measure that estimates if the robot has settled, or
+  // in other words if its joint velocities are close to zero such that the
+  // robot will not move further. Settling requires time, it depends on the
+  // robot and its tracking abilities and noise characteristics. Typically it
+  // takes between 250 to 750 milliseconds. Defaults to false, i.e.
+  // the motion only terminates after the robot has settled.
+  optional bool ignore_is_settled_condition = 1;
+
+  // Configures the robot motion to stop on a signal that matches the provided
+  // parameters. If the trajectory is finished before the signal matches the
+  // provided parameters, the motion will stop too.
+  // The return value MoveRobotResult::stopped_on_signal will be true if
+  // the motion was stopped by a signal. False otherwise.
+  // The move_until_signal behavior is activated only if
+  // `move_until_signal_parameters` are specified.
+  // For example, this can be used for "move to suction", where engagement of
+  // the suction gripper is indicated via a digital input signal. In such case,
+  // the user should take extra care to ensure the quality of the signal and the
+  // effectiveness of the behavior when configuring the setup, e.g.:
+  //   - the motion target of the last motion segment should be beyond the
+  //       expected contact point to ensure the expected signal will happen -
+  //       during tuning start out with a motion target with which it wouldn't
+  //       damage the robot if the desired signal value does not happen.
+  //   - this sort of in-contact stopping motion requires the end-effector to
+  //       have sufficient compliance. In practice, this can for instance be
+  //       achieved through the suction cups compressibility. The more
+  //       compliance available (e.g., longer cup / smaller cup diameter), the
+  //       faster the approach motion can be.
+  //   - to make sure the robot can decelerate to a stop within the provided
+  //       compliance and doesn't run into collision, there must be a short
+  //       motion segment just before the expected contact position, in which
+  //       the maximum Cartesian velocity is constrained to a suitable (small)
+  //       value. Start out with a low approach velocity, e.g. 1 cm/sec, and
+  //       gradually increase the approach velocity during tuning.
+  optional MoveUntilSignalParameters move_until_signal_parameters = 2;
+}
+
+message MotionSegment {
+  enum MotionType {
+    ANY = 0;
+    LINEAR = 1;
+    JOINT = 2;
+  }
+
+  // The motion target of the segment defines the final robot configuration for
+  // this segment. The target is defined as a set of constraints that can be
+  // specified in terms of either joint position or Cartesian constraints like
+  // a pose.
+  oneof motion_target {
+    intrinsic_proto.icon.JointVec joint_position = 1;
+    intrinsic_proto.motion_planning.v1.PoseEquality cartesian_pose = 2;
+    intrinsic_proto.motion_planning.v1.PositionEquality position_equality = 3;
+    intrinsic_proto.motion_planning.v1.RotationEquality rotation_equality = 4;
+    intrinsic_proto.motion_planning.v1.RelativePoseEquality
+        relative_cartesian_pose = 15;
+    intrinsic_proto.motion_planning.v1.RelativePositionEquality
+        relative_position_equality = 16;
+    intrinsic_proto.motion_planning.v1.RelativeRotationEquality
+        relative_rotation_equality = 17;
+    intrinsic_proto.motion_planning.v1.RotationCone rotation_cone = 5;
+    intrinsic_proto.motion_planning.v1.JointPositionLimits
+        joint_position_limits = 12;
+    intrinsic_proto.motion_planning.v1.PointAt point_at = 13;
+    intrinsic_proto.motion_planning.v1.ConstraintIntersection
+        constraint_intersection = 6;
+  }
+  // Allows setting the motion type. ANY is the default motion
+  // type that enables arbitrary collision free paths in configuration space.
+  // LINEAR enforces Cartesian linear trajectories. JOINT
+  // enforces joint space interpolation.  A planning failure error will
+  // be returned if a motion cannot be found of the given type.
+  MotionType motion_type = 7;
+  // Local collision settings for the individual segments. If not defined,
+  // segment will use the global collision settings if defined or the default
+  // collision settings with zero margin if none are set.
+  optional intrinsic_proto.world.CollisionSettings collision_settings = 8;
+  // Specifies geometric constraints that will be applied to the motion of the
+  // robot. This will also add the constraint to the start and end configuration
+  // of the robot.
+  optional intrinsic_proto.motion_planning.v1.UniformGeometricConstraint
+      path_constraints = 11;
+  // Robot joint limits that allow to update the lower and upper position
+  // limits, velocity, acceleration, and
+  // jerk for the motion segment. If not defined, the application limits of the
+  // robot will be used.
+  optional intrinsic_proto.motion_planning.v1.JointLimitsUpdate joint_limits =
+      9;
+  // Cartesian limit constraints allow to restrict the Cartesian
+  // velocity and acceleration of the robot motion. If not defined, the default
+  // limits defined for the robot will be used for Cartesian linear motions and
+  // unlimited limits will be used for all other motions. The limit constraints
+  // apply to the origin of the moving frame defined in the motion target.
+  optional intrinsic_proto.motion_planning.v1.DynamicCartesianLimits
+      cartesian_limits = 10;
+}
+
+message MoveRobotParams {
+  // The `MotionPlannerService` (MPS) Asset specification.
+  intrinsic_proto.assets.v1.ResolvedDependency
+      motion_planner_service = 12 [(intrinsic_proto.assets.field_metadata)
+                                       .dependency = {
+    requires: "grpc://intrinsic_proto.motion_planning.v1.MotionPlannerService",
+    skill_annotations: { always_provide_connection_info: true }
+  }];
+
+  // A motion is composed of a sequence of motion segments that define the
+  // motion planning problem to be solved. Each motion segment can consist of a
+  // motion target, a motion type, collision settings, path constraints, and
+  // robot motion limits.
+  // The motion target of the segment defines the final robot configuration for
+  // this segment. When the motion consists of only one segment, the defined
+  // motion target defines the final configuration of the robot at the end of
+  // the motion. When multiple motion segments are defined, the motion targets
+  // of the non-final segments define waypoints. The resulting trajectory does
+  // not stop at these waypoints and only passes these waypoints up to a
+  // user-defined blending radius.
+  repeated MotionSegment motion_segments = 1;
+  // The curve waypoint fitting parameters that will be applied during
+  // trajectory generation if multiple segments have been defined.
+  optional intrinsic_proto.motion_planning.v1.BlendingParameters
+      curve_parameters = 8;
+  // General parameters that apply to motion planning (as opposed to execution).
+  // Allows setting a max planning time.
+  optional PlanningParameters planning_parameters = 2;
+  // General parameters that apply to motion execution (as opposed to planning).
+  optional ExecutionParameters execution_parameters = 3;
+
+  // Name of the ICON arm part to control. If not provided but only a single
+  // arm part is present in the ICON instance, that part will be used.
+  intrinsic_proto.world.ObjectReference arm_part = 9
+      [(intrinsic_proto.skills.skill_parameter_metadata) = {
+        is_icon2_position_part: true
+      }];
+
+  // If true, planning uses the last commanded position instead of the last
+  // sensed position. This improves cache matching for sequentially planned
+  // motions. You should not typically need this option if you are planning
+  // online.
+  optional bool plan_using_last_commanded_position = 10;
+
+  reserved 4, 5, 6, 7;
+}
+
+// Skill internal data for storing pre-planned solutions stored in the request.
+message MoveRobotInternalData {
+  MoveRobotExecutionPlan execution_plan = 1;
+  optional string lock_motion_id = 2;
+  // Id of the motion planning request that generated the execution plan.
+  string logging_id = 3;
+}
+// Pre-planned solutions
+message MoveRobotExecutionPlan {
+  message RobotSpecifications {
+    intrinsic_proto.JointLimits application_limits = 1;
+  }
+  // Represents the desired trajectory
+  intrinsic_proto.icon.JointTrajectoryPVA planned_trajectory = 1;
+  // Robot specifications from the motion planning request
+  RobotSpecifications robot_specifications = 2;
+}
+
+message MoveRobotReturnValue {
+  // True if MoveRobot was stopped on a signal.
+  bool stopped_on_signal = 1;
+
+  // If the motion is locked based on the request, this is the id of the motion
+  // for loading later. Note this field is not set if this response is from
+  // loading a locked motion.
+  optional string lock_motion_id = 2;
+  // Logging id of the motion planning request
+  optional string logging_id = 3;
+}

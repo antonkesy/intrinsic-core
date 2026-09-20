@@ -1,0 +1,57 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "intrinsic/assets/proto/field_metadata.proto";
+import "intrinsic/assets/proto/v1/resolved_dependency.proto";
+import "intrinsic/skills/proto/skills.proto";
+import "intrinsic/world/proto/collision_settings.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/icon/skills/move_gripper_joints_go_proto";
+
+message MoveGripperJointsParams {
+  // The desired goal position of each joint of the gripper.
+  // TODO(b/352808145): Update the following comments once this is addressed.
+  // The goal position must be between -1 and 1 for each joint.
+  // All values are treated as radians but will be converted to degrees by the
+  // skill before sending them to ICON.
+  // The goal position must have 6 values, one for each gripper joint.
+  intrinsic_proto.skills.VectorNdValue goal_position = 1;
+  // The gripper object to control. This is needed for the skill to run in draft
+  // sim and to get the correct footprint.
+  intrinsic_proto.world.ObjectReference gripper = 2;
+
+  // In case the ICON instance features more than one gripper part, we can
+  // specify the one to use.
+  optional string gripper_part = 3;
+  // Timeout in which the skill has to finish successfully before raising an
+  // error.
+  optional int32 timeout_in_secs = 4;
+  // Additional collision settings when checking for collisions. If not defined,
+  // the application global collision settings will be used. If defined, they
+  // will be merged with the application global collision settings.
+  optional intrinsic_proto.world.CollisionSettings collision_settings = 5;
+
+  // The `MotionPlannerService` (MPS) Asset specification.
+  intrinsic_proto.assets.v1.ResolvedDependency
+      motion_planner_service = 6 [(intrinsic_proto.assets.field_metadata)
+                                      .dependency = {
+    requires: "grpc://intrinsic_proto.motion_planning.v1.MotionPlannerService",
+    skill_annotations: { always_provide_connection_info: true }
+  }];
+}

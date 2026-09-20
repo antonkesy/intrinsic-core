@@ -1,0 +1,54 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "intrinsic/perception/proto/v1/camera_to_robot_calibration.proto";
+import "intrinsic/assets/proto/v1/resolved_dependency.proto";
+import "intrinsic/assets/proto/field_metadata.proto";
+
+option go_package = "intrinsic/perception/skills/calibration/calibrate_camera_to_robot_go_proto";
+
+// Next ID: 5
+message CalibrateCameraToRobotParams {
+  // The type of camera-to-robot calibration.
+  intrinsic_proto.perception.v1.CameraToRobotCalibrationType calibration_type =
+      1;
+
+  // Threshold on the translation error in meters (computed as the root of the
+  // mean square error). If the calibration error is greater than the threshold,
+  // the result will not be accepted and thus not applied to the world.
+  optional double translation_root_mean_square_error_threshold = 2;
+
+  // Threshold on the rotation error in degrees (computed as the root of the
+  // mean square error). If the calibration error is greater than the threshold,
+  // the result will not be accepted and thus not applied to the world.
+  optional double rotation_root_mean_square_error_threshold = 3;
+
+  // Resolved dependency for the calibration service.
+  intrinsic_proto.assets.v1.ResolvedDependency calibration_service = 4
+      [(intrinsic_proto.assets.field_metadata).dependency = {
+        requires: "grpc://intrinsic_proto.perception.v1.CalibrationService"
+      }];
+}
+
+message CalibrateCameraToRobotResult {
+  // The resulting calibration parameters for the camera-to-robot
+  // transformation. The index of each entry corresponds to the index of the
+  // camera in the `initialize_calibration` skill input.
+  repeated intrinsic_proto.perception.v1.CameraToRobotCalibrationResult
+      calibration_results = 1;
+}

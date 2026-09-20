@@ -1,0 +1,35 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="$model_name">
+    <link name="body">
+      <visual name="visual">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>$uri_path</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="collision">
+        <pose>0 0 $collision_z 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>$board_width $board_height $thickness_m</size>
+          </box>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass>0.1</mass>
+        <pose>0 0 $collision_z 0 0 0</pose>
+        <inertia>
+          <ixx>0.00001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00001</iyy>
+          <iyz>0</iyz>
+          <izz>0.000015</izz>
+        </inertia>
+      </inertial>
+    </link>
+  </model>
+</sdf>

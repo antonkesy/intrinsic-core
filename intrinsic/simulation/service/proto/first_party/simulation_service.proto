@@ -1,0 +1,279 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.simulation.first_party;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+import "intrinsic/config/proto/operation_mode.proto";
+import "intrinsic/kubernetes/generator/proto/auth_options.proto";
+import "intrinsic/world/proto/object_world_updates.proto";
+
+option go_package = "intrinsic/simulation/service/proto/first_party/simulation_service_go_proto";
+
+// Provides methods to control and query running simulations.
+service SimulationService {
+  ///////////////////////////////////////////////////////////////////////////
+  //
+  // Solution lifetime routines
+  //
+  ///////////////////////////////////////////////////////////////////////////
+  // Call to initialize connection to the simulator once the solution has
+  // started.
+  rpc StartSolution(StartSolutionRequest) returns (StartSolutionResponse) {}
+
+  // Call to terminate connection to the simulator once the solution has
+  // stopped. All runtime RPCs will return `FailedPreconditionError` until
+  // `StartSolution` is called again.
+  rpc StopSolution(StopSolutionRequest) returns (StopSolutionResponse) {}
+
+  ///////////////////////////////////////////////////////////////////////////
+  //
+  // Runtime routines
+  // - Should be called after calling `StartSolution` successfully
+  //
+  ///////////////////////////////////////////////////////////////////////////
+  // Returns a human readable string to identify the simulator being used.
+  rpc GetSimulatorName(google.protobuf.Empty)
+      returns (google.protobuf.StringValue) {}
+
+  // Reset the simulation to a specified initial state.
+  //
+  // Resets the simulator world and the simulator's internal scene to the
+  // specified initial state. Also resets simulation time to 0.
+  // The simulator may be started paused or unpaused after reset, see
+  // `ResetSimulationRequest` for details.
+  //
+  // Returns FailedPreconditionError if `StartSolution` has not been called
+  // yet.
+  // If no simulator has been instantiated in the solution, returns `Ok`.
+  // If multiple simulators have been instantiated in the solution, returns
+  // `FailedPreconditionError`.
+  rpc ResetSimulation(ResetSimulationRequest) returns (google.protobuf.Empty) {
+    // Auth annotations for consumption by the following helm_chart:
+    //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+    option (intrinsic_proto.auth.method_options).auth_methods =
+        AUTH_METHOD_API_KEY;
+  }
+
+  // Pause the simulator.
+  //
+  // Simulation time will not advance until `UnpauseSimulation` is called. As a
+  // result, time-driven updates will be paused. Attempts to control hardware
+  // device services running in the solution may fail while the simulator is
+  // paused.
+  //
+  // Returns FailedPreconditionError if `StartSolution` has not been called
+  // yet.
+  // If no simulator has been instantiated in the solution, returns `Ok`.
+  // If multiple simulators have been instantiated in the solution, returns
+  // `FailedPreconditionError`.
+  rpc PauseSimulation(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+
+  // Unpause the simulator.
+  //
+  // Simulation time will start to advance from where it was last paused.
+  //
+  // Returns FailedPreconditionError if `StartSolution` has not been called
+  // yet.
+  // If no simulator has been instantiated in the solution, returns `Ok`.
+  // If multiple simulators have been instantiated in the solution, returns
+  // `FailedPreconditionError`.
+  rpc UnpauseSimulation(google.protobuf.Empty) returns (google.protobuf.Empty) {
+  }
+
+  // Get the current simulation status.
+  //
+  // Returns FailedPreconditionError if `StartSolution` has not been called
+  // yet.
+  // If no simulator has been instantiated in the solution, returns `Ok`.
+  // If multiple simulators have been instantiated in the solution, returns
+  // `FailedPreconditionError`.
+  //
+  // Use `GetSimulatorStatus` instead to get info on the connected simulator.
+  rpc GetSimulationStatus(google.protobuf.Empty)
+      returns (GetSimulationStatusResponse) {}
+
+  // Get info and status for the simulator.
+  // Returns empty if no simulator is available (this is a valid state for the
+  // platform).
+  // Returns FailedPreconditionError if multiple simulators are installed.
+  rpc GetSimulatorStatus(GetSimulatorStatusRequest)
+      returns (GetSimulatorStatusResponse) {}
+
+  // Refresh the connected simulator info by querying the resource registry.
+  // Returns info and status for the simulator.
+  // Returns empty if no simulator is available (this is a valid state for the
+  // platform).
+  // Returns FailedPreconditionError if multiple simulators are installed.
+  rpc RefreshConnectedSimulator(RefreshConnectedSimulatorRequest)
+      returns (RefreshConnectedSimulatorResponse) {}
+
+  // Runs the visualizer for the single set of updates as outlined in the
+  // request object
+  rpc RunVisualization(VisualizeWorldUpdatesRequest)
+      returns (google.protobuf.Empty) {}
+}
+
+// Request for resetting the current simulation.
+message ResetSimulationRequest {
+  // The world ID for the world which will seed the simulator and the simulator
+  // world after reset.
+  //
+  // All objects marked as "disabled in sim" will be deleted from the start
+  // world while cloning it to the simulator world.
+  // See `SimulationComponent::disabled` in
+  // google3/intrinsic/world/public/proto/simulation_component.proto
+  string start_world_id = 2;
+
+  // Whether the simulator should start paused. Default is false, indicating
+  // that the simulator will start running after it is reset.
+  bool start_paused = 4;
+
+  reserved "simulation_mode", "sim_world_id";
+  reserved 1, 3;
+}
+
+// Updates the world specified by `visualized_world_id` with a series of updates
+// at 30Hz that are computed from the snapshot given in `start_world_id`.
+message VisualizeWorldUpdatesRequest {
+  // Updates to apply to the world.
+  intrinsic_proto.world.ObjectWorldUpdates world_updates = 1;
+
+  // The desired duration for the animation. If this is set to zero, then
+  // the implementation will give a best guess for something that "looks good".
+  //
+  // TODO(b/259744285): This should really be per-update instead of per-request.
+  google.protobuf.Duration duration = 5;
+
+  // The original world that contains the starting state for visualization.
+  string start_world_id = 2;
+
+  // The destination world that receives visualization updates.
+  string visualized_world_id = 3;
+
+  // If set, prior to visualization we will clone the start world into the
+  // visualized world, in order to guarantee that the updates are salient.
+  bool clone_start_world_to_visualized_world = 4;
+}
+
+enum SimulatorState {
+  SIMULATOR_STATE_UNSPECIFIED = 0;
+
+  // Simulator is currently running unpaused.
+  RUNNING = 1;
+
+  // Simulator is currently paused.
+  PAUSED = 2;
+
+  // Simulator is currently stopped (possibly due to an error). Calling
+  // `ResetSimulation` will attempt to restart it.
+  STOPPED = 3;
+}
+
+message GetSimulationStatusResponse {
+  // The current state of the simulator. Only set if the simulator is
+  // currently connected to the SimulationService.
+  optional SimulatorState simulator_state = 1;
+
+  // Optional status that will be populated if the simulator is in a `Stopped`
+  // state.
+  google.rpc.Status status = 2;
+}
+
+message StartSolutionRequest {
+  message SimulationEnvironment {
+    // The world in the world service to which the simulator should sync its
+    // scene.
+    //
+    // `StartSolution` will clone and overwrite the simulator world from the
+    // specified `start_world_id`.
+    // - All objects marked as "disabled in sim" will be deleted from the start
+    //   world while cloning it to the simulator world.
+    //   See `SimulationComponent::disabled` in
+    //   google3/intrinsic/world/public/proto/simulation_component.proto
+    //
+    // It will be assumed that the `SimulationService` has exclusive write
+    // access to this world after `StartSolution` is called, and up until
+    // `StopSolution` is called.
+    //
+    // Forwarded to any connected simulator over the
+    // `SimulatorWorldSync::SyncWorld` stream.
+    string simulator_world_id = 1;
+
+    // The starting world from which the above simulator world will be cloned.
+    // Future `ResetSimulation` calls can specify a different `start_world_id`.
+    string start_world_id = 2;
+
+    // Pubsub topic name for simulator world state updates.
+    // Forwarded to any connected simulator over the
+    // `SimulatorWorldSync::SyncWorld` stream.
+    string simulator_world_state_updates_pubsub_topic_name = 3;
+  }
+
+  // Specify the environment parameters which should be used, if the solution
+  // is in a simulated deployment (see `operation_mode`).
+  // If unset, the service does not connect to the simulator.
+  // If unset, and the service was previously connected to the simulator, the
+  // connection is terminated.
+  optional SimulationEnvironment simulation_env = 2;
+
+  // The operation mode in which the solution is being deployed.
+  config.OperationMode operation_mode = 3;
+
+  reserved "is_simulated";
+  reserved 1;
+}
+
+message StartSolutionResponse {}
+
+message StopSolutionRequest {}
+
+message StopSolutionResponse {}
+
+message SimulatorInfo {
+  // The name of the simulator asset instance.
+  string simulator_name = 1;
+}
+
+message SimulatorStatus {
+  // Info containing simulator name.
+  SimulatorInfo simulator_info = 1;
+  // Simulator state will be populated once the simulator is reachable.
+  optional SimulatorState simulator_state = 2;
+  // Reports:
+  // - The simulator status retrieval error: if simulator is reachable, but
+  //   status cannot be retrieved.
+  // - The simulator error status: if simulator status was retrieved and it
+  //   reported an error.
+  optional google.rpc.Status status = 3;
+}
+
+message GetSimulatorStatusRequest {}
+message GetSimulatorStatusResponse {
+  // Status of the simulator. Set only if a simulator is installed in the
+  // cluster.
+  optional SimulatorStatus simulator_status = 1;
+}
+
+message RefreshConnectedSimulatorRequest {}
+message RefreshConnectedSimulatorResponse {
+  // Status of the simulator. Set only if a simulator is installed in the
+  // cluster.
+  optional SimulatorStatus simulator_status = 1;
+}

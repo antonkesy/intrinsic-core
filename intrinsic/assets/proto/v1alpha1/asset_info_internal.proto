@@ -1,0 +1,104 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.assets.v1alpha1;
+
+import "intrinsic/assets/proto/id.proto";
+import "intrinsic/resources/proto/geometric_resource_data.proto";
+import "intrinsic/resources/proto/resource_type_runtime.proto";
+import "intrinsic/util/status/extended_status.proto";
+
+option go_package = "intrinsic/assets/proto/v1alpha1/asset_info_internal_go_proto";
+
+service AssetInfoInternal {
+  // Returns all of the world data needed to construct a world from a given
+  // resource set.
+  rpc GetGeometricResourceSetData(GetGeometricResourceSetDataRequest)
+      returns (intrinsic_proto.resources.GeometricResourceSetData) {}
+
+  // Retrieves a specific resource type runtime data entry from the
+  // underlying runtime store.
+  rpc GetResourceTypeRuntime(GetResourceTypeRuntimeRequest)
+      returns (GetResourceTypeRuntimeResponse) {}
+
+  // Gets connected services for the requested scene object from the currently
+  // deployed app.
+  rpc GetConnectedServices(GetConnectedServicesRequest)
+      returns (GetConnectedServicesResponse) {}
+
+  // Retrieves non-public information about a set of skills.
+  rpc BatchGetInternalSkillData(BatchGetInternalSkillDataRequest)
+      returns (BatchGetInternalSkillDataResponse) {}
+
+  // Checks validity of the running Solution.
+  rpc CheckSolutionValidity(CheckSolutionValidityRequest)
+      returns (CheckSolutionValidityResponse) {}
+}
+
+message BatchGetInternalSkillDataRequest {
+  repeated string ids = 1;
+}
+
+message BatchGetInternalSkillDataResponse {
+  repeated InternalSkillData internal_skill_data = 1;
+}
+
+message InternalSkillData {
+  // The skill's IDVersion.
+  intrinsic_proto.assets.IdVersion id_version = 1;
+
+  // The skill's gRPC service addresses in the Kubernetes cluster.
+  message GrpcTargets {
+    string validate = 1;
+    string project = 2;
+    string execute = 3;
+    string skill_info = 4;
+  }
+
+  // gRPC targets for the skill's services.
+  GrpcTargets grpc_targets = 2;
+
+  // Whether the skill is sideloaded into the solution.
+  bool sideloaded = 3;
+}
+
+message GetResourceTypeRuntimeRequest {
+  string id_version = 1;
+}
+
+message GetResourceTypeRuntimeResponse {
+  intrinsic_proto.resources.ResourceTypeRuntime resource_type_runtime = 1;
+}
+
+message GetGeometricResourceSetDataRequest {}
+
+message GetConnectedServicesRequest {
+  string name = 1;
+}
+
+message ConnectedService {
+  string name = 1;
+}
+
+message GetConnectedServicesResponse {
+  repeated ConnectedService connected_services = 1;
+}
+
+message CheckSolutionValidityRequest {}
+
+message CheckSolutionValidityResponse {
+  intrinsic_proto.status.ExtendedStatus validation_errors = 1;
+}

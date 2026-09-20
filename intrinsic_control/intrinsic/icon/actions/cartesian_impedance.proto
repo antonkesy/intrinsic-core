@@ -1,0 +1,201 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// LINT: LEGACY_NAMES
+syntax = "proto3";
+
+package intrinsic_proto.icon.actions.proto;
+
+import "intrinsic/icon/actions/cartesian_impedance_reference_generators.proto";
+import "intrinsic/icon/proto/cart_space.proto";
+import "intrinsic/icon/proto/joint_space.proto";
+import "intrinsic/icon/proto/matrix.proto";
+import "intrinsic/kinematics/types/joint_limits.proto";
+import "intrinsic/math/proto/vector3.proto";
+
+option go_package = "intrinsic/icon/actions/cartesian_impedance_go_proto";
+
+// Parameters for a Cartesian admittance or impedance action for stabilizing
+// around a Cartesian pose and wrench setpoint. All quantities not marked
+// optional are required, optional quantities will be automatically derived and
+// set to reasonable values by the algorithm if not provided by the user.
+message CartesianTarget {
+  // Tool offset pose from default robot tip, expressed w.r.t. the default
+  // tip frame. This allows to define an offset 'tool' for the Cartesian
+  // impedance control law, which does not coincide with the default robot tip.
+  // Defaults to Identity, which is equivalent to no offset.
+  intrinsic_proto.icon.Transform robot_tip_t_robot_tool = 9;
+
+  // The frame in which `CartesianTarget` is expressed. The task frame is
+  // defined w.r.t. the robot base frame. Defaults to Identity (in this case the
+  // task frame is the robot base frame).
+  optional intrinsic_proto.icon.Transform robot_base_t_task = 11;
+
+  // The desired reference pose of the robot tool frame expressed in the task
+  // frame. If no pose is specified, the controller uses the current Cartesian
+  // pose of the 'tool' frame computed via forward kinematics. This also takes
+  // into account above 'robot_tip_t_robot_tool'.
+  optional intrinsic_proto.icon.Transform task_t_tool_reference_pose = 1;
+
+  // The desired goal twist of the tool frame, expressed in the task frame.
+  // Defaults to zero.
+  intrinsic_proto.icon.Twist tool_reference_twist = 2;
+
+  // The desired acceleration of the tool frame, expressed in the task frame.
+  // Defaults to zero.
+  intrinsic_proto.icon.Acceleration tool_reference_acceleration = 3;
+
+  // The desired wrench at the tool, expressed in the task frame. Defaults to
+  // zero.
+  intrinsic_proto.icon.Wrench tool_reference_wrench = 4;
+
+  // The desired virtual cartesian inertia matrix [kg, kg m²], expressed in the
+  // task frame.
+  intrinsic_proto.icon.Matrix6d virtual_cartesian_inertia = 10;
+
+  // The cartesian stiffness matrix [N/m, Nm/rad], expressed in the task frame.
+  intrinsic_proto.icon.Matrix6d cartesian_stiffness = 6;
+
+  // The cartesian damping matrix, expressed in the task frame. If not
+  // specified, it is automatically derived from stiffness and inertia to
+  // achieve critical damping.
+  optional intrinsic_proto.icon.Matrix6d cartesian_damping = 7;
+
+  // The selection matrix allowing to eliminate the effect of wrench-readings in
+  // certain directions, expressed in the task frame. The selection matrix must
+  // be an orthogonal projection matrix. If not specified, it is set to
+  // Identity.
+  optional intrinsic_proto.icon.Matrix6d wrench_selection_matrix = 8;
+
+  reserved 5;
+}
+
+message NullspaceTarget {
+  // The nullspace task joint stiffness, scalar value applied to all joints.
+  optional double nullspace_stiffness = 1;
+
+  // The nullspace task joint damping, scalar value applied to all joints.
+  optional double nullspace_damping = 2;
+
+  // The desired nullspace joint configuration.
+  optional intrinsic_proto.icon.JointVec nullspace_reference = 3;
+}
+
+message Constraints {
+  // The joint limits to apply to the motion.
+  optional intrinsic_proto.JointLimits joint_limits = 1;
+
+  // Cartesian limits for the motion expressed in the robot base frame. Action
+  // will fail if a motion target violates Cartesian limits.
+  optional intrinsic_proto.icon.CartesianLimits cartesian_limits = 2;
+
+  // Enables strict joint- and Cartesian acceleration andjerk limits in force
+  // control. This is an experimental feature, defaults to false.
+  // TODO: b/468326263 - Strip away for IOC once the copybara strip commands are
+  // available.
+  optional bool enforce_cartesian_and_joint_limits = 3;
+}
+
+message AlgorithmConfiguration {
+  // Damping factor for the Jacobian pseudo inverse Thikonov regularization.
+  // Stabilizes the feedback controller in the vicinity of kinematic
+  // singularities. Meaningful values are roughly located in [0, ~0.01], where
+  // 0.0 corresponds to no regularization. The higher the value, the stronger
+  // the regularization, and the bigger the deviation from commanded values near
+  // singularities.
+  optional double jacobian_pinv_damping = 1;
+
+  // Deadband to be applied to the sensed wrench. Values below the numerical
+  // threshold defined in the deadband will be truncated.
+  optional intrinsic_proto.icon.Wrench sensed_wrench_deadband = 2;
+
+  // Pose error integrator gain. Must be greater than or equal to zero.
+  optional intrinsic_proto.icon.CartVec6 pose_error_integrator_gain = 3;
+
+  // Pose error integrator upper bound, used to saturate the error integrator.
+  // The integrated pose error es expressed in [m] for positions (first three
+  // elements) and [rad] for orientation (last three elements). Must be greater
+  // than or equal to zero.
+  optional intrinsic_proto.icon.CartVec6 pose_error_integrator_bound = 4;
+
+  // [This is an experimental feature].
+  // Scaling factor for subtracting estimated post-sensor dynamic load from the
+  // sensed wrench. Admissible range is [0,1], the default 0.0 means no
+  // compensation, 1.0 means total compensation. Note that values >0.5 need to
+  // be handled with extreme care since they may result in instability.
+  optional double post_sensor_dynamic_load_multiplier = 5;
+}
+
+message StateVariableConfiguration {
+  // L-infinity vector norm on task-space position error for determining action
+  // success [m].
+  optional double position_error_threshold = 1;
+
+  // L-infinity norm bound on task-space orientation error for determining
+  // action success [rad].
+  optional double orientation_error_threshold = 2;
+
+  // L-infinity norm bound on translational velocity error for determining
+  // action success [m/s, rad/s].
+  optional double translation_velocity_error_threshold = 3;
+
+  // L-infinity norm bound on angular velocity error for determining
+  // action success [m/s, rad/s].
+  optional double angular_velocity_error_threshold = 4;
+
+  // L-infinity norm bound on joint velocity for determining action success, can
+  // be used to terminate despite nullspace motion [rad/s].
+  optional double joint_velocity_threshold = 5;
+
+  // Direction along which to measure the distance traveled for the state
+  // variable `kTranslationalDistanceTraveled`. This is specified in the
+  // *target* frame at the start of this action as opposed to the robot's
+  // base frame.
+  optional intrinsic_proto.Vector3 translational_distance_along = 6;
+
+  // Duration of a time window within which to measure the maximum
+  // translational displacement of the target frame. Distance will be
+  // reported in the state variable `kMaximumTranslationalDisplacementInWindow`.
+  optional double time_window_for_maximum_displacement_sec = 7;
+
+  // The is_settled state-variable assumes that the motion is finished if
+  // the force stays in this band. Defaults to 3 N.
+  optional double force_settled_band = 8;
+
+  // The three directions along which the force is sensed and reported in the
+  // state variables `kSensedForceInDirection1`, `kSensedForceInDirection2`,
+  // `kSensedForceInDirection3`. The directions are normalized, the magnitude is
+  // ignored.
+  // Defined in the robot base frame. They default to the x-y-z directions.
+  optional intrinsic_proto.Vector3 force_direction_1_in_task = 9;
+  optional intrinsic_proto.Vector3 force_direction_2_in_task = 10;
+  optional intrinsic_proto.Vector3 force_direction_3_in_task = 11;
+  // The three directions along which the torque is sensed and
+  // reported in the state variables `kSensedTorqueAboutAxis1`,
+  // `kSensedTorqueAboutAxis2`, `kSensedTorqueAboutAxis3`. The directions are
+  // normalized, the magnitude is ignored.
+  // Defined in the robot base frame. They default to the x-y-z directions.
+  optional intrinsic_proto.Vector3 torque_axis_1_in_task = 12;
+  optional intrinsic_proto.Vector3 torque_axis_2_in_task = 13;
+  optional intrinsic_proto.Vector3 torque_axis_3_in_task = 14;
+}
+
+message CartesianImpedanceParameters {
+  CartesianTarget cartesian_target = 1;
+  NullspaceTarget nullspace_target = 2;
+  AlgorithmConfiguration algorithm_configuration = 3;
+  Constraints constraints = 4;
+  StateVariableConfiguration state_variable_configuration = 5;
+  ReferenceGenerators reference_generators = 6;
+}

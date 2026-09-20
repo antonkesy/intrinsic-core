@@ -1,0 +1,41 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+option go_package = "intrinsic/icon/skills/aio_set_output_go_proto";
+
+message AioSetOutputParams {
+  repeated AioOutputBlock aio_output_blocks = 1;
+}
+
+message AioOutputBlock {
+  // Name of the Analog IO (input/output) block in which the output values
+  // should be set. You can look up the list of block names, indices, and
+  // current values of analog outputs in the Services panel, on the settings
+  // page of the real-time control or robot control service, in the 'I/O
+  // mapping' window.
+  string block_name = 1;
+
+  // Indices to set within the Analog IO (input/output) block. To set the first
+  // value, use 0. The maximal supported number of indices is 64 and
+  // the maximum allowed index is 63.
+  repeated uint32 indices = 2;
+
+  // Corresponding output values that the indices within the Analog IO block
+  // should be set to. Must have same size as `indices`.
+  repeated double values = 3;
+}

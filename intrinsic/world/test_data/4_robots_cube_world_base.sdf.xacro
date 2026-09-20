@@ -1,0 +1,180 @@
+<?xml version="1.0"?>
+
+<!--
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<sdf version="1.9" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <world name="default">
+        <include>
+            <uri>model://sun</uri>
+        </include>
+
+        <xacro:include filename="$(cwd)/intrinsic_control/intrinsic/models/robot_definitions/kuka/kr6_r900_2/kr6_r900_2.xacro"/>
+
+        <xacro:kr6_r900_2_sdf name="iris622"
+                    joint_0_initial="0"
+                    joint_1_initial="-2"
+                    joint_2_initial="2"
+                    joint_3_initial="0"
+                    joint_4_initial="0"
+                    joint_5_initial="0">
+            <model_options>
+                <pose>0.620633 -0.617091 0.014591 0.000099 0.005144 3.139627</pose>
+                <joint name="base" type="fixed">
+                    <parent>world</parent>
+                    <child>base_link</child>
+                </joint>
+                <include>
+                    <pose>0.990 0 0.425 0 1.570796327 0</pose>
+                    <uri>model://intrinsic/models/assets/adjustable_tool</uri>
+                    <name>tool</name>
+                </include>
+                <joint name="robot_tool_mount" type="fixed">
+                    <parent>tool0</parent>
+                    <child>tool::tool_base</child>
+                </joint>
+            </model_options>
+        </xacro:kr6_r900_2_sdf>
+
+        <xacro:kr6_r900_2_sdf name="iris692"
+                    joint_0_initial="0"
+                    joint_1_initial="-2"
+                    joint_2_initial="2"
+                    joint_3_initial="0"
+                    joint_4_initial="0"
+                    joint_5_initial="0">
+            <model_options>
+                <pose>-0.619797 -0.615755 0.014108 -0.001547 0.000748 -0.002139</pose>
+                <joint name="base" type="fixed">
+                    <parent>world</parent>
+                    <child>base_link</child>
+                </joint>
+                <include>
+                    <pose>0.990 0 0.425 0 1.570796327 0</pose>
+                    <uri>model://intrinsic/models/assets/adjustable_tool</uri>
+                    <name>tool</name>
+                </include>
+                <joint name="robot_tool_mount" type="fixed">
+                    <parent>tool0</parent>
+                    <child>tool::tool_base</child>
+                </joint>
+            </model_options>
+        </xacro:kr6_r900_2_sdf>
+
+        <model name="table">
+            <include merge="true">
+                <uri>model://intrinsic/models/assets/quad_table</uri>
+            </include>
+            <joint name="base" type="fixed">
+                <parent>world</parent>
+                <child>table_base</child>
+            </joint>
+        </model>
+
+        <xacro:kr6_r900_2_sdf name="agilus-03"
+                    joint_0_initial="0"
+                    joint_1_initial="-2"
+                    joint_2_initial="2"
+                    joint_3_initial="0"
+                    joint_4_initial="0"
+                    joint_5_initial="0">
+            <model_options>
+                <pose>-0.615691 0.622351 0.0116668 -0.001780 -0.001903 -0.005796</pose>
+                <joint name="base" type="fixed">
+                    <parent>world</parent>
+                    <child>base_link</child>
+                </joint>
+                <include>
+                    <pose>0.990 0 0.425 0 1.570796327 0</pose>
+                    <uri>model://intrinsic/models/assets/adjustable_tool</uri>
+                    <name>tool</name>
+                </include>
+                <joint name="robot_tool_mount" type="fixed">
+                    <parent>tool0</parent>
+                    <child>tool::tool_base</child>
+                </joint>
+            </model_options>
+        </xacro:kr6_r900_2_sdf>
+
+        <xacro:kr6_r900_2_sdf name="agilus-04"
+                    joint_0_initial="0"
+                    joint_1_initial="-2"
+                    joint_2_initial="2"
+                    joint_3_initial="0"
+                    joint_4_initial="0"
+                    joint_5_initial="0">
+            <model_options>
+                <pose>0.623598 0.619270 0.0142757 0.000695 0.002447 3.134007</pose>
+                <joint name="base" type="fixed">
+                    <parent>world</parent>
+                    <child>base_link</child>
+                </joint>
+                <include>
+                    <pose>0.990 0 0.425 0 1.570796327 0</pose>
+                    <uri>model://intrinsic/models/assets/adjustable_tool</uri>
+                    <name>tool</name>
+                </include>
+                <joint name="robot_tool_mount" type="fixed">
+                    <parent>tool0</parent>
+                    <child>tool::tool_base</child>
+                </joint>
+            </model_options>
+        </xacro:kr6_r900_2_sdf>
+
+        <model name="11140_agilus_cell">
+            <include merge="true">
+                <uri>model://intrinsic/models/assets/11140_agilus_cell</uri>
+            </include>
+            <joint name="base" type="fixed">
+                <parent>world</parent>
+                <child>room</child>
+            </joint>
+        </model>
+        <model name="workpiece">
+            <pose>0 0 0 0 0 0</pose>
+            <link name="table_cube_link">
+              <inertial>
+                <mass>1</mass>
+                <inertia>
+                  <ixx>1</ixx>
+                  <ixy>0</ixy>
+                  <ixz>0</ixz>
+                  <iyy>1</iyy>
+                  <iyz>0</iyz>
+                  <izz>1</izz>
+                </inertia>
+              </inertial>
+              <visual name="visual1">
+                <geometry>
+                  <mesh>
+                    <uri>model://intrinsic/models/assets/table_cube/table_cube_vis.dae</uri>
+                  </mesh>
+                </geometry>
+              </visual>
+              <collision name="collision1">
+                <geometry>
+                  <mesh>
+                    <uri>model://intrinsic/models/assets/table_cube/table_cube_collision.stl</uri>
+                  </mesh>
+                </geometry>
+              </collision>
+            </link>
+            <joint name="base" type="fixed">
+                <parent>world</parent>
+                <child>table_cube_link</child>
+            </joint>
+        </model>
+    </world>
+</sdf>

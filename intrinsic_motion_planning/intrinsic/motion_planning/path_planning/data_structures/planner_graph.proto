@@ -1,0 +1,62 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic.proto;
+
+import "intrinsic/icon/proto/joint_space.proto";
+import "intrinsic/motion_planning/path_planning/data_structures/nearest_neighbor_configs.proto";
+
+option go_package = "intrinsic/motion_planning/path_planning/data_structures/planner_graph_go_proto";
+
+message PathPlannerGraphConfig {
+  NearestNeighborSpecification nearest_neighbor_spec = 1;
+}
+
+message RobotSpecification {
+  uint32 base_id = 2;
+  uint32 tip_id = 3;
+
+  reserved 1;
+}
+
+message PathPlannerGraph {
+  enum Validity {
+    UNKNOWN = 0;
+    UNTESTED = 1;
+    VALID = 2;
+  }
+
+  message VertexProto {
+    int64 id = 1;
+    intrinsic_proto.icon.JointVec configuration = 2;
+    Validity validity = 3;
+  }
+
+  message EdgeProto {
+    int64 start_vertex = 1;
+    int64 end_vertex = 2;
+    double cost = 3;
+    Validity validity = 4;
+  }
+
+  RobotSpecification robot = 1;
+  repeated VertexProto vertices = 2;
+  repeated EdgeProto edges = 3;
+}
+
+message MultiRobotGraphs {
+  repeated PathPlannerGraph robot_graphs = 1;
+}

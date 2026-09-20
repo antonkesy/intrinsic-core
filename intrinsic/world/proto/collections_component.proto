@@ -1,0 +1,114 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+option go_package = "intrinsic/world/proto/collections_component_go_proto";
+
+// Component indicating the owner is a collections Entity, which aggregates
+// typed collections (e.g. LINKS, JOINTS, etc.) of other Entities. Some key
+// properties:
+// * Basics
+//   - Collections are ordered sets, meaning each member appears exactly once.
+//   - Some types of collections have additional invariants, documented below.
+//   - Otherwise, no other guarantees (e.g. ordering, continguousness) are made
+//     about a collection's members.
+// * Entities
+//   - The collections Entity (a.k.a. collection parent) is not part of the
+//     attachment graph.
+//   - The referenced Entities, called members, are in the attachment graph.
+//   - Member Entities have CollectionsMemberComponents with backreferences to
+//     the collections Entity.
+//   - An Entity can be a member of any number of collections, spread across the
+//     same or different collections Entities.
+//
+// Some examples:
+// * A robot (specifically what was previously represented through
+//   RobotComponent) will have LINKS and JOINTS collections and optionally
+//   a COORDINATE_FRAME collection. Additionally, the JOINTS collection will
+//   have at least 1 degree of freedom (i.e. joint of non-fixed motion type).
+// * An SDF <model> containing only static geometry is translated into a
+//   collections Entity with only a LINKS collection.
+// Next tag: 2
+message CollectionsComponent {
+  enum CollectionType {
+    COLLECTION_TYPE_UNDEFINED = 0;
+
+    // Members are LinkEntityIds, whose Entities represent rigid geometry.
+    //
+    // If this collection also has joints (i.e. represents a robot), then the
+    // list of links is ordered:
+    // - If there is a base link (i.e. the link that is not the child of any
+    //   joint of this collection), then it is the first element of the list.
+    // - The remaining links are the children of the joints, following the order
+    //   of that list.
+    COLLECTION_TYPE_LINKS = 1;
+
+    // Members are JointEntityIds, whose Entities represent degrees of freedom.
+    //
+    // This list is organized depth-first, with multiple children of the same
+    // link traversed in the order
+    // described at
+    // go/intrinsic-choreographer-kinematic-tdd#heading=h.pbpe8z6aycw4.
+    //
+    // In brief, the sorting factors are in order:
+    // 1. Motion type, in the same order as the KinematicsComponent::MotionType
+    //    enum (see
+    //    intrinsic/world/public/proto/kinematics_component.proto&q=%22enum%20MotionType%22).
+    // 2. Translation component of KinematicsComponent::parent_t_inboard.
+    // 3. Quaternion component of KinematicsComponent::parent_t_inboard.
+    // 4. KinematicsComponent::axis.
+    //
+    // This order will also be used in DofKinematicViews created through this
+    // component's C++ API.
+    COLLECTION_TYPE_JOINTS = 2;
+
+    // Members are CoordinateFrameEntityIds, whose Entities represent various
+    // coordinate frames in the world (e.g. gripping pose, useful reference
+    // point in the world, etc.).
+    //
+    // This list is not sorted.
+    COLLECTION_TYPE_COORDINATE_FRAMES = 3;
+
+    // Members are Entities with a SensorComponent which represent a sensor in
+    // the world (cameras, force-torque sensors, ...).
+    //
+    // This list is not sorted.
+    COLLECTION_TYPE_SENSORS = 4;
+
+    // Members are Entities that represent various coordinate frames in the
+    // world that are used to attach other object to this collection. (e.g. tool
+    // mounting pose, etc.). These are similar to coordinate frames but have
+    // special handling.
+    //
+    // This list is not sorted.
+    COLLECTION_TYPE_ATTACHMENT_FRAMES = 5;
+
+    // Members are Entities with a ProjectorComponent which represent a
+    // projector in the world
+    //
+    // This list is not sorted.
+    COLLECTION_TYPE_PROJECTORS = 6;
+  }
+
+  message Members {
+    repeated uint32 uid = 1;
+  }
+
+  // Map from CollectionType (encoded as int32 because enums cannot be used as
+  // map keys) to Members protos.
+  map<int32, Members> collections = 1;
+}

@@ -1,0 +1,58 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Messages for publishing TF associations for visualizations.
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+option go_package = "intrinsic/world/proto/tf_associations_go_proto";
+
+import "intrinsic/world/proto/geometry_component.proto";
+
+// A lightweight representation of TF frames and their associated geometry.
+message TFAssociations {
+  // Mappings of ROS-style TF frame IDs to their associations.
+  map<string, FrameAssociation> frame_associations = 1;
+}
+
+message FrameAssociation {
+  string fully_qualified_tf_frame = 1;
+
+  // The geometry component associated with this frame, which also contains
+  // references to any renderables that should be attached.
+  intrinsic_proto.world.GeometryComponent geometry = 2;
+
+  // Map of path to a particular TransformedGeometry proto within the
+  // GeometryComponent in the `geometry` field to some renderable ID that can be
+  // used to fetch renderables from a renderable map stored elsewhere, keyed by
+  // those renderable IDs (e.g., in a "heavy" VisualizationContext message).
+  //
+  // Important: This is intended to be populated by a cloud component (e.g. the
+  // cloud BagPackager), and will probably be empty on-prem.
+  //
+  // Path example: "Intrinsic_Visual.RobotLinkGeometryName"
+  //
+  // This is needed because not every form of geometry has an ID that can be
+  // computed outside of C++, or a field that can hold it, so this message holds
+  // it instead.
+  //
+  // Renderable IDs for the following cases are:
+  // - InlineGeometry:
+  //   - The C++ generated fingerprint on the InlineGeometry's ExactGeometry
+  // - Geometry with v1.GeometryStorageRefs:
+  //   - Prefer renderable_ref (CAS URL), but fallback to exact_geometry_ref
+  //   (CAS URL)
+  map<string, string> geometry_path_to_renderable_id = 3;
+}

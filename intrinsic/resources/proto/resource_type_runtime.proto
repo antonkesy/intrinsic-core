@@ -1,0 +1,106 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.resources;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+import "intrinsic/assets/proto/v1/asset.proto";
+import "intrinsic/assets/data/proto/v1/data_asset.proto";
+import "intrinsic/assets/processes/proto/process_asset.proto";
+import "intrinsic/assets/proto/installation_origin.proto";
+import "intrinsic/assets/proto/metadata.proto";
+import "intrinsic/resources/proto/resource_service_definition.proto";
+import "intrinsic/scene/proto/v1/scene_object.proto";
+import "intrinsic/scene/proto/v1/scene_object_config.proto";
+import "intrinsic/skills/proto/processed_skill_manifest.proto";
+import "intrinsic/world/proto/world_fragment.proto";
+
+option go_package = "intrinsic/resources/proto/resource_type_runtime_go_proto";
+
+// Container for runtime information for an asset that has been installed into a
+// solution. Stored in RuntimeDB.
+//
+// We will eventually rename this proto and its package to something more
+// appropriate for assets, but are keeping it unchanged for now to minimize
+// disruption.
+message ResourceTypeRuntime {
+  // No longer used, but kept around for compatibility with stored solutions.
+  // Should only be set just before being stored at rest by the modified
+  // solution service.
+  // TODO: b/379721373 - remove this once all clusters are sufficiently updated
+  // to not need this backfill and tooling can handle removed fields.
+  string id_version = 1 [deprecated = true];
+
+  // Metadata for the asset.
+  intrinsic_proto.assets.Metadata metadata = 11;
+
+  // Origin from which the asset was added to RuntimeDB.
+  intrinsic_proto.assets.InstallationOrigin installation_origin = 12;
+
+  // The following fields will be deprecated in favor of asset-specific
+  // messages. ("Deprecated" here could mean renaming fields to make them more
+  // applicable across all asset types [e.g., renaming
+  // "parameter_descriptor_fileset" to "file_descriptor_set"].)
+
+  // Use metadata.asset_tag instead.
+  string family_id = 2 [deprecated = true];
+
+  // Default service configuration, if the asset has a service component.
+  google.protobuf.Any default_configuration = 3;
+
+  // Parameter Description
+  google.protobuf.FileDescriptorSet parameter_descriptor_fileset = 5
+      [deprecated = true];
+
+  // World fragment containing world entities.
+  intrinsic_proto.world.WorldFragment world_fragment = 6;
+
+  // Scene object containing geometric information.
+  // Only one of `world_fragment` or `scene_object` field should be set.
+  // If both are set, then `scene_object` takes precedence.
+  intrinsic_proto.scene_object.v1.SceneObject scene_object = 10;
+
+  // Default scene object config, if the asset has a scene object component.
+  optional intrinsic_proto.scene_object.v1.SceneObjectConfig
+      default_scene_object_config = 15;
+
+  // The service definition for the resource type
+  intrinsic_proto.config.ResourceServiceDefinition service_def = 9;
+
+  // Asset class-specific information.
+  oneof variant {
+    // Set for skill assets. The 'metadata' submessage is not set, instead the
+    // 'metadata' field is used.
+    intrinsic_proto.skills.ProcessedSkillManifest skill = 13;
+
+    // Set for data assets.
+    intrinsic_proto.data.v1.DataAsset data = 14;
+
+    // Set for process assets. The 'metadata' submessage is not set, instead the
+    // 'metadata' field is used.
+    intrinsic_proto.processes.ProcessAsset process = 16;
+  }
+
+  // A map of Assets referenced by this Asset.
+  //
+  // Keys are Asset IDs of the referenced Assets.
+  map<string, intrinsic_proto.assets.v1.Asset> referenced_assets = 17;
+
+  reserved 4, 7, 8;
+  reserved "default_resource_data", "has_services",
+      "requires_scheduling_config";
+}

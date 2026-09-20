@@ -1,0 +1,52 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto;
+
+option go_package = "intrinsic/math/proto/array_go_proto";
+
+/*
+  Efficiently represents a multi-dimensional array.
+*/
+message Array {
+  bytes data = 1;
+  repeated uint32 shape = 2;
+  ScalarType type = 3;
+  ByteOrder byte_order = 4;
+
+  enum ScalarType {
+    UNSPECIFIED_SCALAR_TYPE = 0;
+    BOOL_SCALAR_TYPE = 1;
+    INT8_SCALAR_TYPE = 2;
+    INT16_SCALAR_TYPE = 3;
+    INT32_SCALAR_TYPE = 4;
+    INT64_SCALAR_TYPE = 5;
+    UINT8_SCALAR_TYPE = 6;
+    UINT16_SCALAR_TYPE = 7;
+    UINT32_SCALAR_TYPE = 8;
+    UINT64_SCALAR_TYPE = 9;
+    FLOAT16_SCALAR_TYPE = 10;
+    FLOAT32_SCALAR_TYPE = 11;
+    FLOAT64_SCALAR_TYPE = 12;
+  }
+
+  enum ByteOrder {
+    UNSPECIFIED_BYTE_ORDER = 0;
+    NO_BYTE_ORDER = 1;
+    LITTLE_ENDIAN_BYTE_ORDER = 2;
+    BIG_ENDIAN_BYTE_ORDER = 3;
+  }
+}

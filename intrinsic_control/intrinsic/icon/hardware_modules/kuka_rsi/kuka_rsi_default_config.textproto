@@ -1,0 +1,74 @@
+# proto-file: intrinsic/icon/hal/proto/hardware_module_config.proto
+# proto-message: intrinsic_proto.icon.HardwareModuleConfig
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+[type.googleapis.com/intrinsic_proto.icon.HardwareModuleConfig] {
+  name: "kuka_rsi_hal_module"
+  module_config {
+    [type.googleapis.com/intrinsic_proto.icon.KukaRsiModule] {
+      local_rsi_host: "192.170.10.123"
+      local_rsi_port: 5852
+      velocity_settling_cutoff_frequency: 100
+      digital_input_names: ["di_1", "di_2", "di_3", "di_4"]
+      digital_output_names: ["do_1", "do_2"]
+      eki_status_client_params: {
+        eki_address: "192.170.11.122"
+        eki_port: 54600
+        # Update rate of the EKI status telemetry. A rate of 10+ is mainly needed
+        # for a smooth visualization during teach pendant jogging.
+        # Recommended not to change. Limited to 15 Hz due to EKI response time.
+        update_frequency: 15  # Hz
+      }
+      eki_control_client_params: {
+        eki_address: "192.170.11.122"
+        eki_port: 54601
+        # Update rate of the EKI control telemetry. Recommended not to change.
+        # Limited to 15 Hz due to EKI response time.
+        update_frequency: 2  # Hz
+      }
+    }
+  }
+  drives_realtime_clock: true
+  control_frequency_hz: 250
+  simulation_module_config {
+    dio_config {
+      inputs {
+        device_name: "digital_input_status"
+        signals: [
+          { name: "di_1" bit: 0 },
+          { name: "di_2" bit: 1 },
+          { name: "di_3" bit: 2 },
+          { name: "di_4" bit: 3 }
+        ]
+      }
+      inputs {
+        device_name: "digital_output_status"
+        signals: [
+          { name: "do_1" bit: 4 },
+          { name: "do_2" bit: 5 }
+        ]
+      }
+      outputs {
+        device_name: "digital_output_command"
+        signals: [
+          { name: "do_1" bit: 4 },
+          { name: "do_2" bit: 5 }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,95 @@
+# proto-file: intrinsic/world/public/proto/object_world_updates.proto
+# proto-message: intrinsic_proto.world.ObjectWorldUpdates
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+updates {
+  update_object_name {
+    object {
+      by_name {
+        object_name: "agilus-03"
+      }
+    }
+    name: "agilus_03"
+    name_is_global_alias: true
+  }
+}
+updates {
+  update_object_name {
+    object {
+      by_name {
+        object_name: "agilus-04"
+      }
+    }
+    name: "agilus_04"
+    name_is_global_alias: true
+  }
+}
+updates {
+  update_object_name {
+    object {
+      by_name {
+        object_name: "11140_agilus_cell"
+      }
+    }
+    name: "cell_11140_agilus"
+    name_is_global_alias: true
+  }
+}
+updates {
+  update_object_name {
+    object {
+      by_name {
+        object_name: "agilus-03::tool"
+      }
+    }
+    name: "agilus_03_tool"
+    name_is_global_alias: true
+  }
+}
+updates {
+  update_object_name {
+    object {
+      by_name {
+        object_name: "agilus-04::tool"
+      }
+    }
+    name: "agilus_04_tool"
+    name_is_global_alias: true
+  }
+}
+updates {
+  update_object_name {
+    object {
+      by_name {
+        object_name: "iris622::tool"
+      }
+    }
+    name: "iris622_tool"
+    name_is_global_alias: true
+  }
+}
+updates {
+  update_object_name {
+    object {
+      by_name {
+        object_name: "iris692::tool"
+      }
+    }
+    name: "iris692_tool"
+    name_is_global_alias: true
+  }
+}

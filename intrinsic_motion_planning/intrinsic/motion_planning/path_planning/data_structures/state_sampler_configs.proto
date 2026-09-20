@@ -1,0 +1,214 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic.proto;
+
+import "google/protobuf/any.proto";
+
+option go_package = "intrinsic/motion_planning/path_planning/data_structures/state_sampler_configs_go_proto";
+
+// Mapping from the StateSamplerSpecification to the specific state sampler is
+// performed via CreateStateSampler(const proto::StateSamplerSpecification&
+// spec) in intrinsic/path_planning/data_structures/state_sampler_utils.h.
+message StateSamplerSpecification {
+  string name = 1;
+  google.protobuf.Any config = 2;
+}
+
+// Used to configure the UniformStateSampler used for sampling robot
+// configurations. If a parameter is not provided, the parameter will upon
+// construction default to a reasonable value.
+message UniformStateSamplerConfig {
+  // Defines the probability with which the UniformStateSampler samples 'nearby'
+  // the goal configuration of the planning problem.
+  double goal_sampling_probability = 1;
+
+  // Defines the distance from the goal configuration that is considered
+  // 'nearby'.
+  double goal_sampling_distance = 2;
+}
+
+// Used to configure PrmHeuristicStateSampler used by the PRM path planner.
+message PrmHeuristicStateSamplerConfig {
+  // Probability of sampling near the goal position.
+  double goal_sampling_probability = 1;
+
+  // Probability of sampling near the start position.
+  double start_sampling_probability = 2;
+
+  // Probability of sampling along the line between start and goal
+  // positions.
+  double straight_line_sampling_probability = 3;
+  double seed_extension_sampling_probability = 4;
+
+  // Maximum number of sampling attempts before a DeadlineExceeded error
+  // is returned by the sampler.
+  int32 max_sampling_attempts = 5;
+  double end_point_exploration_distance = 6;
+  double initial_seed_distance = 7;
+
+  // If true, sampling is done using the Halton sequence algorithm.
+  bool halton_sequence = 8;
+}
+
+message RrtScoringHeuristicStateSamplerConfig {
+  // The ideal spacing between a point to try and the current growing tree. A
+  // non-zero default parameter will be used if the parameter is not provided.
+  // Therefore, if a spacing distance of zero is desired, a value close to zero
+  // but != zero needs to be provided. Otherwise, the default parameter will
+  // be used.
+  double growing_tree_spacing = 1;
+
+  // Scaling parameter that defines how much we punish the deviation of the
+  // ideal spacing towards the growing tree. The scaling factor is inverse
+  // proportional to the score of the candidate. A non-zero default parameter
+  // will be used if the parameter is not provided.
+  // Therefore, if a width of zero is desired, a value close to zero
+  // but != zero needs to be provided. Otherwise, the default parameter will
+  // be used.
+  double growing_tree_width = 2;
+
+  // The ideal spacing between a point to try and the connecting tree.
+  double connecting_tree_spacing = 3;
+
+  // Scaling parameter that defines how much we punish the deviation of the
+  // ideal spacing towards the connecting tree. The scaling factor is inverse
+  // proportional to the score of the candidate. A non-zero default parameter
+  // will be used if the parameter is not provided.
+  // Therefore, if a width of zero is desired, a value close to zero
+  // but != zero needs to be provided. Otherwise, the default parameter will
+  // be used.
+  double connecting_tree_width = 4;
+
+  // Score weighting for intertree_distance. This weight is normalized against
+  // the intratree score. A non-zero default parameter
+  // will be used if the parameter is not provided.
+  // Therefore, if a weight of zero is desired, a value close to zero
+  // but != zero needs to be provided. Otherwise, the default parameter will
+  // be used.
+  double connecting_tree_weight = 5;
+
+  // The ideal spacing between a point to try and the failure configurations.
+  double failure_spacing = 6;
+
+  // Scaling parameter that defines how much we punish the deviation of the
+  // ideal spacing towards the failure configurations. A non-zero default
+  // parameter will be used if the parameter is not provided. Therefore, if a
+  // width of zero is desired, a value close to zero but != zero needs to be
+  // provided. Otherwise, the default parameter will be used.
+  double failure_width = 7;
+
+  // Score weighting for the score generated for from trying another point in a
+  // region that this tree previously failed to connect with. This weight is
+  // also normalized against the intratree score.  A non-zero default parameter
+  // will be used if the parameter is not provided.
+  // Therefore, if a weight of zero is desired, a value close to zero
+  // but != zero needs to be provided. Otherwise, the default parameter will
+  // be used.
+  double failure_weight = 8;
+
+  // Number of candidates to generate and score. Increasing this number can
+  // improve a heuristic but may also increase the run time.
+  //
+  // Values less than 1 are not valid and will result either in setting a
+  // default value (if num_candidates == 0) or will cause a fatal failure
+  // during construction.
+  int32 num_candidates = 9;
+
+  // Number of most recent extend failures to store. The stored failures are
+  // passed to the scoring function enabling it to avoid sampling the sample
+  // point repeatedly. The impact of increasing this value on run time highly
+  // depends on the scoring function used.
+  //
+  // Values less than 1 are not valid and will result either in setting a
+  // default value ( == 0) or will cause a fatal failure during construction.
+  int32 max_num_failures_stored = 10;
+
+  // Defines whether the dof with label arm_dof should be weighted according to
+  // the dof range (i.e., upper_limit - lower_limit) for determining the
+  // euclidean distance between configurations. If not defined, this value is
+  // false.
+  bool arm_dof_range_scale = 11;
+
+  // Defines whether the tool dofs, i.e., those without a arm_dof label, will
+  // be weighted according to their dof range for determining the euclidean
+  // distance between configurations. If not defined, this value will default
+  // to true.
+  bool tool_dof_range_scale = 12;
+
+  // Defines to what degree the tool dofs will be randomly sampled. It is
+  // expected to be value between zero and one. The default value is set to
+  // zero. A value between zero and one
+  // defines a value between a random configuration  and the closest
+  // configuration in the start tree. Zero means the virtual joints are not
+  // sampled, instead the value of the closest configuration in the start tree
+  // will be used. If set to one, the tool dof will be randomly sampled.
+  double tool_dof_sampling_weight = 13;
+
+  // Special sampling mode that attempts to select from all directions equally,
+  // rather than be biased by the joint range. As an example, look at the simple
+  // diagram below. Usually we sample uniformly in each joints range and then
+  // connect this to an existing point. However, if 'x' is our existing point,
+  // note that we are more likely to pick a point to its right when we sample
+  // uniformly in the full range of the joint. This means we have a lot less
+  // chance of trying a point to the left of 'x', and may take a long time to
+  // find a path if finding a path requires moving to the left first.
+  //
+  //    +-----------------------------------+
+  //    |                                   |
+  //    |                                   |
+  //    |                                   |
+  // J1 |  x                                |
+  //    |                                   |
+  //    |                                   |
+  //    |                                   |
+  //    |                                   |
+  //    +-----------------------------------+
+  //                    J2
+  bool use_equidirectional_sampling_method = 14;
+
+  // Controls the rate of extending the sampling envelope..
+  double equidirectional_sampling_buffer = 15;
+}
+
+// Used to configure the LearnedStateSampler used for sampling robot
+// configurations. If a parameter is not provided, the parameter will upon
+// construction default to a reasonable value. However, the model_directory and
+// robot_indicator_variable (unless unused by the model) are required and have
+// no defaults.
+message LearnedStateSamplerConfig {
+  // Defines the probability with which the LearnedStateSampler samples
+  // uniformly.
+  double lambda = 1;
+
+  // Defines the amount of samples we create in each batch to save computation
+  // time.
+  int32 sample_batch_size = 2;
+
+  // Dimension of our latent variable we use to sample from N(O, I).
+  int32 latent_input_dim = 3;
+
+  // The secondary sampler we use along with the learned sampling to 'fill' the
+  // gaps.
+  StateSamplerSpecification secondary_state_sampler_spec = 4;
+
+  // Directory from which we read in our conditional-variational-auto-encoder.
+  string model_directory = 5;
+
+  // Map of robot id -> index used to encode robot information for the
+  // sampler. Needs to match the inputs for the model specified.
+  map<string, int64> robot_indicator_variable = 6;
+}

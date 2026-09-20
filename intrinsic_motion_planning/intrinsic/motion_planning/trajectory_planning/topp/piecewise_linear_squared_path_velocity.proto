@@ -1,0 +1,35 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.topp;
+
+option go_package = "intrinsic/motion_planning/trajectory_planning/topp/piecewise_linear_squared_path_velocity_go_proto";
+
+// Phase space state (b, bp) at a discrete collocation point.
+message PhaseStateProto {
+  // Squared path velocity `b = (ds/dt)^2`.
+  double b = 1;
+
+  // First derivative of squared path velocity `bp = db/ds`.
+  double bp = 2;
+}
+
+// A piecewise linear representation of a squared path velocity profile.
+message PiecewiseLinearSquaredPathVelocityProto {
+  repeated double path_variables = 1;
+  repeated double cumulative_times = 2;
+  repeated PhaseStateProto phase_states = 3;
+}

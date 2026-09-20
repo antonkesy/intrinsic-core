@@ -1,0 +1,49 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.config;
+
+import "intrinsic/config/proto/application.proto";
+import "intrinsic/config/proto/common.proto";
+
+option go_package = "intrinsic/config/proto/cluster_go_proto";
+
+message Cluster {
+  Metadata metadata = 1;
+
+  // Aligned with (and initially populated from) k8s.robot.metadata.name.
+  string cluster_name = 2;
+  // The context can be the same as cluster_name, but there are cases such as
+  // minikube systems where the context name is locally always the same.
+  string k8s_context = 3;
+  // Group clusters by region for display purposes.
+  string region = 4;
+
+  // A copy of the currently running application
+  Application application = 5;
+
+  // Cluster is powerful enough to run a simulated workcell.
+  bool can_do_sim = 6;
+
+  // Cluster can access real hardware.
+  bool can_do_real = 7;
+
+  // Cluster has a GPU available to in-cluster workloads.
+  bool has_gpu = 8;
+
+  // Used for ui only.
+  string location = 9;
+}

@@ -1,0 +1,165 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.executive;
+
+import "google/longrunning/operations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/empty.proto";
+import "intrinsic/executive/proto/code_execution.proto";
+
+option go_package = "intrinsic/executive/proto/code_execution_service_go_proto";
+
+// Executes code execution tasks for the executive. Users must not use this
+// service directly. To execute a task node with a code execution task one has
+// to execute the node as part of a behavior tree via the executive.
+service CodeExecutionService {
+  // Starts an operation to execute code.
+  rpc ExecuteCode(CodeExecutionRequest) returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      response_type: "CodeExecutionResponse"
+      metadata_type: "CodeExecutionMetadata"
+    };
+  }
+
+  // Lists all running operations.
+  //
+  // By default, if
+  // [ListOperationsRequest.page_size][google.longrunning.ListOperationsRequest.page_size]
+  // is 0, uses a page size of 20. Otherwise, the maximum page size is 200. If
+  // a larger page size is requested, 200 is used.
+  rpc ListOperations(google.longrunning.ListOperationsRequest)
+      returns (google.longrunning.ListOperationsResponse);
+
+  // Gets the latest state of a long-running operation.
+  rpc GetOperation(google.longrunning.GetOperationRequest)
+      returns (google.longrunning.Operation);
+
+  // Deletes a long-running operation. This method indicates that the client is
+  // no longer interested in the operation result. It does not cancel the
+  // operation.
+  rpc DeleteOperation(google.longrunning.DeleteOperationRequest)
+      returns (google.protobuf.Empty);
+
+  // Starts asynchronous cancellation on a long-running operation. The server
+  // makes a best effort to cancel the operation, but success is not
+  // guaranteed. Clients can use [CodeExecutionService.GetOperation] or
+  // other methods to check whether the cancellation succeeded or whether the
+  // operation completed despite cancellation. On successful cancellation, the
+  // operation is not deleted; instead, it becomes an operation with an
+  // [Operation.error] value with a [google.rpc.Status.code] of 1, corresponding
+  // to `Code.CANCELLED`.
+  rpc CancelOperation(google.longrunning.CancelOperationRequest)
+      returns (google.protobuf.Empty);
+
+  // Waits until the specified long-running operation is done or reaches at most
+  // a specified timeout, returning the latest state. If the operation is
+  // already done, the latest state is immediately returned. Note that this
+  // method is on a best-effort basis. It may return the latest state before
+  // the specified timeout (including immediately), meaning even an immediate
+  // response is no guarantee that the operation is done.
+  rpc WaitOperation(google.longrunning.WaitOperationRequest)
+      returns (google.longrunning.Operation);
+
+  // Streams response messages from a running code execution. Emits all
+  // responses of the execution so far on the stream as soon as the stream is
+  // established. The stream will end automatically once the corresponding code
+  // execution has finished.
+  rpc StreamExecuteCodeResponse(StreamExecuteCodeResponseRequest)
+      returns (stream StreamExecuteCodeResponseResponse);
+
+  // Restarts the Jupyter kernels for all workers. You can call this proactively
+  // after all code executions of a scope have finished, which removes the delay
+  // caused by workers having to reset kernels on-the-fly when an
+  // ExecuteCodeRequest with a new scope comes in. For example, if requests are
+  // scoped to an executive operation you should call this at the end of each
+  // executive operation. This call is a best-effort fire-and-forget call. It
+  // will trigger the resets and return immediately.
+  rpc ResetKernels(ResetKernelsRequest) returns (ResetKernelsResponse);
+}
+
+message CodeExecutionRequest {
+  // The code snippet to run.
+  oneof code {
+    PythonCode python_code = 1;
+  }
+
+  // Input parameters. Must be a message of the type specified by
+  // [parameter_message_full_name].
+  google.protobuf.Any parameters = 2;
+
+  // Full proto message name of the message specifying the input parameters.
+  // This should be the same as
+  // [CodeExecution.parameter_message_full_name][intrinsic_proto.executive.CodeExecution.parameter_message_full_name].
+  string parameter_message_full_name = 3;
+
+  // Full proto message name of the message specifying the return values. This
+  // should be the same as
+  // [CodeExecution.return_value_message_full_name][intrinsic_proto.executive.CodeExecution.return_value_message_full_name].
+  string return_value_message_full_name = 4;
+
+  // A file descriptor set containing the proto files with the message
+  // definitions for the parameter message (see [parameter_message_full_name])
+  // and return value message (see [return_value_message_full_name]) and all
+  // transitive dependencies. Parameter and return value message are
+  // expected to be defined in the same proto file, else an error will be
+  // returned. This should be the same as
+  // [CodeExecution.file_descriptor_set][intrinsic_proto.executive.CodeExecution.file_descriptor_set].
+  google.protobuf.FileDescriptorSet file_descriptor_set = 5;
+
+  // ID of the world in the world service which holds the world state.
+  string world_id = 6;
+
+  // Kernel scope for the execution request. Requests with different scopes are
+  // guaranteed to be run in different kernels. Requests having the same scope
+  // may be run in the same kernel to improve performance with only a
+  // lightweight reset between requests.
+  //
+  // Callers anticipating a scope transition can call `ResetKernels` in advance
+  // to asynchronously reset kernels and avoid startup latency on the next
+  // request.
+  string scope = 7;
+}
+
+// Contains status information about a running code execution.
+message CodeExecutionMetadata {
+  // Messages emitted to stdout during execution. This would include things like
+  // the output of print() statements.
+  repeated string stdout = 1;
+}
+
+message CodeExecutionResponse {
+  // Return values as an instance of the message type specified by
+  // [CodeExecutionRequest.parameter_message_full_name][intrinsic_proto.executive.CodeExecutionRequest.parameter_message_full_name].
+  google.protobuf.Any return_value = 1;
+}
+
+message StreamExecuteCodeResponseRequest {
+  // Name of the operation to stream responses from.
+  string operation_name = 1;
+}
+
+message StreamExecuteCodeResponseResponse {
+  oneof type {
+    // Stdout message from the code execution.
+    string stdout = 1;
+  }
+}
+
+message ResetKernelsRequest {}
+
+message ResetKernelsResponse {}

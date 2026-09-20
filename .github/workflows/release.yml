@@ -1,0 +1,145 @@
+name: intrinsic-core Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag to create a release for"
+        required: true
+        type: string
+  push:
+    tags:
+      - '*'
+
+jobs:
+  determine-checkout-ref:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      checkout_ref: ${{ steps.checkout_ref.outputs.ref }}
+      prerelease: ${{ steps.checkout_ref.outputs.prerelease }}
+      is_tag: ${{ steps.checkout_ref.outputs.is_tag }}
+      should_run: ${{ steps.checkout_ref.outputs.should_run }}
+    steps:
+      - name: Determine Checkout Ref
+        id: checkout_ref
+        env:
+          # If the trigger was 'workflow_dispatch', use the input tag. Otherwise, use the ref_name from the push.
+          REF: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+          # A manual dispatch is always for a tag. For pushes, we check the ref_type.
+          IS_TAG: ${{ github.event_name == 'workflow_dispatch' || github.ref_type == 'tag' }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          PRERELEASE="false"
+          if [[ "${IS_TAG}" == "true" && "${REF}" == *candidate* ]]; then
+            PRERELEASE="true"
+          fi
+
+          SHOULD_RUN="${IS_TAG}"
+          # Explicitly disable pre-releases in intrinsic-core repository.
+          if [[ "${REPO_NAME}" == "intrinsic-ai/intrinsic-core" && "${PRERELEASE}" == "true" ]]; then
+            SHOULD_RUN="false"
+          fi
+
+          echo "Ref to checkout: \"${REF}\""
+          echo "Is a tag: \"${IS_TAG}\""
+          echo "Is a prerelease: \"${PRERELEASE}\""
+
+          echo "ref=${REF}" >> $GITHUB_OUTPUT 
+          echo "prerelease=${PRERELEASE}" >> $GITHUB_OUTPUT 
+          echo "is_tag=${IS_TAG}" >> $GITHUB_OUTPUT 
+          echo "should_run=${SHOULD_RUN}" >> $GITHUB_OUTPUT
+
+  package-intrinsic-core-srcs:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    needs: determine-checkout-ref
+    if: needs.determine-checkout-ref.outputs.should_run == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ needs.determine-checkout-ref.outputs.checkout_ref }}
+          path: intrinsic-core
+          lfs: true
+      - name: Cleanup
+        working-directory: intrinsic-core
+        run: rm -rf .devcontainer .git .github .vscode .gitignore .gitattributes
+      - name: Package
+        run: tar --create --owner=root --group=root --numeric-owner --directory intrinsic-core --gzip --file intrinsic-core.tar.gz .
+      - name: Save build artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # 7.0.1
+        with:
+          name: sources
+          path: intrinsic-core.tar.gz
+          if-no-files-found: error
+
+  build-intrinsic-core-artifacts:
+    runs-on: ubuntu-24.04-8core
+    permissions:
+      contents: read
+    needs:
+      - package-intrinsic-core-srcs
+      - determine-checkout-ref
+    if: needs.determine-checkout-ref.outputs.should_run == 'true'
+    steps:
+      - name: Download sources
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: sources
+
+      - name: Extract sources
+        run: |
+          mkdir intrinsic-core_build
+          tar --extract --directory intrinsic-core_build --file intrinsic-core.tar.gz
+
+      - name: Build Intrinsic Core Artifacts
+        uses: ./.github/actions/build-intrinsic-core-artifacts
+        with:
+          stamp: "true"
+          checkout-ref: ${{ needs.determine-checkout-ref.outputs.checkout_ref }}
+          working-directory: intrinsic-core_build
+          upload-artifacts: "true"
+          cache-save: "false"
+
+  create-intrinsic-core-release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs:
+      - determine-checkout-ref
+      - package-intrinsic-core-srcs
+      - build-intrinsic-core-artifacts
+    if: needs.determine-checkout-ref.outputs.should_run == 'true'
+    steps:
+      - name: Download sources
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.q
+        with:
+          name: sources
+
+      - name: Download binaries
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.q
+        with:
+          name: intrinsic-core-binaries
+          path: release
+
+      - name: Create GitHub Release
+        if: needs.determine-checkout-ref.outputs.is_tag == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE_ARGS=""
+          if [[ "${{ needs.determine-checkout-ref.outputs.prerelease }}" == "true" ]]; then
+            echo "Marking this release as a pre-release."
+            PRERELEASE_ARGS="--prerelease"
+          fi
+
+          gh release create "${{ needs.determine-checkout-ref.outputs.checkout_ref }}" \
+            --repo ${GITHUB_REPOSITORY} \
+            --title "${{ needs.determine-checkout-ref.outputs.checkout_ref }}" \
+            --draft=false \
+            $PRERELEASE_ARGS \
+            intrinsic-core.tar.gz \
+            release/*

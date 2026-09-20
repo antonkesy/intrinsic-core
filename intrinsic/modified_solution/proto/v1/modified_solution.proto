@@ -1,0 +1,90 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.modified_solution.v1;
+
+import "intrinsic/config/proto/application.proto";
+import "intrinsic/config/proto/data_files.proto";
+import "intrinsic/config/proto/process.proto";
+import "intrinsic/executive/proto/behavior_tree.proto";
+import "intrinsic/resources/proto/resource_type_runtime.proto";
+import "intrinsic/skills/catalog/proto/skill_deployment_data.proto";
+
+option go_package = "intrinsic/modified_solution/proto/v1/modified_solution_go_proto";
+
+// Data that contains modified parts of a solution that are not (yet) released
+// to the catalog.
+message ModifiedSolution {
+  // Unique name of the modified solution. This ensures modified solutions in
+  // content addressable storage (CAS) are always distinct across multiple
+  // solutions. In other words, saving the exact same solution state will create
+  // two objects in CAS. This is important to keep a linear history of modified
+  // solutions regardless of the solution state. Do not rely on the format of
+  // the name.
+  string name = 8;
+
+  // Full application in hot-shared-state at the time of saving. The following
+  // fields are omitted to allow configuration at deploy time:
+  // * `metadata`
+  // * `operation_mode`
+  intrinsic_proto.config.Application application = 11;
+
+  // Representation of a parameterizable behavior tree that is sideloaded to a
+  // solution through the skill registry.
+  message SideloadedParameterizableBehaviorTree {
+    // The entire sideloaded behavior tree. All sideloaded behavior trees have a
+    // description containing skill information for the registry.
+    intrinsic_proto.executive.BehaviorTree behavior_tree = 1;
+  }
+
+  // All PBTs sideloaded to the solution.
+  repeated SideloadedParameterizableBehaviorTree
+      sideloaded_parameterizable_behavior_trees = 1;
+
+  // All runnables of the solution.
+  //
+  // Deprecated: Use `application.process.runnables` instead.
+  map<string, intrinsic_proto.config.Process.Runnable> runnables = 2
+      [deprecated = true];
+
+  // Default runnable of the solution.
+  //
+  // Deprecated: Use `application.process.default_runnable` instead.
+  intrinsic_proto.config.Process.DefaultRunnable default_runnable = 5
+      [deprecated = true];
+
+  // Data files from the solution process.
+  //
+  // Deprecated: Use `application.process.data_files` instead.
+  intrinsic_proto.config.DataFiles process_data_files = 6 [deprecated = true];
+
+  // Skills sideloaded to the solution.
+  repeated intrinsic_proto.catalog.SkillDeploymentData sideloaded_skills = 3
+      [deprecated = true];
+
+  // Skills installed from the catalog.
+  //
+  // Deprecated: Use `application.skills` instead.
+  intrinsic_proto.config.Application.Skills catalog_skills = 9
+      [deprecated = true];
+
+  // Resource types sideloaded to the solution.
+  repeated intrinsic_proto.resources.ResourceTypeRuntime
+      sideloaded_resource_types = 4;
+
+  reserved 7, 10;
+  reserved "product_parts", "products";
+}

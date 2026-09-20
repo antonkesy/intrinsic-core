@@ -1,0 +1,102 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+import "intrinsic/icon/proto/cart_space.proto";
+import "intrinsic/kinematics/types/joint_limits.proto";
+import "intrinsic/world/service/robot_calibration/robot_calibration_data_service.proto";
+
+option go_package = "intrinsic/world/service/robot_calibration/robot_update_service_go_proto";
+
+message RobotKinematicsUpdateRequest {
+  // Specifies the world in which to update the robot kinematics.
+  string world_id = 3;
+
+  // Specifies the robot resource for which the kinematic data should be
+  // updated in the world.
+  string resource_id = 1;
+
+  // If set, this is used to update the robot defined by `resource_id`.
+  // Otherwise the service attempts to fetch the SceneObjectKinematicsUpdate
+  // directly from the hardware module which must implement a
+  // `RobotCalibrationDataService`.
+  optional SceneObjectKinematicsUpdate user_specified_update = 2;
+}
+
+message RobotUpdateResponse {}
+
+message CheckWorldMatchesHardwareKinematicsRequest {
+  // Specifies the world in which to check the robot kinematics.
+  string world_id = 2;
+
+  // Specifies the robot resource for which the kinematic data should be
+  // updated in the world.
+  string resource_id = 1;
+}
+
+message CheckWorldMatchesHardwareKinematicsResponse {
+  bool world_matches_hardware_kinematics = 1;
+}
+
+message UpdateRobotLimitsRequest {
+  // Specifies the world in which to update the robot limits.
+  string world_id = 1;
+
+  // Specifies the robot resource for which the limits should be
+  // updated in the world.
+  string resource_id = 2;
+
+  message LimitsUpdate {
+    intrinsic_proto.JointLimitsUpdate joint_system_limits = 1;
+    intrinsic_proto.JointLimitsUpdate joint_application_limits = 2;
+    icon.CartesianLimits cartesian_limits = 3;
+  }
+
+  message AutoUpdate {
+    // The payload for which the limits are computed. If unset the maximum
+    // payload is used.
+    optional double payload_mass_kg = 1;
+  }
+
+  // Reads the limits from the robot controller and automatically computes
+  // system and application limits. Fails if the HWM does not provide the
+  // LimitProviderService.
+  AutoUpdate from_controller = 4;
+}
+
+message UpdateRobotLimitsResponse {}
+
+// Service used to update the kinematic chain of a robot in the world using
+// kinematics information provided by an asset implementing a
+// RobotCalibrationDataService which is typically a robot hardware module.
+// This service is only available for UR robots.
+service RobotUpdateService {
+  // Updates the robot kinematic information in the world and restarts ICON if
+  // necessary.
+  rpc UpdateRobotKinematics(RobotKinematicsUpdateRequest)
+      returns (RobotUpdateResponse);
+
+  // Checks whether the robot kinematics match the hardware source.
+  rpc CheckWorldMatchesHardwareKinematics(
+      CheckWorldMatchesHardwareKinematicsRequest)
+      returns (CheckWorldMatchesHardwareKinematicsResponse);
+
+  // Update the limits in the world and restarts ICON. Overwrites custom
+  // application limits.
+  rpc UpdateRobotLimits(UpdateRobotLimitsRequest)
+      returns (UpdateRobotLimitsResponse);
+}

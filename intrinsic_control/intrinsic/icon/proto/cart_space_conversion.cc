@@ -1,0 +1,275 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "intrinsic/icon/proto/cart_space_conversion.h"
+
+#include <cstdlib>
+
+#include "Eigen/Geometry"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "intrinsic/eigenmath/types.h"
+#include "intrinsic/icon/proto/cart_space.pb.h"
+#include "intrinsic/icon/proto/eigen_conversion.h"
+#include "intrinsic/math/pose3.h"
+#include "intrinsic/math/twist.h"
+#include "intrinsic/util/status/status_builder.h"
+#include "intrinsic/util/status/status_macros.h"
+
+namespace intrinsic::icon {
+
+namespace {
+template <typename ProtoT, typename CartVectorT>
+ProtoT CartVectorToProto(const CartVectorT& obj) {
+  ProtoT out;
+  out.set_x(obj.x());
+  out.set_y(obj.y());
+  out.set_z(obj.z());
+  out.set_rx(obj.RX());
+  out.set_ry(obj.RY());
+  out.set_rz(obj.RZ());
+  return out;
+}
+
+template <typename ProtoT, typename CartVectorT>
+CartVectorT CartVectorFromProto(const ProtoT& proto) {
+  CartVectorT out;
+  out.x() = proto.x();
+  out.y() = proto.y();
+  out.z() = proto.z();
+  out.RX() = proto.rx();
+  out.RY() = proto.ry();
+  out.RZ() = proto.rz();
+  return out;
+}
+}  // namespace
+
+intrinsic_proto::icon::Twist ToProto(const Twist& twist) {
+  return CartVectorToProto<intrinsic_proto::icon::Twist, Twist>(twist);
+}
+
+Twist FromProto(const intrinsic_proto::icon::Twist& proto) {
+  return CartVectorFromProto<intrinsic_proto::icon::Twist, Twist>(proto);
+}
+
+intrinsic_proto::icon::Acceleration ToProto(const Acceleration& acc) {
+  return CartVectorToProto<intrinsic_proto::icon::Acceleration, Acceleration>(
+      acc);
+}
+
+Acceleration FromProto(const intrinsic_proto::icon::Acceleration& proto) {
+  return CartVectorFromProto<intrinsic_proto::icon::Acceleration, Acceleration>(
+      proto);
+}
+
+intrinsic_proto::icon::Wrench ToProto(const Wrench& wrench) {
+  return CartVectorToProto<intrinsic_proto::icon::Wrench, Wrench>(wrench);
+}
+
+Wrench FromProto(const intrinsic_proto::icon::Wrench& proto) {
+  return CartVectorFromProto<intrinsic_proto::icon::Wrench, Wrench>(proto);
+}
+
+
+void ToPoseVector(const Pose3d& pose, intrinsic_proto::icon::CartState* dst) {
+  dst->mutable_pose()->Resize(7, 0);
+  // Storage order is defined in intrinsic/icon/proto/cart_space.proto
+  dst->set_pose(0, pose.translation().x());
+  dst->set_pose(1, pose.translation().y());
+  dst->set_pose(2, pose.translation().z());
+  dst->set_pose(3, pose.quaternion().x());
+  dst->set_pose(4, pose.quaternion().y());
+  dst->set_pose(5, pose.quaternion().z());
+  dst->set_pose(6, pose.quaternion().w());
+}
+
+intrinsic_proto::icon::CartState ToProto(const CartStatePV& cart_state) {
+  intrinsic_proto::icon::CartState proto;
+  ToPoseVector(cart_state.pose, &proto);
+  *proto.mutable_velocity() = {cart_state.velocity.begin(),
+                               cart_state.velocity.end()};
+  return proto;
+}
+
+intrinsic_proto::icon::CartState ToProto(const CartStatePVA& cart_state) {
+  intrinsic_proto::icon::CartState proto;
+  ToPoseVector(cart_state.pose, &proto);
+  *proto.mutable_velocity() = {cart_state.velocity.begin(),
+                               cart_state.velocity.end()};
+  *proto.mutable_acceleration() = {cart_state.acceleration.begin(),
+                                   cart_state.acceleration.end()};
+  return proto;
+}
+
+absl::Status FromProto(const intrinsic_proto::icon::CartState& proto,
+                       CartStatePV& cart_state, bool ignore_missing_fields) {
+  if (!ignore_missing_fields || proto.pose_size() > 0) {
+    if (proto.pose_size() != 7) {
+      return absl::InvalidArgumentError(
+          "intrinsic_proto::icon::CartState::pose must be a 7 vector (3 "
+          "translation, "
+          "4 "
+          "rotation).");
+    }
+    cart_state.pose.translation().x() = proto.pose(0);
+    cart_state.pose.translation().y() = proto.pose(1);
+    cart_state.pose.translation().z() = proto.pose(2);
+    eigenmath::Quaterniond q;
+    q.x() = proto.pose(3);
+    q.y() = proto.pose(4);
+    q.z() = proto.pose(5);
+    q.w() = proto.pose(6);
+    // We expect roughly normalized input so we can detect wrong storage order
+    // input and disallow invalid quaternions (i.e. 0 0 0 0).
+    if (q.squaredNorm() < 0.9 || q.squaredNorm() > 1.1) {
+      return ::intrinsic::InvalidArgumentErrorBuilder()
+             << "intrinsic_proto::icon::CartState::pose[3:6] must be a roughly "
+                "normalized quaternion in storage order x/y/z/w. q: "
+             << q.coeffs().transpose();
+    }
+    cart_state.pose.setQuaternion(q.normalized());
+  }
+  if (!ignore_missing_fields || proto.velocity_size() > 0) {
+    if (proto.velocity_size() != 6) {
+      return absl::InvalidArgumentError(
+          "intrinsic_proto::icon::CartState::velocity must be a 6 vector");
+    }
+    cart_state.velocity = Eigen::Map<const eigenmath::Vector6d>(
+        proto.velocity().data(), proto.velocity().size());
+  }
+  return absl::OkStatus();
+}
+
+absl::Status FromProto(const intrinsic_proto::icon::CartState& proto,
+                       CartStatePVA& cart_state) {
+  INTR_RETURN_IF_ERROR(FromProto(proto, static_cast<CartStatePV&>(cart_state)));
+  if (proto.acceleration_size() != 6) {
+    return absl::InvalidArgumentError(
+        "intrinsic_proto::icon::CartState::acceleration must be a 6 vector");
+  }
+  cart_state.acceleration = Eigen::Map<const eigenmath::Vector6d>(
+      proto.acceleration().data(), proto.acceleration().size());
+  return absl::OkStatus();
+}
+
+
+
+intrinsic_proto::icon::CartesianLimits ToProto(const CartesianLimits& limits) {
+  intrinsic_proto::icon::CartesianLimits out;
+  Vector3dToRepeatedDouble(limits.min_translational_position,
+                           out.mutable_min_translational_position());
+  Vector3dToRepeatedDouble(limits.max_translational_position,
+                           out.mutable_max_translational_position());
+  Vector3dToRepeatedDouble(limits.min_translational_velocity,
+                           out.mutable_min_translational_velocity());
+  Vector3dToRepeatedDouble(limits.max_translational_velocity,
+                           out.mutable_max_translational_velocity());
+  Vector3dToRepeatedDouble(limits.min_translational_acceleration,
+                           out.mutable_min_translational_acceleration());
+  Vector3dToRepeatedDouble(limits.max_translational_acceleration,
+                           out.mutable_max_translational_acceleration());
+  Vector3dToRepeatedDouble(limits.min_translational_jerk,
+                           out.mutable_min_translational_jerk());
+  Vector3dToRepeatedDouble(limits.max_translational_jerk,
+                           out.mutable_max_translational_jerk());
+  out.set_max_rotational_velocity(limits.max_rotational_velocity);
+  out.set_max_rotational_acceleration(limits.max_rotational_acceleration);
+  out.set_max_rotational_jerk(limits.max_rotational_jerk);
+  return out;
+}
+
+absl::StatusOr<CartesianLimits> FromProto(
+    const intrinsic_proto::icon::CartesianLimits& proto) {
+  CartesianLimits out;
+  INTR_ASSIGN_OR_RETURN(
+      out.min_translational_position,
+      RepeatedDoubleToVector3d(proto.min_translational_position()),
+      _ << "while reading min_translation_position from CartesianLimits proto");
+  INTR_ASSIGN_OR_RETURN(
+      out.max_translational_position,
+      RepeatedDoubleToVector3d(proto.max_translational_position()),
+      _ << "while reading max_translation_position from CartesianLimits proto");
+  INTR_ASSIGN_OR_RETURN(
+      out.min_translational_velocity,
+      RepeatedDoubleToVector3d(proto.min_translational_velocity()),
+      _ << "while reading min_translation_velocity from CartesianLimits proto");
+  INTR_ASSIGN_OR_RETURN(
+      out.max_translational_velocity,
+      RepeatedDoubleToVector3d(proto.max_translational_velocity()),
+      _ << "while reading max_translation_velocity from CartesianLimits proto");
+  INTR_ASSIGN_OR_RETURN(
+      out.min_translational_acceleration,
+      RepeatedDoubleToVector3d(proto.min_translational_acceleration()),
+      _ << "while reading min_translation_acceleration from CartesianLimits "
+           "proto");
+  INTR_ASSIGN_OR_RETURN(
+      out.max_translational_acceleration,
+      RepeatedDoubleToVector3d(proto.max_translational_acceleration()),
+      _ << "while reading max_translation_acceleration from CartesianLimits "
+           "proto");
+  INTR_ASSIGN_OR_RETURN(
+      out.min_translational_jerk,
+      RepeatedDoubleToVector3d(proto.min_translational_jerk()),
+      _ << "while reading min_translation_jerk from CartesianLimits proto");
+  INTR_ASSIGN_OR_RETURN(
+      out.max_translational_jerk,
+      RepeatedDoubleToVector3d(proto.max_translational_jerk()),
+      _ << "while reading max_translation_jerk from CartesianLimits proto");
+  out.max_rotational_velocity = proto.max_rotational_velocity();
+  out.max_rotational_acceleration = proto.max_rotational_acceleration();
+  out.max_rotational_jerk = proto.max_rotational_jerk();
+  if (!out.IsValid()) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Cartesian limits are invalid: ", proto));
+  }
+  return out;
+}
+
+intrinsic_proto::icon::Transform ToProto(const Pose3d& pose) {
+  intrinsic_proto::icon::Transform out;
+  intrinsic_proto::icon::Point pos;
+  pos.set_x(pose.translation().x());
+  pos.set_y(pose.translation().y());
+  pos.set_z(pose.translation().z());
+
+  intrinsic_proto::icon::Rotation rot;
+  rot.set_qx(pose.quaternion().x());
+  rot.set_qy(pose.quaternion().y());
+  rot.set_qz(pose.quaternion().z());
+  rot.set_qw(pose.quaternion().w());
+
+  *out.mutable_pos() = pos;
+  *out.mutable_rot() = rot;
+  return out;
+}
+
+absl::StatusOr<Pose3d> FromProto(
+    const intrinsic_proto::icon::Transform& proto) {
+  eigenmath::Quaterniond quat{proto.rot().qw(), proto.rot().qx(),
+                              proto.rot().qy(), proto.rot().qz()};
+  if (std::abs(quat.squaredNorm() - 1.0f) >=
+      Eigen::NumTraits<double>::dummy_precision()) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Cannot deserialize control::Transform: quaternion is not "
+                     "normalized; proto=",
+                     proto));
+  }
+  return Pose3d(
+      quat,
+      eigenmath::Vector3d{proto.pos().x(), proto.pos().y(), proto.pos().z()},
+      eigenmath::kDoNotNormalize);
+}
+
+}  // namespace intrinsic::icon

@@ -1,0 +1,505 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Base classes for everything provided by skill and resource providers."""
+
+from __future__ import annotations
+
+import abc
+import enum
+from typing import Any
+from typing import Dict
+from typing import ItemsView
+from typing import Iterator
+from typing import KeysView
+from typing import List
+from typing import Set
+from typing import Type
+from typing import Union
+from typing import ValuesView
+
+from google.protobuf import any_pb2
+from google.protobuf import descriptor
+from google.protobuf import descriptor_pb2
+from google.protobuf import message
+from google.protobuf import struct_pb2
+
+from intrinsic.resources.proto import resource_handle_pb2
+from intrinsic.scene.proto.v1 import scene_object_pb2
+from intrinsic.skills.proto import equipment_pb2
+from intrinsic.solutions import blackboard_value
+from intrinsic.solutions import cel
+from intrinsic.solutions import utils
+from intrinsic.solutions.internal import actions
+
+# Union of types that can be used to set a skill parameter dynamically from the
+# blackboard. This type alias is useful to keep the signatures of skill and
+# message wrapper classes concise.
+ParamAssignment = Union[blackboard_value.BlackboardValue, cel.CelExpression]
+
+
+class ResourceHandle:
+  """Lightweight wrapper for ResourceHandle proto.
+
+  A resource handle describes a resource in the solution with which a skill can
+  be executed, e.g., a robot. It consists of a name and capabilities. A skill
+  defines the required capabilities via selectors. A matching resource's
+  capabilities must be a superset of the required capabilities.
+  """
+
+  _proto: resource_handle_pb2.ResourceHandle
+
+  def __init__(self, proto: resource_handle_pb2.ResourceHandle):
+    """Constructs a ResourceHandle.
+
+    Args:
+      proto: ResourceHandle proto to wrap.
+    """
+    self._proto = proto
+
+  @classmethod
+  def create(cls, name: str, capabilities: list[str]) -> "ResourceHandle":
+    """Creates a new ResourceHandle.
+
+    Args:
+      name: Name of the resource.
+      capabilities: Capabilities of the resources.
+
+    Returns:
+      Resource handle initialized according to the given arguments.
+    """
+    proto = resource_handle_pb2.ResourceHandle(name=name)
+    for c in capabilities:
+      proto.resource_data[c].CopyFrom(
+          resource_handle_pb2.ResourceHandle.ResourceData()
+      )
+    return ResourceHandle(proto)
+
+  @property
+  def name(self) -> str:
+    return self._proto.name
+
+  @property
+  def types(self) -> list[str]:
+    return list(self._proto.resource_data.keys())
+
+  @property
+  def proto(self) -> resource_handle_pb2.ResourceHandle:
+    return self._proto
+
+  def __repr__(self) -> str:
+    types_str = ", ".join(['"%s"' % t for t in sorted(self.types)])
+    return f'ResourceHandle.create(name="{self.name}", types=[{types_str}])'
+
+
+class ResourceList(abc.ABC):
+  """A dict-like container for resource handles."""
+
+  @abc.abstractmethod
+  def append(self, handle: ResourceHandle) -> None:
+    """Appends the given resource handle to this list.
+
+    If the name of the given handle is not a valid Python identifier, it will be
+    stored under it's real name and a simplified name which is a valid Pyhon
+    identifier.
+
+    Args:
+      handle: The resource handle to append.
+    """
+    ...
+
+  @abc.abstractmethod
+  def __getitem__(self, name: str) -> ResourceHandle:
+    """Returns the resource handle for the given name."""
+    ...
+
+  @abc.abstractmethod
+  def __setitem__(self, name: str, handle: ResourceHandle) -> None:
+    """Sets the resource handle for the given name."""
+    ...
+
+  @abc.abstractmethod
+  def __getattr__(self, name: str) -> ResourceHandle:
+    """Returns the resource handle for the given name."""
+    ...
+
+  @abc.abstractmethod
+  def __dir__(self) -> list[str]:
+    """Returns the names of the stored resource handles in sorted order.
+
+    Only returns names which are valid Python identifiers.
+    """
+    ...
+
+  @abc.abstractmethod
+  def __len__(self) -> int:
+    """Returns the number of stored resource handles.
+
+    Only counts resource handles whose names are valid Python identifiers.
+    """
+    ...
+
+  @abc.abstractmethod
+  def __iter__(self) -> Iterator[ResourceHandle]:
+    """Returns an iterator to the stored resource handles.
+
+    The iterator only returns resource handles whose names are valid Python
+    identifiers.
+    """
+    ...
+
+  @abc.abstractmethod
+  def __str__(self) -> str:
+    ...
+
+
+class SkillType(enum.Enum):
+  """Classifies different types of skills."""
+
+  # A regular skill installed as a Skill asset.
+  REGULAR_SKILL = 0
+
+  # A process installed as a Process asset.
+  PROCESS = 1
+
+
+class SkillInfo(abc.ABC):
+  """Containes information about a Skill.
+
+  Attributes:
+    id: Skill ID (e.g. 'ai.intrinsic.move_robot').
+    id_version: Skill ID and version (e.g. 'ai.intrinsic.move_robot.1.2.1').
+    skill_name: Skill name (e.g. 'move_robot').
+    package_name: Skill package name (e.g. 'ai.intrinsic').
+    description: Skill description (e.g. 'This skill moves a robot').
+    skill_type: Skill type (regular skill or process, see SkillType).
+    type_url_area: Area to be used in Intrinsic type URLs for this skill.
+    parameter_message_full_name: Full name of the skill's parameter message.
+      Empty if the skill does not have a parameter message.
+    return_value_message_full_name: Full name of the skill's return value
+      message. Empty if the skill does not have a return value message.
+    file_descriptor_set: File descriptor set containing all dependencies of the
+      skill's parameter and return value message.
+    default_params: Default value for the skill parameters or None if the skill
+      does not provide a default value proto.
+    resource_selectors: Resource selectors for the skill.
+    field_names: names of top-level fields in parameter proto.
+    message_classes: mapping from type names to default messages for that type.
+  """
+
+  @property
+  @abc.abstractmethod
+  def id(self) -> str:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def id_version(self) -> str:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def skill_name(self) -> str:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def package_name(self) -> str:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def description(self) -> str:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def skill_type(self) -> SkillType:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def type_url_area(self) -> str:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def parameter_message_full_name(self) -> str:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def return_value_message_full_name(self) -> str:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def file_descriptor_set(self) -> descriptor_pb2.FileDescriptorSet:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def default_params(self) -> any_pb2.Any | None:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def resource_selectors(self) -> dict[str, equipment_pb2.ResourceSelector]:
+    ...
+
+  @abc.abstractmethod
+  def create_param_message(self) -> message.Message:
+    ...
+
+  @abc.abstractmethod
+  def create_result_message(self) -> message.Message:
+    ...
+
+  @abc.abstractmethod
+  def get_result_message_type(self) -> Type[message.Message]:
+    ...
+
+  @abc.abstractmethod
+  def parameter_descriptor(self) -> descriptor.Descriptor:
+    ...
+
+  @abc.abstractmethod
+  def return_value_descriptor(self) -> descriptor.Descriptor:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def field_names(self) -> Set[str]:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def message_classes(self) -> Dict[str, Type[message.Message]]:
+    ...
+
+  @abc.abstractmethod
+  def get_message_class(self, msg_descriptor: descriptor.Descriptor):
+    ...
+
+  @abc.abstractmethod
+  def get_proto_comment(self, full_name: str) -> str:
+    """Returns the comment associated with the given name.
+
+    Returns the comment associated with the given name in the skill's file
+    descriptor set (parameter and return value file descriptor set combined) as
+    a multi-line string ending with '\n'. Returns an empty string if the name is
+    invalid or if there was no associated comment in the original .proto file.
+
+    E.g., if the original .proto file had the following contents:
+
+    ```
+    package my_package;
+
+    // Message comment
+    message MyMessage {
+
+      // Leading comment 1
+      // Leading comment 2
+      string my_string = 1; // Trailing comment
+
+      bool my_bool = 2;
+    }
+    ```
+
+    Then:
+
+    - get_proto_comment('my_package.MyMessage') -> 'Message comment\n'
+    - get_proto_comment('my_package.MyMessage.my_string') ->
+        'Leading comment 1\nLeading comment 2\nTrailing comment\n'
+    - get_proto_comment('my_package.MyMessage.my_bool') -> ''
+    - get_proto_comment('non_existing.Name') -> ''
+    """
+
+
+class SkillCompatibleResourcesMap:
+  """Map from resource slot name to resources list.
+
+  Used for convenient auto-completion.
+  """
+
+  _resources: dict[str, ResourceList]
+
+  def __init__(self, resources: dict[str, ResourceList]):
+    self._resources = resources
+
+  def __dir__(self) -> List[str]:
+    return [str(k) for k in self._resources.keys()]
+
+  def __contains__(self, resource_slot: str) -> bool:
+    return resource_slot in self._resources
+
+  def __getitem__(self, resource_slot: str) -> ResourceList:
+    if resource_slot not in self._resources:
+      raise KeyError(f"Resource {resource_slot} not compatible or unknown")
+    return self._resources[resource_slot]
+
+  def __getattr__(self, resource_slot: str) -> ResourceList:
+    if resource_slot not in self._resources:
+      raise AttributeError(
+          f"Resource {resource_slot} not compatible or unknown"
+      )
+    return self._resources[resource_slot]
+
+  def __iter__(self) -> Iterator[str]:
+    return iter(self._resources)
+
+  def keys(self) -> KeysView[str]:
+    return self._resources.keys()
+
+  def values(self) -> ValuesView[ResourceList]:
+    return self._resources.values()
+
+  def items(self) -> ItemsView[str, ResourceList]:
+    return self._resources.items()
+
+
+class SkillBase(actions.ActionBase):
+  """Base class for skills provided by SkillProvider below."""
+
+  @property
+  @abc.abstractmethod
+  def result_key(self) -> str:
+    """Returns the key with which the result can be accessed on the blackboard.
+
+    Returns:
+      Result key on blackboard.
+    """
+    ...
+
+  @abc.abstractmethod
+  def __repr__(self) -> str:
+    """Converts SkillBase to Python (pseudocode) representation."""
+    ...
+
+  @utils.classproperty
+  @abc.abstractmethod
+  def info(cls) -> SkillInfo:  # pylint:disable=no-self-argument
+    """Get skill metadata information.
+
+    Returns:
+      SkillInfo object associated with this skill.
+    """
+    # @classproperty requires an error-free default implementation.
+    return None
+
+  @utils.classproperty
+  @abc.abstractmethod
+  def skill_info(cls) -> SkillInfo:  # pylint:disable=no-self-argument
+    """Get skill metadata information.
+
+    Returns:
+      SkillInfo object associated with this skill.
+    """
+    # @classproperty requires an error-free default implementation.
+    return None
+
+  @utils.classproperty
+  @abc.abstractmethod
+  def compatible_resources(cls) -> SkillCompatibleResourcesMap:  # pylint:disable=no-self-argument
+    """Access resources compatible with this skill.
+
+    Keys in the returned map are the same as the parameters to the constructor.
+
+    Returns:
+      Map from resource slot name to resource list.
+    """
+    # @classproperty requires an error-free default implementation.
+    return SkillCompatibleResourcesMap({})
+
+  @utils.classproperty
+  @abc.abstractmethod
+  def message_classes(cls) -> Dict[str, Type[message.Message]]:  # pylint:disable=no-self-argument
+    """Exposes available message classes for this skill.
+
+    This dictionary contains a mapping of type names to the message classes
+    bases on the hermetic descriptor pool for this skill.
+
+    Returns:
+      A dictionary mapping proto names to the message classes.
+    """
+    # @classproperty requires an error-free default implementation.
+    return {}
+
+
+class SkillPackage(abc.ABC):
+  """A container that provides access a skill package.
+
+  A skill package may contain skills as well as further child skill packages.
+  E.g.:
+    - The SkillPackage for 'foo' will contain the skill 'foo_skill' if the
+      skill 'foo.foo_skill' is available in the solution."
+    - The SkillPackage for 'foo' will contain the child skill package 'bar' if
+      the skill 'foo.bar.bar_skill' is available in the solution.
+  """
+
+  @property
+  @abc.abstractmethod
+  def package_name(self) -> str:
+    """Returns the full name of the skill package (e.g. 'ai.intrinsic')."""
+    ...
+
+  @property
+  @abc.abstractmethod
+  def relative_package_name(self) -> str:
+    """Returns the name of the skill package relative to its parent package.
+
+    For example, the package with the full package name
+    "ai.intrinsic.experimental" would return "experimental".
+    """
+    ...
+
+  # We would like to use Type[SkillBase] instead, but Python then checks
+  # the constructor parameters explicitly against SkillBase, which we don't
+  # want and which is rather odd. Therefore, just state that it's a type.
+  @abc.abstractmethod
+  def __getattr__(self, name: str) -> Union[Type[Any], SkillPackage]:
+    """Returns the skill class or child skill package with the given name."""
+    ...
+
+  @abc.abstractmethod
+  def __dir__(self) -> list[str]:
+    """Returns the list of available skill classes or child skill packages."""
+    ...
+
+
+class Product(abc.ABC):
+  """An abstract interface for a Product.
+
+  A Product is a named entity composed from a SceneObject and some metadata.
+
+  Attributes:
+    name: The name of the product.
+    scene_object: The SceneObject describing the geometry of the product.
+    metadata: The metadata associated with the product.
+  """
+
+  @property
+  @abc.abstractmethod
+  def name(self) -> str:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def scene_object(self) -> scene_object_pb2.SceneObject:
+    ...
+
+  @property
+  @abc.abstractmethod
+  def metadata(self) -> struct_pb2.Struct:
+    ...

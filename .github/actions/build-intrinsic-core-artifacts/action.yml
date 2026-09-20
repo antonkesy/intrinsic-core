@@ -1,0 +1,74 @@
+name: "Build Intrinsic Core Artifacts"
+description: "Builds intrinsic-core binaries and packages release artifacts using Bazel"
+
+inputs:
+  stamp:
+    description: "Whether to stamp the build"
+    required: false
+    default: "false"
+  checkout-ref:
+    description: "The git ref or candidate name to stamp the build with"
+    required: false
+    default: ""
+  working-directory:
+    description: "The directory containing the source code to build"
+    required: false
+    default: "."
+  upload-artifacts:
+    description: "Whether to upload the build artifacts using actions/upload-artifact"
+    required: false
+    default: "true"
+  cache-save:
+    description: "Whether to save caches at the end of the workflow"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: bazel-contrib/setup-bazel@0.14.0
+      with:
+        # Avoid downloading Bazel every time.
+        bazelisk-cache: true
+        # Store build cache under a shared key across workflows.
+        disk-cache: intrinsic-core-build
+        # Cache external/ repositories
+        external-cache: true
+        # Share repository cache between workflows.
+        repository-cache: true
+        # Controls whether caches are saved back to GitHub cache at the end.
+        cache-save: ${{ inputs.cache-save }}
+
+    - name: Stamp Build
+      if: inputs.stamp == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        CANDIDATE_NAME="${{ inputs.checkout-ref }}"
+        echo "build --stamp" >> .bazelrc
+        echo "build --workspace_status_command=\"echo STABLE_INTRINSIC_CORE_VERSION ${CANDIDATE_NAME}\"" >> .bazelrc
+
+    - name: Build binaries
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # https://github.com/bazel-contrib/rules_kotlin/issues/1352
+        unset -v ANDROID_HOME ANDROID_SDK_HOME
+        bazel build \
+          //intrinsic_runtime:intrinsic_base \
+          //intrinsic/tools/inctl:inctl_external
+
+        if [[ "${{ inputs.upload-artifacts }}" == "true" ]]; then
+          mkdir -p release
+          cp "$(bazel cquery --output=files //intrinsic_runtime:intrinsic_base)" release/intrinsic-base-linux-amd64.tar
+          cp "$(bazel cquery --output=files //intrinsic/tools/inctl:inctl_external)" release/inctl-linux-amd64
+          ls -la release
+        fi
+
+    - name: Save build artifacts
+      if: inputs.upload-artifacts == 'true'
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # 7.0.1
+      with:
+        name: intrinsic-core-binaries
+        path: ${{ inputs.working-directory }}/release/*
+        if-no-files-found: error

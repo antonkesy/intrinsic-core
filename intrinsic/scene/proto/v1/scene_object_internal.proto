@@ -1,0 +1,258 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.scene_object.v1;
+
+import "google/longrunning/operations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "intrinsic/assets/proto/asset_deployment.proto";
+import "intrinsic/assets/proto/id.proto";
+import "intrinsic/assets/scene_objects/proto/scene_object_manifest.proto";
+import "intrinsic/geometry/proto/v1/material.proto";
+import "intrinsic/math/proto/quaternion.proto";
+import "intrinsic/math/proto/vector3.proto";
+import "intrinsic/scene/proto/v1/geometry_stats.proto";
+import "intrinsic/scene/proto/v1/imported_scene.proto";
+import "intrinsic/scene/proto/v1/scene_object_config.proto";
+import "intrinsic/scene/proto/v1/scene_object_import.proto";
+import "intrinsic/scene/proto/v1/export.proto";
+
+option go_package = "intrinsic/scene/proto/v1/scene_object_internal_go_proto";
+
+// SceneObjectInternal provides APIs to handle conversion between SceneObject
+// proto and other open source formats like SDF.
+service SceneObjectInternal {
+  // Imports a scene file as a SceneObject. Converts scene data packed in
+  // ImportSceneRequest and returns a longrunning.Operation with:
+  //   metadata of type ImportSceneStatus (progress information, etc.)
+  //   response of type ImportSceneResult (resulting scene object)
+  // Processing errors are reported through the longrunning.Operation.error
+  // field.
+  rpc ImportScene(ImportSceneRequest) returns (google.longrunning.Operation) {}
+
+  // Instantiates an imported scene by installing SceneObjects as asset types.
+  // Then instantiate resource instances from instances of scene objects.
+  // See intrinsic/kubernetes/workcell_spec/proto/installer.proto for
+  // installing resources. See intrinsic/assets/proto/asset_deployment.proto
+  // for instantiating resources.
+  // Returns a longrunning.Operation with:
+  //   metadata of type InstantiateImportedSceneStatus (progress information,
+  //     created assets and created resources)
+  //   response of type InstantiateImportedSceneResponse (All created assets and
+  //     resources)
+  // Processing errors are reported through the longrunning.Operation.error
+  // field.
+  rpc InstantiateImportedScene(InstantiateImportedSceneRequest)
+      returns (google.longrunning.Operation) {}
+
+  // Exports a SceneObject as a zip archive in the specified format.
+  rpc Export(ExportRequest) returns (ExportResponse) {}
+}
+
+// Request field for ImportScene.
+message ImportSceneRequest {
+  // Source data to be imported.
+  oneof to_be_imported {
+    intrinsic_proto.scene_object.v1.SceneFileData scene_file_data = 1;
+    // A token returned from a previous ImportSceneRequest. Use this token to
+    // skip the file parsing step and avoid transferring a large file again.
+    string file_token = 4;
+  }
+
+  // An optional generic proto with user-specific custom data attached to the
+  // geometry processing operation. The proto will be returned to the caller in
+  // the ImportSceneStatus message.
+  google.protobuf.Any custom_data = 2;
+
+  ImportSceneConfig import_config = 3;
+}
+
+// Metadata field (returned in google.longrunning.Operation):
+message ImportSceneStatus {
+  // Progress indicator of the processing between [0, 1]. Not all processing
+  // pipelines provide this information
+  optional double progress = 1;
+
+  // Optional custom data attached by the caller when requesting convert from
+  // file.
+  google.protobuf.Any custom_data = 2;
+
+  // Timestamp when this import was requested.
+  google.protobuf.Timestamp create_time = 3;
+}
+
+// Response field for SceneObjectConversionService.ImportScene (returned
+// in google.longrunning.Operation)
+message ImportSceneResult {
+  oneof result {
+    // A imported scene that contains all imported scene objects and information
+    // to instantiate them into the original scene file.
+    intrinsic_proto.scene_object.v1.ImportedScene scene = 1;
+  }
+
+  ImportResultMetadata result_metadata = 2;
+}
+
+// Configurations for a ImportScene operation.
+// Next tag: 10
+message ImportSceneConfig {
+  // TODO(b/325530374: Support import configurations equivalent to
+  // WorldImportConfig.
+  // Applies length unit conversion on imported geometry. Only supported in
+  // single mesh import for file types that are unit less.
+  intrinsic_proto.scene_object.v1.LengthUnitConversion length_unit_conversion =
+      1;
+
+  // Geometry operations to apply to the imported geometry.
+  intrinsic_proto.scene_object.v1.GeometryOperations geometry_operations = 2;
+
+  // Transforms imported scene.
+  TransformScene transform_scene = 3;
+
+  // Preferred imported scene structure. Only used for CAD file imports.
+  intrinsic_proto.scene_object.v1.ImportStructure import_structure = 4;
+
+  // If present, the display_name is used to create scene object instance ids
+  // in the import result instead of the original file name
+  optional string display_name = 5;
+
+  // Geometry import resolution for non mesh geometry types.
+  intrinsic_proto.scene_object.v1.GeometryImportResolution
+      geometry_import_resolution = 6;
+
+  // Material properties to apply to all imported geometries.
+  intrinsic_proto.geometry.v1.MaterialProperties material_properties = 7;
+
+  // If present, the imported SceneObject(s) will be named by this name.
+  optional string scene_object_name = 8;
+
+  // Optional user data to associate with the imported scene object(s).
+  map<string, google.protobuf.Any> user_data = 9;
+}
+
+message TransformScene {
+  // Scale applied to each scene object in the scene and relative poses between
+  // scene objects. Non-uniform scaling is only supported for scaling pure link
+  // and frame objects without rotation.
+  intrinsic_proto.Vector3 scale = 1;
+
+  // Rotation to apply to the imported scene so that the entire scene is
+  // effectively rotated. The rotation is first applied to each scene object
+  // after scaling. Then adjustment to reparent updates are applied to achieve
+  // the overall goal of applying rotation on the scene.
+  intrinsic_proto.Quaternion rotation = 2;
+
+  // Translation to apply to the imported scene so that the entire scene is
+  // effectively translated. The translation is first applied to each scene
+  // object after scaling and rotating.
+  intrinsic_proto.Vector3 translation = 3;
+}
+
+// Metadata field that describes the result of a world import or scene object
+// import result.
+message ImportResultMetadata {
+  // Summary stats of the imported geometry. Use these key stats provided to
+  // validate the imported geometry and evaluate imported geometry quality.
+  repeated GeometryStats geometry_summary_stats = 1;
+
+  // A token uniquely identifying the file that was imported. Use this token to
+  // skip the file parsing step and avoid transferring a large file again.
+  optional string file_token = 2;
+
+  // Map from the scene object name to the visual meshstats aggregated over
+  // all links.
+  map<string, GeometryStats> scene_object_to_visual_stats = 3;
+  // Map from the scene object name to the collision mesh stats aggregated over
+  // all links.
+  map<string, GeometryStats> scene_object_to_collision_stats = 4;
+}
+
+message InstantiateImportedSceneRequest {
+  oneof scene {
+    intrinsic_proto.scene_object.v1.ImportedScene imported_scene = 1;
+  }
+
+  // An optional generic proto with user-specific custom data attached to the
+  // instantiate imported scene operation. The proto will be returned to the
+  // caller in the InstantiateImportedSceneStatus message.
+  google.protobuf.Any custom_data = 2;
+
+  // Configurations for the instantiate imported scene request.
+  InstantiateImportedSceneConfig config = 3;
+
+  // The world ID of the world in which we will instantiate these scene objects.
+  string world_id = 4;
+}
+
+message InstantiateImportedSceneConfig {
+  // A template used to sideload imported scene objects.
+  // Only metadata.id.name will be replaced by an unique identifier generated
+  // during the import process.
+  intrinsic_proto.scene_objects.SceneObjectMetadata metadata = 1;
+
+  // The default scene object config for creating scene object InstalledAssets.
+  intrinsic_proto.scene_object.v1.SceneObjectConfig scene_object_config = 3;
+
+  // The names of existing resource instances to avoid when instantiating
+  // new resource instances.
+  repeated string existing_resource_instance_names = 2;
+}
+
+// Metadata field (returned in google.longrunning.Operation):
+message InstantiateImportedSceneStatus {
+  // Progress indicator of the training job between [0, 1]. Not all training
+  // jobs provide this information.
+  optional float progress = 1;
+
+  // Custom data attached by the caller during InstantiateImportedSceneRequest.
+  optional google.protobuf.Any custom_data = 2;
+
+  // Timestamp when this job was submitted for training.
+  google.protobuf.Timestamp create_time = 3;
+
+  // The assets that are installed in the solution so far.
+  InstalledAssets installed_assets = 4;
+
+  // The resource instances that are created so far.
+  CreatedInstances created_instances = 5;
+}
+
+message InstantiateImportedSceneResponse {
+  // The assets that are installed in the solution for the request.
+  InstalledAssets installed_assets = 1;
+
+  // The instances that are created from the installed assets for the request.
+  CreatedInstances created_instances = 2;
+}
+
+// Installed assets requested by InstantiateImportedSceneRequest.
+message InstalledAssets {
+  // A mapping between original scene object ids in ImportedSceneObjects to
+  // their respective asset Id.
+  map<string, intrinsic_proto.assets.Id> scene_object_id_to_installed_asset = 2;
+
+  reserved 1;
+  reserved "scene_object_id_to_installed_resource";
+}
+
+// Instantiated instances requested by InstantiateImportedSceneRequest.
+message CreatedInstances {
+  // A mapping between original scene object instance ids in
+  // ImportedSceneObjectInstances to their respective installed response.
+  map<string, intrinsic_proto.assets.CreateResourceFromCatalogResponse>
+      scene_object_instance_id_to_created_resource_instance = 1;
+}

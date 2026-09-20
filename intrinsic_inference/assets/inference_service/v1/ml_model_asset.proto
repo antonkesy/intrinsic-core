@@ -1,0 +1,36 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.ml.inference_service.v1;
+
+import "intrinsic_inference/core/v1/ml_model.proto";
+import "intrinsic/assets/data/proto/v1/referenced_data.proto";
+
+// Describes a MlModel data asset consisting of the general MlModel proto
+// and the Flowstate/IOC specific ReferencedData field. This enables the
+// referenced_data to be discovered and data to be handled by the data
+// asset infrastructure.
+message MlModelAsset {
+  // MlModel field containing deployment information and the mapping of
+  // data references to files in the deployment.
+  inference.v1.MlModel ml_model = 1;
+
+  // Referenced data entries. Setting this field means data is managed
+  // by the Flowstate platform. In this case, the MlModel.MlModeData
+  // references should use the file:// identifier as it can be assumed
+  // the data is available in the file system.
+  map<string, intrinsic_proto.data.v1.ReferencedData> referenced_data = 2;
+}

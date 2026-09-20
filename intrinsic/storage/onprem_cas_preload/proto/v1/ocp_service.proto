@@ -1,0 +1,109 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.onprem_cas_preload.v1;
+
+import "google/longrunning/operations.proto";
+import "intrinsic/storage/onprem_cas_preload/proto/v1/preload_set.proto";
+
+option go_package = "intrinsic/storage/onprem_cas_preload/proto/v1/ocp_service_go_proto";
+
+service OnpremCASPreloadService {
+  // Create or atomically update a preload set for preloading, see
+  // `UpsertPreloadSetRequest` for a more detailed description of the request
+  // parameters.
+  //
+  // OnpremCASPreloadService will try to determine as soon as possible if it
+  // will not be able to satisfy the upsert request, e.g. because:
+  //
+  //   - there is not enough disk space, or
+  //   - because one of the objects cannot be found in the cloud CAS, or
+  //   - because the requester doesn't have access to one of the objects,
+  //
+  // and then return an error immediately.
+  //
+  // Otherwise, reserve disk space and return a long running operation (LRO).
+  // The `google.longrunning.Operation` itself can fail, e.g. because of a
+  // network connection problem. If the LRO fails, the disk space is immediately
+  // released. If the client wants to cancel a download in progress, they should
+  // use the standard `google.longrunning.Operations.CancelOperation()` method.
+  //
+  // Update requests have similar semantics, with the difference that if the
+  // update fails, the old version of the preload set is preserved (update is
+  // atomic). This is to prevent cases like this:
+  //
+  // 1. Client delete a preload set (A, B, C)
+  // 2. OCPS frees up objects A, B, C in the storage because of disk pressure
+  // 3. Client requests a new preload set (A, B, Z)
+  // 4. OCPS rejects it because of disk pressure. Client now has neither Z, nor
+  //    A and B preloaded for it.
+  //
+  // With an atomic update, the client would at least still have A and B.
+  //
+  // This function is safe to be called by multiple clients at the same time.
+  // It implements pessimistic locking, i.e. all but one active requests will be
+  // blocked to avoid races.
+  rpc UpsertPreloadSet(UpsertPreloadSetRequest)
+      returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      response_type: "UpsertPreloadSetResponse"
+      metadata_type: "Metadata"
+    };
+  }
+
+  // Delete a preload set. If this was the last preload set referencing an
+  // object, the preloading state of the object is now undefined. It may or may
+  // not be in the storage.
+  //
+  // This function is safe to be called by multiple clients at the same time.
+  // It implements pessimistic locking, i.e. all but one active requests will be
+  // blocked to avoid races.
+  rpc DeletePreloadSet(DeletePreloadSetRequest)
+      returns (DeletePreloadSetResponse);
+}
+
+message UpsertPreloadSetRequest {
+  // If "preload_set" has no "name" field set, this call has an "insert"
+  // semantics, i.e. a preload set is created. The name of the created preload
+  // set will be returned in the response message. If the preload set has its
+  // name specified, then it will be atomically updated.
+  PreloadSet preload_set = 1;
+
+  // A client must provide a list of their active preload sets with each
+  // request. This allows OCPS to detect orphaned preload sets, e.g. when a
+  // client's container was terminated.
+  //
+  // The OCPS will compute the set difference between the client provided active
+  // preload sets and its own state. All preload sets that are not in the
+  // client's request are considered to be orphaned and will be immediately
+  // deleted.
+  repeated string active_preload_sets = 2;
+}
+
+message UpsertPreloadSetResponse {
+  // Created or updated preload set with the server-generated "name". Notice
+  // that this name will change if a preload set was updated.
+  PreloadSet preload_set = 1;
+
+  // OCPS' notion of which preload sets are currently active and owned by the
+  // client.
+  repeated string active_preload_sets = 2;
+}
+message DeletePreloadSetRequest {
+  string name = 1;
+}
+
+message DeletePreloadSetResponse {}

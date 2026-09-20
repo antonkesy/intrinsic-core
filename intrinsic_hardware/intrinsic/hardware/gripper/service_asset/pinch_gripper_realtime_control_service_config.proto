@@ -1,0 +1,40 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.gripper_service;
+
+import "intrinsic/hardware/gripper/service_asset/gripper_service_signals.proto";
+
+option go_package = "intrinsic/hardware/gripper/service_asset/pinch_gripper_realtime_control_service_config_go_proto";
+
+// This is the service configuration for pinch grippers that are controlled
+// using the realtime control service.
+message PinchGripperRealtimeControlServiceConfig {
+  // A collection of signal maps whose keys are the signal names as configured
+  // in the realtime control service and whose values are the values to be set
+  // for each pinch gripper action.
+  PinchGripperSignals signals = 1;
+
+  // The name of the realtime control service instance that controls the
+  // pinch gripper.
+  string service_instance_name = 2;
+
+  // Whether the gripper is closed when all joints are at their lower limit. Set
+  // it to false (default) if the gripper is open when all joints are at their
+  // lower limit. This parameter is used to correctly update the digital twin
+  // when the gripper is commanded to grasp or release.
+  bool is_default_closed = 3;
+}

@@ -1,0 +1,45 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.gripper;
+
+import "intrinsic/hardware/gripper/gripper.proto";
+
+option go_package = "intrinsic/hardware/gripper/service/proto/generic_pinch_gripper_configs_go_proto";
+
+message GenericPinchGripperCommunicationConfig {
+  // IP address of the gripper.
+  string ip_address = 1;
+
+  // Port to connect to.
+  int64 port = 2;
+}
+
+message GenericPinchGripperConfig {
+  GenericPinchGripperCommunicationConfig comm_config = 1;
+
+  // Full description of the gripper's hardware physical configuration of
+  // the finger.
+  PinchGripperPhysicalConfig physical_config = 2;
+
+  PinchGripperAdditionalConfig additional_config = 3;
+
+  // The name of the driver of the gripper (from its c++ class name).
+  // If a non-existing driver name is specified, the resource container of
+  // the gripper will exit with an error. Every gripper will have a default
+  // config in its resource type that shows the correct driver name.
+  string pinch_gripper_driver_name = 4;
+}

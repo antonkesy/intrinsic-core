@@ -1,0 +1,13 @@
+metadata {
+  id {
+    package: "ai.intrinsic"
+    name: "$OBJECT_NAME"
+  }
+  vendor {
+    display_name: "Intrinsic"
+  }
+  documentation {
+    description: "A ChArUco calibration board."
+  }
+  display_name: "$DISPLAY_NAME"
+}

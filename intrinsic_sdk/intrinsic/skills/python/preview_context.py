@@ -1,0 +1,149 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""PreviewContext for calls to Skill.preview."""
+
+import abc
+
+# isort: off
+
+from intrinsic.geometry.proto import geometry_service_pb2_grpc
+
+# isort: on
+from intrinsic.motion_planning import motion_planner_client
+from intrinsic.skills.python import skill_canceller
+from intrinsic.skills.python import skill_logging_context
+from intrinsic.world.proto import object_world_updates_pb2
+from intrinsic.world.python import object_world_client
+from intrinsic.world.python import object_world_ids
+from intrinsic.world.python import object_world_resources
+
+
+class PreviewContext(abc.ABC):
+  """Provides extra metadata and functionality for a Skill.preview call.
+
+  It is provided by the skill service to a skill and allows access to the world
+  and other services that a skill may use.
+
+  Attributes:
+    canceller: Supports cooperative cancellation of the skill.
+    context_id: A unique identifier shared across all interactions with the
+      Skill for a single activation of a Skill node in a Process (including any
+      preparation, planning, or execution calls).
+    logging_context: The skill's logging context.
+    motion_planner: A client for the motion planning service.
+    object_world: A client for interacting with the object world. NOTE: This
+      client should be treated as read-only. Any effect the skill is expected to
+      have on the physical world should be recorded using `record_world_update`.
+      (See further explanation in Skill.preview.)
+  """
+
+  @property
+  @abc.abstractmethod
+  def canceller(self) -> skill_canceller.SkillCanceller:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def context_id(self) -> str:
+    pass
+
+
+  @property
+  @abc.abstractmethod
+  def geometry_service(self) -> geometry_service_pb2_grpc.GeometryServiceStub:  # pylint: disable=g-missing-from-attributes
+    pass
+
+
+
+  @property
+  @abc.abstractmethod
+  def logging_context(self) -> skill_logging_context.SkillLoggingContext:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def motion_planner(self) -> motion_planner_client.MotionPlannerClient:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def object_world(self) -> object_world_client.ObjectWorldClient:
+    pass
+
+  @abc.abstractmethod
+  def get_frame_for_equipment(
+      self, equipment_name: str, frame_name: object_world_ids.FrameName
+  ) -> object_world_resources.Frame:
+    """Returns the frame by name for an object corresponding to some equipment.
+
+    The frame is sourced from the same world that's available via
+    `object_world`.
+
+    Args:
+      equipment_name: The name of the expected equipment.
+      frame_name: The name of the frame within the equipment's object.
+
+    Returns:
+      A frame from the world associated with this context.
+    """
+
+  @abc.abstractmethod
+  def get_kinematic_object_for_equipment(
+      self, equipment_name: str
+  ) -> object_world_resources.KinematicObject:
+    """Returns the kinematic object that corresponds to this equipment.
+
+    The kinematic object is sourced from the same world that's available via
+    `object_world`.
+
+    Args:
+      equipment_name: The name of the expected equipment.
+
+    Returns:
+      A kinematic object from the world associated with this context.
+    """
+
+  @abc.abstractmethod
+  def get_object_for_equipment(
+      self, equipment_name: str
+  ) -> object_world_resources.WorldObject:
+    """Returns the world object that corresponds to this equipment.
+
+    The world object is sourced from the same world that's available via
+    `object_world`.
+
+    Args:
+      equipment_name: The name of the expected equipment.
+
+    Returns:
+      A world object from the world associated with this context.
+    """
+
+  @abc.abstractmethod
+  def record_world_update(
+      self,
+      update: object_world_updates_pb2.ObjectWorldUpdate,
+      elapsed: float,
+      duration: float,
+  ) -> None:
+    """Records a world update that the skill is expected to make.
+
+    Args:
+      update: The expected update.
+      elapsed: The expected amount of (non-negative) elapsed time since the
+        start of the previous update (NOT since the start of skill execution),
+        in seconds.
+      duration: The expected duration of the update, in seconds.
+    """

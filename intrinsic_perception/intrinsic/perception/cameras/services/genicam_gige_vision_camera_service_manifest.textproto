@@ -1,0 +1,84 @@
+# proto-file: intrinsic/assets/services/proto/service_manifest.proto
+# proto-message: intrinsic_proto.services.ServiceManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+metadata {
+  id {
+    package: "ai.intrinsic"
+    name: "genicam_gige_vision_camera_service"
+  }
+  vendor {
+    display_name: "Intrinsic"
+  }
+  documentation {
+    description: "A service for GenICam cameras using GigE Vision."
+  }
+  display_name: "GenICam camera service"
+  asset_tag: ASSET_TAG_CAMERA
+}
+service_def {
+  service_proto_prefixes: "/intrinsic_proto.perception.v1.CameraConfigService/"
+  service_proto_prefixes: "/intrinsic_proto.perception.v1.CameraService/"
+  http_config: {}
+  real_spec {
+    image {
+      archive_filename: "camera-server-image.tar"
+      settings {
+        volume_mounts {
+          name: "tmp"
+          mount_path: "/tmp"
+        }
+        resource_requirements {
+          requests: { key: "nvidia.com/gpu" value: "0" }
+          limits: { key: "nvidia.com/gpu" value: "1" }
+        }
+        security_context {
+          posix_capabilities {
+            add: [POSIX_CAPABILITY_SYS_RAWIO]
+          }
+        }
+        requires_rtpc_node: false
+      }
+    }
+    extra_images {
+      archive_filename: "camera_service_http_image.tar"
+    }
+    settings {
+      host_network: true
+      volumes {
+        name: "tmp"
+        empty_dir {
+          medium: EMPTY_DIR_MEDIUM_MEMORY
+        }
+      }
+    }
+  }
+  sim_spec {
+    image {
+      archive_filename: "camera_service_proxy_image.tar"
+    }
+    extra_images {
+      archive_filename: "camera_service_http_image.tar"
+    }
+  }
+  service_state_config {
+    service_versions: INTRINSIC_PROTO_SERVICES_V1_SERVICE_STATE
+  }
+  dynamic_reconfiguration_config {
+    service_versions: INTRINSIC_PROTO_SERVICES_V1_DYNAMIC_RECONFIGURATION
+  }
+}

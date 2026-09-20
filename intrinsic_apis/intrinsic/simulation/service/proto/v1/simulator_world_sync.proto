@@ -1,0 +1,133 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.simulation.v1;
+
+option go_package = "intrinsic/simulation/service/proto/v1/simulator_world_sync_go_proto";
+
+import "google/rpc/status.proto";
+
+// To be called by the Simulator to get the initial world state, subscribe to
+// Simulator World edits and publish scene changes. State changes such as object
+// pose updates and joint position updates for kinematic objects should NOT be
+// published on this stream. Instead, the simulator should publish those on the
+// pubsub topic returned in `session_ack`. Some RPCs can be called by
+// non-simulator clients to retrieve information about the simulator world.
+service SimulatorWorldSync {
+  // Establishes a bidirectional stream for real-time world updates and edits
+  // e.g. re-parenting objects, adding objects, removing objects, etc.
+  rpc SyncWorld(stream SimulatorSceneMessage) returns (stream WorldMessage);
+
+  // Get the id of the simulator world currently in use.
+  // Can be called by non-simulator clients to introspect the world in the World
+  // Service.
+  rpc GetSimulatorWorldInfo(GetSimulatorWorldInfoRequest)
+      returns (SimulatorWorldInfo);
+}
+
+// Top-level message sent by the Simulator to the SimulatorWorldSync Service.
+message SimulatorSceneMessage {
+  oneof payload {
+    // Must be the very first message sent on the stream.
+    SessionInit session_init = 1;
+    // Subsequent messages containing batched simulation updates.
+    SimulatorUpdates simulator_updates = 2;
+    // Response confirming a world edit requested externally (e.g. by user).
+    WorldUpdateAck world_update_ack = 3;
+  }
+}
+
+// Top-level message sent by the SimulatorWorldSync Service to the
+// simulator.
+message WorldMessage {
+  oneof payload {
+    // Confirmation that the session was successfully initialized.
+    // Contains metadata regarding the Simulator World.
+    SessionAck session_ack = 1;
+    // Batched world edits requested externally (e.g. by user).
+    WorldUpdates world_updates = 2;
+  }
+}
+
+message SessionInit {
+  // Used only for logging and display. By convention, this should be the
+  // asset instance id for a simulator asset.
+  string simulator_name = 1;
+}
+
+message SessionAck {
+  // Whether or not the session could be initialized.
+  google.rpc.Status status = 1;
+  // The id of the world in World Service from which scene data should be
+  // fetched to initialize the simulator scene. Do not write to this world
+  // directly through World gRPC service. Instead, publish state updates over
+  // the pubsub topic below, and other updates (such as add/ delete object) over
+  // this stream. The value returned should not be treated as a constant, and
+  // the world with this id should be expected to exist only as long as the
+  // stream is open.
+  string simulator_world_id = 2;
+  // Intrinsic Pubsub topic name on which the simulator should publish periodic
+  // state updates.
+  // The simulator should publish `PubsubWorldUpdates` messages on this topic.
+  // See intrinsic/world/public/proto/v1/pubsub_world_updates.proto for details.
+  // The simulator should only publish state updates while the stream is open.
+  // These updates are applied in the World Service to the simulator world. We
+  // recommend publishing updates at 30-120Hz for optimal latency and
+  // performance.
+  // The World Service may temporarily pause applying the published updates if
+  // the simulator world is being edited by another client (such as the user).
+  // The topic name returned should not be treated as a constant.
+  string state_updates_pubsub_topic_name = 3;
+  // A unique id indicating the generation of the Simulator World currently in
+  // use.
+  // See WorldUpdates and WorldUpdateAck definitions below.
+  // The id should be treated as an opaque string, only meant for
+  // internal comparison.
+  string simulator_world_generation_id = 4;
+}
+
+message SimulatorUpdates {
+  repeated SimulatorUpdate updates = 1;
+}
+
+message SimulatorUpdate {
+  // TBD: messages for supported edits from the simulator to the sim world.
+}
+
+message WorldUpdates {
+  // Updated generation id for the simulator world.
+  string simulator_world_generation_id = 1;
+  repeated WorldUpdate updates = 2;
+}
+
+message WorldUpdate {
+  // TBD: messages for supported edits from the sim world to the simulator.
+}
+
+message WorldUpdateAck {
+  // Matches the simulator_world_generation_id from the WorldUpdates.
+  string simulator_world_generation_id = 1;
+  google.rpc.Status status = 2;
+}
+
+// Request message for GetSimulatorWorldInfo.
+message GetSimulatorWorldInfoRequest {}
+
+message SimulatorWorldInfo {
+  // The id of the world in World Service which is synced to the simulator
+  // scene.
+  string simulator_world_id = 1;
+}

@@ -1,0 +1,53 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package xfa.simulation;
+
+import "google/protobuf/empty.proto";
+import "intrinsic/math/proto/pose.proto";
+import "intrinsic/scene/proto/v1/scene_object.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/simulation/gazebo/proto/spawner_service_go_proto";
+
+message SpawnObjectRequest {
+  // The scene object we intend to spawn.
+  intrinsic_proto.scene_object.v1.SceneObject scene_object = 3;
+
+  // The pose of the spawned object. If the 'spawn_method' is via the resource
+  // name, then this pose is assumed to be within the coordinate frame of the
+  // spawner object. If instead it's via a scene object, then this pose is used
+  // relative to the parent transform node.
+  intrinsic_proto.Pose parent_t_object = 2;
+
+  // If spawn_method is via a scene_object, this is the parent object to attach
+  // the spawned object to.
+  intrinsic_proto.world.TransformNodeReference parent = 4;
+
+  // If set, the spawned object will be named according to this field.
+  // Otherwise, a unique name will be generated.
+  // If object with the provided name already exists, the request will fail.
+  string name = 5;
+
+  reserved 1;
+  reserved "spawner_resource_name";
+}
+
+service SpawnerService {
+  // Contacts the world service and creates an object in Gazebo and the running
+  // simulation world.
+  rpc SpawnObject(SpawnObjectRequest) returns (google.protobuf.Empty) {}
+}

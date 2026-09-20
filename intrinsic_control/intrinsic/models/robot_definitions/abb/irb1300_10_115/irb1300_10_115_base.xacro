@@ -1,0 +1,402 @@
+<!--
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<sdf version='1.9' xmlns:xacro='http://www.ros.org/wiki/xacro' xmlns:intrinsic='https://intrinsic.ai/'>
+  <xacro:macro name='irb1300_10_115_base_sdf' params='name **model_options'>
+    <model name='${name}'>
+      <intrinsic:control_frequency_hz>250</intrinsic:control_frequency_hz>
+      <intrinsic:ik_solver>spherical_wrist</intrinsic:ik_solver>
+      <intrinsic:cartesian_limits>
+        <intrinsic:min_translational_position>-5 -5 -5</intrinsic:min_translational_position>
+        <intrinsic:max_translational_position>5 5 5</intrinsic:max_translational_position>
+        <intrinsic:min_translational_velocity>-1.5 -1.5 -1.5</intrinsic:min_translational_velocity>
+        <intrinsic:max_translational_velocity>1.5 1.5 1.5</intrinsic:max_translational_velocity>
+        <intrinsic:min_translational_acceleration>-2 -2 -2</intrinsic:min_translational_acceleration>
+        <intrinsic:max_translational_acceleration>2 2 2</intrinsic:max_translational_acceleration>
+        <intrinsic:min_translational_jerk>-100 -100 -100</intrinsic:min_translational_jerk>
+        <intrinsic:max_translational_jerk>100 100 100</intrinsic:max_translational_jerk>
+        <intrinsic:max_rotational_jerk>100</intrinsic:max_rotational_jerk>
+      </intrinsic:cartesian_limits>
+
+  <link name="irb1300_link_1">
+      <pose relative_to="joint_a1"/>
+      <visual name="irb1300_visual_1">
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/robot_definitions/abb/irb1300_10_115/visual/irb1300_visual_1.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="cylinder020_collider_cylinder.001">
+        <pose>0.0 -0.0 0.085317 0.0 0.0 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.1335</radius>
+            <length>0.168279</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_cylinder">
+        <pose>0.0 0.0 0.136 1.570796 -0.0 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.106466</radius>
+            <length>0.342115</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_cylinder.001">
+        <pose>0.15 0.0 0.291 1.570796 -0.0 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.089541</radius>
+            <length>0.342115</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_cylinder002_collider_box">
+        <pose>0.079908 0.0 0.219477 1.570796 0.776981 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.202908 0.18933 0.342115</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <link name="irb1300_link_0">
+      <visual name="irb1300_visual_0">
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/robot_definitions/abb/irb1300_10_115/visual/irb1300_visual_0.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="cylinder020_collider_cylinder">
+        <pose>0.0 -0.0 0.137903 0.0 0.0 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.124851</radius>
+            <length>0.232283</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_box">
+        <pose>0.0 0.0 0.019137 0.0 -0.0 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.224 0.224 0.038273</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cube014_collider_box">
+        <pose>-0.116956 0.000817 0.120883 0.0 -0.0 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.113327 0.168365 0.182162</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cube014_collider_box.001">
+        <pose>-0.135622 -0.069509 0.123842 0.0 0.0 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.05 0.059811 0.11589</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <link name="irb1300_link_2">
+      <pose relative_to="joint_a2"/>
+      <visual name="irb1300_visual_2">
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/robot_definitions/abb/irb1300_10_115/visual/irb1300_visual_2.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="cylinder022_collider_box.001">
+        <pose>0.002437 -0.07493 0.094699 1.570796 -0.028742 -0.0</pose>
+        <geometry>
+          <box>
+            <size>0.052596 0.027544 0.036633</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cube014_collider_box.002">
+        <pose>-0.019433 -0.0 0.192652 0.0 1.543096 3.141593</pose>
+        <geometry>
+          <box>
+            <size>0.384527 0.14 0.127392</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cube014_collider_box.003">
+        <pose>0.008159 0.0 0.081956 -0.0 2.132216 3.141593</pose>
+        <geometry>
+          <box>
+            <size>0.106644 0.14 0.075943</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_box.002">
+        <pose>-0.066391 0.0 0.27453 -3.141593 -0.0 -1.570796</pose>
+        <geometry>
+          <box>
+            <size>0.059969 0.048422 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_box.004">
+        <pose>-0.006589 -0.0 0.475091 1.521709 -0.0 -1.570796</pose>
+        <geometry>
+          <box>
+            <size>0.272 0.214516 0.142467</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_box008_collider_cylinder">
+        <pose>0.000189 -0.0 0.576198 1.570796 0.049088 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.074881</radius>
+            <length>0.272</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_box008_collider_cylinder.001">
+        <pose>-0.015271 -0.0 0.367236 1.570796 0.049088 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.064174</radius>
+            <length>0.272</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+    <link name="irb1300_link_3">
+      <pose relative_to="joint_a3"/>
+      <visual name="irb1300_visual_3">
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/robot_definitions/abb/irb1300_10_115/visual/irb1300_visual_3.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="cylinder022_collider_box.005">
+        <pose>0.010153 0.0 0.009872 -3.141593 -1.570796 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.182256 0.122 0.23532</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_box.007">
+        <pose>0.081884 -0.059846 0.001351 -1.587289 -0.0 1.570796</pose>
+        <geometry>
+          <box>
+            <size>0.028253 0.03544 0.021871</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <link name="irb1300_link_4">
+      <pose relative_to="joint_a4"/>
+      <visual name="irb1300_visual_4">
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/robot_definitions/abb/irb1300_10_115/visual/irb1300_visual_4.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="cube014_collider_box.004">
+        <pose>0.033016 0.0 0.0 0.0 -1.570796 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.106 0.112 0.044328</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_box.006">
+        <pose>0.071134 0.0 0.056243 -1.570796 0.0 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.121564 0.02 0.077</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cylinder022_collider_cylinder.002">
+        <pose>0.039281 0.0 0.0 -0.0 1.570796 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.061</radius>
+            <length>0.081788</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision name="cube014_collider_box.005">
+        <pose>0.187403 0.0 0.0 0.0 -1.570796 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.122 0.126 0.204684</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="cube014_collider_box005_collider_cylinder">
+        <pose>0.296893 0.0 0.0 1.570796 -1.570796 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.052472</radius>
+            <length>0.126</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision name="cube014_collider_box005_collider_cylinder.001">
+        <pose>0.08597 -0.0 0.0 1.570796 -1.570796 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.061188</radius>
+            <length>0.126</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+    <link name="irb1300_link_5">
+      <pose relative_to="joint_a5"/>
+      <visual name="irb1300_visual_5">
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/robot_definitions/abb/irb1300_10_115/visual/irb1300_visual_5.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="cylinder022_collider_cylinder.003">
+        <pose>0.04156 0.0 0.0 -0.0 1.570796 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.0425</radius>
+            <length>0.059714</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+    <link name="irb1300_link_6">
+      <pose relative_to="joint_a6"/>
+      <visual name="irb1300_visual_6">
+        <pose>-0.0219 0.0 0.0 0.0 0.0 0.0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/robot_definitions/abb/irb1300_10_115/visual/irb1300_visual_6.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="cylinder022_collider_cylinder.004">
+        <pose>-0.020034 0.0 0.0 -0.0 1.570796 0.0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.041</radius>
+            <length>0.028868</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="joint_a1" type="revolute">
+      <pose relative_to="irb1300_link_0">0.0 0.0 0.253 0 0 0</pose>
+      <parent>irb1300_link_0</parent>
+      <child>irb1300_link_1</child>
+      <axis>
+        <xyz>0.0 0.0 1.0</xyz>
+        <limit>
+          <lower>-3.1415927410125732</lower>
+          <upper>3.1415927410125732</upper>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="joint_a2" type="revolute">
+      <pose relative_to="irb1300_link_1">0.15 0.0 0.291 0 0 0</pose>
+      <parent>irb1300_link_1</parent>
+      <child>irb1300_link_2</child>
+      <axis>
+        <xyz>0.0 1.0 0.0</xyz>
+        <limit>
+          <lower>-2.7052602767944336</lower>
+          <upper>1.6580628156661987</upper>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="joint_a3" type="revolute">
+      <pose relative_to="irb1300_link_2">0.0 0.0 0.575 0 0 0</pose>
+      <parent>irb1300_link_2</parent>
+      <child>irb1300_link_3</child>
+      <axis>
+        <xyz>0.0 1.0 0.0</xyz>
+        <limit>
+          <lower>-1.2042771577835083</lower>
+          <upper>3.665191411972046</upper>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="joint_a4" type="revolute">
+      <pose relative_to="irb1300_link_3">0.1291 0.0 0.04 0 0 0</pose>
+      <parent>irb1300_link_3</parent>
+      <child>irb1300_link_4</child>
+      <axis>
+        <xyz>1.0 0.0 0.0</xyz>
+        <limit>
+          <lower>-4.014257431030273</lower>
+          <upper>4.014257431030273</upper>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="joint_a5" type="revolute">
+      <pose relative_to="irb1300_link_4">0.2959 -0.0 0.0 0 0 0</pose>
+      <parent>irb1300_link_4</parent>
+      <child>irb1300_link_5</child>
+      <axis>
+        <xyz>0.0 1.0 0.0</xyz>
+        <limit>
+          <lower>-2.268928050994873</lower>
+          <upper>2.268928050994873</upper>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="joint_a6" type="revolute">
+      <pose relative_to="irb1300_link_5">0.09 -0.0 0.0 0 0 0</pose>
+      <parent>irb1300_link_5</parent>
+      <child>irb1300_link_6</child>
+      <axis>
+        <xyz>1.0 -0.0 0.0</xyz>
+        <limit>
+          <lower>-6.981317043304443</lower>
+          <upper>6.981317043304443</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <joint name="joint_a6_tool0" type="fixed">
+      <parent>irb1300_link_6</parent>
+      <child>tool0</child>
+      <pose relative_to="irb1300_link_6">0.0 0 0 0 ${radians(90)} 0</pose>
+    </joint>
+
+    <link name='tool0'>
+      <inertial>
+        <mass>0.1</mass>
+      </inertial>
+      <pose relative_to='joint_a6_tool0'>0 0 0 0 0 0</pose>
+    </link>
+    <frame name='flange' attached_to='tool0' intrinsic:create_attachment_entity='true'/>
+  </model>
+  </xacro:macro>
+</sdf>

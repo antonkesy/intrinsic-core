@@ -1,0 +1,108 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.config;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/timestamp.proto";
+import "intrinsic/assets/proto/id.proto";
+import "intrinsic/config/proto/version.proto";
+import "intrinsic/resources/proto/resource_service_definition.proto";
+import "intrinsic/scene/proto/v1/scene_object.proto";
+import "intrinsic/world/proto/world_fragment.proto";
+
+option go_package = "intrinsic/resources/proto/resource_type_go_proto";
+
+// A ResourceType describes a specific type of resource, e.g., a specific robot
+// type like UR16 or a Basler Network camera, which can be instantiated multiple
+// times in a ResourceSet. It can contain geometry & graph information that is
+// shared across all instances and information on which services need to be
+// started.
+message ResourceType {
+  message Metadata {
+    // Display name, e.g. 'bluebird', 'bb-02'.
+    string display_name = 1;
+
+    // Auto-populated with server timestamp on update.
+    google.protobuf.Timestamp update_time = 2;
+
+    // Username of the user who last created or updated the document containing
+    // this metadata. This can be empty for templates.
+    string last_updated_by = 3;
+
+    // Version information.
+    Version version = 9;
+
+    // Info about how to use this document. Optional.
+    // If present this doc string will be presented to the user, e.g., through
+    // the UI.
+    string docs = 10;
+  }
+
+  Metadata metadata = 1;
+
+  // The fully qualified id of the resource type.
+  string id_version = 17;
+
+  // The id of the resource type.
+  intrinsic_proto.assets.Id id = 18;
+
+  // ResourceFamily, needed for filtering and display for UX.
+  ResourceFamily resource_family = 3;
+
+  // World fragment containing the world entities, e.g. collision/visual
+  // geometry + poses. It is a self contained map of entities, which assume a
+  // parent of root. May contain geometry references.
+  // Optional.
+  intrinsic_proto.world.WorldFragment world_fragment = 4;
+
+  // Scene object containing the geometric information corresponding to the
+  // resource type.
+  // Only one of `world_fragment` or `scene_object` field should be set.
+  // If both are set, then `scene_object` takes precedence.
+  // Optional.
+  intrinsic_proto.scene_object.v1.SceneObject scene_object = 20;
+
+  ResourceServiceDefinition service_def = 19;
+
+  // Vendor who released the resource type, e.g. intrinsic.
+  string vendor = 6;
+
+  // Default configuration data for the resource, e.g. a default
+  // CameraConfiguration with sensible values, for simple instantiation.
+  google.protobuf.Any default_configuration = 7;
+
+  // Parameter Description
+  google.protobuf.FileDescriptorSet parameter_descriptor_fileset = 12;
+
+  reserved 2, 5, 8, 13, 14, 15, 16;
+  reserved "data_files", "default_resource_data", "init_behavior_tree", "name",
+      "resource_spec", "requires_scheduling_config", "run_behavior_tree";
+}
+
+message ResourceFamily {
+  // Unique id representing this resource family
+  string id = 1;
+
+  // Auto-populated with server timestamp on update.
+  google.protobuf.Timestamp update_time = 2
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  reserved 4;
+  reserved "metadata";
+}

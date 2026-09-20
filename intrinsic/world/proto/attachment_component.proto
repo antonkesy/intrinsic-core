@@ -1,0 +1,55 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+import "intrinsic/math/proto/pose.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "intrinsic/world/proto/attachment_component_go_proto";
+
+// Component indicating the owning Entity is in the attachment graph.
+// Next tag: 6
+message AttachmentComponent {
+  // Parent Entity UID.
+  uint32 parent_uid = 1;
+
+  // Pose of this Entity in the parent's space. (In the case of a joint, this is
+  // actually parent_t_outboard. For a full explanation, see
+  // go/intrinsic-choreographer-kinematic-tdd#heading=h.pb680fegfvkr.)
+  intrinsic_proto.Pose parent_t_this = 5;
+
+  // The wall clock time when parent_t_this is last updated.
+  google.protobuf.Timestamp wall_clock_timestamp = 6;
+
+  // Flag indicating parent_t_this is known to be inaccurate.
+  //
+  // A situation where this flag might get set is when when a robot's controller
+  // does not guarantee sufficient accuracy for our purposes. We may use an
+  // external measurement at a later time to confirm parent_t_this and clear
+  // this flag.
+  bool inaccurate_pose = 3;
+
+  // Flag indicating that this attachment represents a rigid fixture to the
+  // root. Only used for top-level models read from SDF.
+  // Note: This does not affect the world, just the SDF generated from the
+  // world in intrinsic/simulation/world/world_to_sdf.cc
+  // TODO(b/231642607) Remove once handling of top-level models is improved
+  bool fixed_in_root = 4;
+
+  reserved 2;
+  reserved "parent_t_this_old";
+}

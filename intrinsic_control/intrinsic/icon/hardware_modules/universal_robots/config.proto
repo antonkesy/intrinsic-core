@@ -1,0 +1,119 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+syntax = "proto3";
+
+package intrinsic_proto.icon;
+
+import "intrinsic/icon/proto/joint_collection_prefilter_config.proto";
+
+option go_package = "intrinsic/icon/hardware_modules/universal_robots/config_go_proto";
+
+// Next ID: 14
+message UniversalRobotsModuleConfig {
+  // The IP to connect to the robot. Can be found on the About page on the Teach
+  // Pendant.
+  string robot_ip = 1;
+  // The checksum of the kinematic calibration.
+  // Ignored if empty. Robot fails to start up on mismatch.
+  string calibration_checksum = 2;
+
+  message ReverseInterface {
+    // IP of the realtime NIC to connect to the robot. Used for reverse
+    // connections (robot to RTPC).
+    // Empty string uses the same IP as the outgoing connection to the robot.
+    string reverse_ip = 1;
+    // Port that will be opened by the driver to allow direct communication
+    // between the driver and the robot controller.
+    // Defaults to 7141
+    optional uint32 reverse_port = 2;
+    // The driver will offer an interface to receive the program's URScript on
+    // this port. If the robot cannot connect to this port, `External Control`
+    // will stop immediately
+    // Defaults to 7142
+    optional uint32 script_sender_port = 3;
+    // Reverse port used to send trajectory points to the robot.
+    // Currently not used by the module. Port is still allocated by the UR
+    // driver.  Required for using `writeTrajectoryPoint`.
+    // Defaults to 7143
+    optional uint32 trajectory_port = 4;
+    // Reverse port used to send script commands to the robot.
+    // Currently not used by the module. Port is still allocated by the UR
+    // driver. Required for using `sendScript`.
+    // Defaults to 7144
+    optional uint32 script_command_port = 5;
+  }
+  // Custom settings for the reverse interface (from robot to RTPC).
+  // Required on conflicts with the default port range [7141, 7144].
+  optional ReverseInterface reverse_interface = 11;
+
+  message NoAdvancedControl {
+    // Proportional gain for arm joints following target position in range
+    // [100,2000]. Defaults to 2000.
+    optional int32 servoj_gain = 1;
+    // Time [s], range [0.03,0.2] smoothens the trajectory with this lookahead
+    // time. Defaults to 0.1s.
+    optional double servoj_lookahead_seconds = 2;
+  }
+  // Uses Intrinsic's default advanced control for Universal Robots, if
+  // available for the specific robot model.
+  message DefaultAdvancedControl {}
+  // Allows to set a custom dynamic prefilter per robot joint.
+  // If set, IIR filters which act on the time-series of commanded position
+  // setpoints are added. These filter can be used to either low-pass filter
+  // the reference, or to achieve better dynamic tracking performance. The IIR
+  // filter coefficients must be stable, the hardware module will not perform
+  // an additional stability check. This feature only affects position control
+  // using `servo_j`. The IIR filter must be designed for the given
+  // `servoj_gain` and `servoj_lookahead_seconds`.
+  message CustomAdvancedControl {
+    JointCollectionPrefilterConfig joint_collection_prefilter_config = 1;
+    // Proportional gain for arm joints following target position in range
+    // [100,2000]. Defaults to 2000.
+    optional int32 servoj_gain = 2;
+    // Time [s], range [0.03,0.2] smoothens the trajectory with this lookahead
+    // time. Defaults to 0.1s.
+    optional double servoj_lookahead_seconds = 3;
+  }
+  // Advanced control options for the Universal Robots module. Defaults to
+  // `default_advanced_control` if unset. If `default_advanced_control` is not
+  // supported by a robot model `no_advanced_control` has to be set explicitly.
+  oneof advanced_control_options {
+    NoAdvancedControl no_advanced_control = 8;
+    DefaultAdvancedControl default_advanced_control = 9;
+    // TODO (468326263): Strip away for IOC once the copybara strip commands are
+    // available.
+    CustomAdvancedControl custom_advanced_control = 10;
+  }
+
+  // If true (also if unset, the default is true), the module reads the
+  // kinematics information from the controller at startup. The kinematics data
+  // is printed in the logs. The calibrated kinematics are served over gRPC if a
+  // port is provided by the resource.
+  optional bool log_and_serve_calibration_data = 12;
+
+  // These values provide the parameters for UR's internal friction
+  // compensation. One value must be provided for each joint and all values must
+  // be between 0 and 1.
+  message FrictionCompensationScaleFactors {
+    repeated double viscous = 1;
+    repeated double coulomb = 2;
+  }
+
+  optional FrictionCompensationScaleFactors
+      friction_compensation_scale_factors = 14;
+
+  reserved 3, 4, 5, 6, 7, 13;
+}

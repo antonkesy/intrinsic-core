@@ -1,0 +1,147 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: intrinsic_proto.skills.SkillManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "move_to_contact"
+}
+display_name: "Move to contact"
+vendor {
+  display_name: "Intrinsic"
+}
+options {
+  supports_cancellation: true
+  cancellation_ready_timeout {
+    seconds: 30
+  }
+  python_config {
+    skill_module: "intrinsic.manipulation.skills.force.move_to_contact"
+    proto_module: "intrinsic.manipulation.skills.force.move_to_contact_pb2"
+    create_skill: "intrinsic.manipulation.skills.force.move_to_contact.MoveToContact"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "robot"
+    value {
+      capability_names: "intrinsic_proto.icon.v1.IconApi"
+      capability_names: "Icon2PositionPart"
+      capability_names: "Icon2ForceTorqueSensorPart"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.manipulation.skills.MoveToContactParams"
+  default_value {
+    [type.googleapis.com/intrinsic_proto.manipulation.skills.MoveToContactParams] {
+      timeout_sec: 60.0
+      tool_translational_stiffness_in_nullspace: 300.0
+      tool_rotational_stiffness_in_nullspace: 300.0
+      default_contact_stiffness: CONTACT_STIFFNESS_MEDIUM
+      contact_force: 10.0
+      fixed_vector {
+        direction {
+          z: 0.1
+        }
+      }
+    }
+  }
+}
+documentation {
+  description:
+    "A skill that moves the TCP until it makes contact with the "
+    "environment using feedback from a force-torque sensor mounted at the endeffector."
+    "\n\n"
+    "Moves the endeffector in a given motion direction and attempts to achieve "
+    "a desired contact force upon contact making. The expected contact stiffness "
+    "can be freely configured or chosen from presets, advanced tuning parameters "
+    "allow to modify the compliance during motion. A maximum approach velocity "
+    "can be configured for safety.\n"
+    "\n\n"
+    "WARNING: This is a reactive skill based on a Cartesian admittance controller. "
+    "Robot motions may be highly sensitive to sensed environmental forces based "
+    "on the configuration of the skill (e.g. approach speed, desired forces, "
+    "virtual stiffnesses). Robot motions are not validated to be kinematically-"
+    "feasible or collision-free. Ensure skill starts from a manipulable start state "
+    "(away from singularities and joint limits). Consider tuning the skill "
+    "conservatively to begin with (slower speeds and lower contact forces) and "
+    "proceed with caution!"
+}
+extended_documentation {
+  prerequisites:
+    "Required assets:\n"
+    "\n\n"
+    "* Robot arm \n"
+    "* Force-torque (FT) sensor specced to the expected contact or "
+    "process forces."
+    "\n\n"
+    "Before invoking `move_to_contact`, make sure the robot is in "
+    "a meaningful, collision-free pre-contact configuration. In most "
+    "cases, a `move_robot` skill will be used right before `move_to_contact`."
+
+  usage_example:
+    "1. Choose a desired `tool` frame which serves as reference for input "
+    "commands like the motion direction. This frame does not need to "
+    "be located _after_ the FT-Sensor, in fact it can be any frame on "
+    "the end-effector assembly."
+    "\n\n"
+    "2. Choose motion direction. When defining a `target` frame in the "
+    "world, the skill will interpolate a direct linear motion in task space "
+    "towards the target frame. By contrast, a `fixed vector` expressed in "
+    "the `tool` frame will lead to a linear Cartesian motion following the "
+    "fixed-vectors direction. By default, the tool frame z-axis is set "
+    "as motion direction."
+    "\n\n"
+    "3. Choose a contact force (Newtons) that matches your process. "
+    "Higher forces lead to higher approach speeds. Note that very high "
+    "desired contact forces can lead to slight force-overshoot when "
+    "establishing the contact."
+    "\n\n"
+    "4. Select `contact_stiffness`. It is recommended to choose one of "
+    "the given presents (default contact stiffnesses). A very stiff "
+    "contact (e.g. colliding metal surfaces) might require an increase "
+    "of the default parameters. For soft contact, e.g. when using a "
+    "suction gripper, it is recommended to use the preset 'low'. In "
+    "general, lower stiffness will also result in higher approach speed."
+    "\n\n"
+}
+status_info: [
+  {
+    code: 10201
+    title: "Invalid parameterization"
+    recovery_instructions: "Check and fix input parameters."
+  },
+
+  {
+    code: 10301
+    title: "Stabilization timeout"
+    recovery_instructions: "Check chosen contact_stiffness (oneof) value."
+  },
+
+  {
+    code: 10302
+    title: "Approach timeout"
+    recovery_instructions: "Increase timeout or increase contact force."
+  },
+
+  {
+    code: 10303
+    title: "Move to contact timeout"
+    recovery_instructions: "Unknown timeout, check parameterization."
+  }
+]

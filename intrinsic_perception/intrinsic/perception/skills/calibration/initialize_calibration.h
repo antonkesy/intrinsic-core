@@ -1,0 +1,53 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef INTRINSIC_PERCEPTION_SKILLS_CALIBRATION_INITIALIZE_CALIBRATION_H_
+#define INTRINSIC_PERCEPTION_SKILLS_CALIBRATION_INITIALIZE_CALIBRATION_H_
+
+#include <memory>
+#include <string_view>
+
+#include "absl/status/statusor.h"
+#include "google/protobuf/message.h"
+#include "intrinsic/skills/cc/skill_interface.h"
+#include "intrinsic/skills/proto/footprint.pb.h"
+
+namespace intrinsic {
+namespace skills {
+
+class InitializeCalibration : public SkillInterface {
+ public:
+  static constexpr std::array<std::string_view, 4> kCameraEquipmentSlots = {
+      "camera_1", "camera_2", "camera_3", "camera_4"};
+  static constexpr char kRobotEquipmentSlot[] = "robot";
+
+  absl::StatusOr<std::unique_ptr<google::protobuf::Message>> Execute(
+      const ExecuteRequest& request, ExecuteContext& context) override;
+
+  absl::StatusOr<std::unique_ptr<::google::protobuf::Message>> Preview(
+      const PreviewRequest& request, PreviewContext& context) override;
+
+  absl::StatusOr<intrinsic_proto::skills::Footprint> GetFootprint(
+      const GetFootprintRequest& request,
+      GetFootprintContext& context) const override;
+
+  static std::unique_ptr<SkillInterface> CreateSkill();
+  InitializeCalibration() = default;
+  ~InitializeCalibration() override = default;
+};
+
+}  // namespace skills
+}  // namespace intrinsic
+
+#endif  // INTRINSIC_PERCEPTION_SKILLS_CALIBRATION_INITIALIZE_CALIBRATION_H_

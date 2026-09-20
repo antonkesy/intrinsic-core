@@ -1,0 +1,60 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.topp;
+
+import "intrinsic/icon/proto/cart_space.proto";
+import "intrinsic/kinematics/types/joint_limits.proto";
+import "intrinsic/math/proto/pose.proto";
+
+option go_package = "intrinsic/motion_planning/trajectory_planning/topp/path_sample_go_proto";
+
+message PathSample {
+  // The path variable s (no need to be normalized).
+  double s = 1;
+
+  // The path translational Cartesian arc length (in meters).
+  double s_c = 10;
+
+  // Vector of joint positions.
+  repeated double q = 2;
+
+  // Vector of the first derivative w.r.t. path variable of joint positions.
+  repeated double qp = 3;
+
+  // Vector of the second derivative w.r.t. path variable of joint positions.
+  repeated double qpp = 4;
+
+  // Vector of the third derivative w.r.t. path variable of joint positions.
+  repeated double qppp = 5;
+
+  // Vector of the third derivative from the left side (incoming) w.r.t. path
+  // variable of joint positions if discontinuous.
+  repeated double qppp_in = 11;
+
+  // Joint limits to apply to the segment.
+  intrinsic_proto.JointLimits joint_limits = 6;
+
+  // Cartesian limits to apply to the Cartesian target frame to the segment.
+  intrinsic_proto.icon.CartesianLimits cart_limits = 7;
+
+  // Offset between robot tip and target frame, to which above Cartesian Limits
+  // are applied.
+  intrinsic_proto.Pose tip_t_target = 8;
+
+  // The id of the path segment this sample belongs to.
+  string segment_id = 9;
+}

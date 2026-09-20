@@ -1,0 +1,113 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.assets.build_defs;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+import "intrinsic/assets/proto/asset_type.proto";
+import "intrinsic/assets/proto/id.proto";
+import "intrinsic/config/proto/operation_mode.proto"; 
+import "intrinsic/world/proto/object_world_updates.proto"; 
+
+option go_package = "intrinsic/assets/build_defs/asset_go_proto";
+
+message AssetInfo {
+  // The asset's type.
+  intrinsic_proto.assets.AssetType asset_type = 1;
+  // The asset ID.
+  intrinsic_proto.assets.Id id = 2;
+  // A file descriptor set containing definitions for protos used by the asset.
+  optional google.protobuf.FileDescriptorSet file_descriptor_set = 3;
+
+  reserved 199;
+}
+
+message AssetLocalInfo {
+  // The asset's type.
+  intrinsic_proto.assets.AssetType asset_type = 1;
+  // The asset ID.
+  intrinsic_proto.assets.Id id = 2;
+  // This is the Bazel runfiles path to the bundle file.
+  string bundle_runfiles_path = 5;
+
+  reserved 3, 4, 199;
+  reserved "bundle_short_path", "bundle_path";
+}
+
+message AssetCatalogRefInfo {
+  // The asset's type.
+  intrinsic_proto.assets.AssetType asset_type = 1;
+  // The asset ID and version.
+  intrinsic_proto.assets.IdVersion id_version = 2;
+
+  reserved 199;
+}
+
+message AssetInstanceInfo {
+  // The asset ID.
+  string asset = 1;
+  // The name of this assent instance.
+  string instance_name = 2;
+  // The name of the node in which the service asset must run on. This option is
+  // only valid for service assets.
+  optional string required_node_hostname = 4;
+
+  // The asset instance's config will be a text proto until we can parse it with
+  // the asset's file descriptor set. The default config will be assigned if no
+  // config was given.
+  oneof config {
+    // The config as a text proto.
+    string text_proto = 5;
+    // The parsed config as an any proto.
+    google.protobuf.Any parsed = 6;
+  }
+
+  reserved 3, 7;
+  reserved "data_files";
+}
+
+
+message LocalSolution {
+  // Solution metadata.
+  string display_name = 5;
+  string build_target = 6;
+  string version = 8;
+
+  // An asset that was compiled locally or is a reference to an item in the
+  // asset catalog.
+  message Asset {
+    oneof variant {
+      AssetLocalInfo local = 1;
+      AssetCatalogRefInfo catalog = 2;
+    }
+  }
+  // A set of assets where no two assets share the same asset ID.
+  repeated Asset assets = 1;
+  // A set of asset instances where each asset ID must be present in assets.
+  repeated AssetInstanceInfo instances = 2;
+
+  // A sequence of updates that are applied to scene object instances to
+  // construct a world.
+  repeated intrinsic_proto.world.ObjectWorldUpdate object_world_updates = 14;
+
+  // The default mode in which to start this solution.
+  intrinsic_proto.config.OperationMode default_operation_mode = 7;
+
+  reserved 3, 4;
+  reserved "product", "process";
+}
+

@@ -1,0 +1,325 @@
+<sdf version='1.9' xmlns:xacro='http://www.ros.org/wiki/xacro' xmlns:intrinsic='https://intrinsic.ai/'>
+  <xacro:macro name='m_710id_50m_base_sdf' params='name **model_options'>
+    <model name='${name}'>
+      <intrinsic:ik_solver>spherical_wrist</intrinsic:ik_solver>
+      <intrinsic:cartesian_limits>
+        <intrinsic:min_translational_position>-5 -5 -5</intrinsic:min_translational_position>
+        <intrinsic:max_translational_position>5 5 5</intrinsic:max_translational_position>
+        <intrinsic:min_translational_jerk>-150 -150 -150</intrinsic:min_translational_jerk>
+        <intrinsic:max_translational_jerk>150 150 150</intrinsic:max_translational_jerk>
+        <intrinsic:max_rotational_jerk>100</intrinsic:max_rotational_jerk>
+      </intrinsic:cartesian_limits>
+
+      <!-- Please note that all inertias are approximated assuming uniform
+      density of linkages and dividing the total mass (600kg) of the robot-->
+      <link name="base_link">
+        <inertial>
+          <mass>109</mass>
+          <pose>-0.0562 -0.000509 0.109 0 0 0</pose>
+          <inertia>
+            <ixx>2.8</ixx>
+            <ixy>-0.0329</ixy>
+            <ixz>0.025</ixz>
+            <iyy>3</iyy>
+            <iyz>0.00163</iyz>
+            <izz>4.87</izz>
+          </inertia>
+        </inertial>
+        <visual name='base_link_visual'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/visual/base.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='base_link_collision'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/collision/base.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="joint_a1" type="revolute">
+        <pose relative_to="base_link">0 0 0 0 0 0</pose>
+        <parent>base_link</parent>
+        <child>link_1</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+      <link name="link_1">
+        <pose relative_to='joint_a1'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>180</mass>
+          <pose>0.0361 -0.00381 0.4777 0 0 0</pose>
+          <inertia>
+            <ixx>6.87</ixx>
+            <ixy>0.225</ixy>
+            <ixz>-0.615</ixz>
+            <iyy>5.55</iyy>
+            <iyz>0.424</iyz>
+            <izz>7.07</izz>
+          </inertia>
+        </inertial>
+        <visual name='link_1_visual'>
+          <pose>0 0 0.565 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/visual/j1.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='link_1_collision'>
+          <pose>0 0 0.565 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/collision/j1.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="joint_a2" type="revolute">
+        <pose relative_to="link_1">0.150 0 0.565 0 0 0 </pose>
+        <parent>link_1</parent>
+        <child>link_2</child>
+        <axis>
+          <xyz>0 1 0</xyz>
+        </axis>
+      </joint>
+      <link name="link_2">
+        <pose relative_to='joint_a2'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>167</mass>
+          <pose>-0.035 0.173 0.519 0 0 0</pose>
+          <inertia>
+            <ixx>24.1</ixx>
+            <ixy>0.149</ixy>
+            <ixz>0.00551</ixz>
+            <iyy>25.3</iyy>
+            <iyz>-1.58</iyz>
+            <izz>2.46</izz>
+          </inertia>
+        </inertial>
+        <visual name='link_2_visual'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/visual/j2.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='link_2_collision'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/collision/j2.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="joint_a3" type="revolute">
+        <pose relative_to="link_2">0 0 1.150 0 0 0</pose>
+        <parent>link_2</parent>
+        <child>link_3</child>
+        <axis>
+          <xyz>0 -1 0</xyz>
+        </axis>
+      </joint>
+      <link name="link_3">
+        <pose relative_to='joint_a3'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>89.4</mass>
+          <pose>0.0255 -0.005 0.0679 0 0 0</pose>
+          <inertia>
+            <ixx>1.9</ixx>
+            <ixy>-0.0775</ixy>
+            <ixz>-0.311</ixz>
+            <iyy>2.41</iyy>
+            <iyz>-0.06</iyz>
+            <izz>1.92</izz>
+          </inertia>
+        </inertial>
+        <visual name='link_3_visual'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/visual/j3.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='link_3_collision'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/collision/j3.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="joint_a4" type="revolute">
+        <pose relative_to="link_3">0 0 0.170 0 0 0</pose>
+        <parent>link_3</parent>
+        <child>link_4</child>
+        <axis>
+          <xyz>-1 0 0</xyz>
+        </axis>
+      </joint>
+      <link name="link_4">
+        <pose relative_to='joint_a4'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>44.2</mass>
+          <pose>0.722 -0.00464 0.0000825 0 0 0</pose>
+          <inertia>
+            <ixx>0.181</ixx>
+            <ixy>0.0138</ixy>
+            <ixz>0.0000199</ixz>
+            <iyy>3.93</iyy>
+            <iyz>-0.000138</iyz>
+            <izz>3.93</izz>
+          </inertia>
+        </inertial>
+        <visual name='link_4_visual'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/visual/j4.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='link_4_collision'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/collision/j4.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="joint_a5" type="revolute">
+        <pose relative_to="link_4">1.295 0 0 0 0 0</pose>
+        <parent>link_4</parent>
+        <child>link_5</child>
+        <axis>
+          <xyz>0 -1 0</xyz>
+        </axis>
+      </joint>
+      <link name="link_5">
+        <pose relative_to='joint_a5'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>9.67</mass>
+          <pose>0.0325 -0.0138 0.000000624 0 0 0</pose>
+          <inertia>
+            <ixx>0.0432</ixx>
+            <ixy>-0.00522</ixy>
+            <ixz>-0.000000315</ixz>
+            <iyy>0.0487</iyy>
+            <iyz>-0.0000000877</iyz>
+            <izz>0.0633</izz>
+          </inertia>
+        </inertial>
+        <visual name='link_5_visual'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/visual/j5.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='link_5_collision'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/collision/j5.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="joint_a6" type="revolute">
+        <pose relative_to="link_5">0.175 0 0  ${radians(180)} ${radians(-90)} 0 </pose>
+        <parent>link_5</parent>
+        <child>link_6</child>
+        <axis>
+          <xyz>0 0 -1</xyz>
+        </axis>
+      </joint>
+      <link name="link_6">
+        <pose relative_to='joint_a6'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>0.415</mass>
+          <pose>0 0 -0.01 0 0 0</pose>
+          <inertia>
+            <ixx>0.000417</ixx>
+            <ixy>-7.46e-11</ixy>
+            <ixz>0</ixz>
+            <iyy>0.000417</iyy>
+            <iyz>0</iyz>
+            <izz>0.000809</izz>
+          </inertia>
+        </inertial>
+        <visual name='link_6_visual'>
+          <pose>0 0 -0.175 ${radians(180.0)} ${radians(-90.0)} 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/visual/j6.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='link_6_collision'>
+          <pose>0 0 -0.175 ${radians(180.0)} ${radians(-90.0)} 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/m_710id_50m/collision/j6.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="joint_a6_tool0" type="fixed">
+        <parent>link_6</parent>
+        <child>tool0</child>
+        <pose relative_to="link_6">0 0 0 0 0 0</pose>
+      </joint>
+      <link name='tool0'>
+        <pose relative_to='joint_a6_tool0'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.00001</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.00001</iyy>
+            <iyz>0</iyz>
+            <izz>0.00001</izz>
+          </inertia>
+        </inertial>
+      </link>
+
+      <frame name='flange' attached_to='tool0' intrinsic:create_attachment_entity='true'/>
+      <xacro:insert_block name='model_options'/>
+
+    </model>
+  </xacro:macro>
+</sdf>

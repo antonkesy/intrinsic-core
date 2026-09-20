@@ -1,0 +1,202 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.proto_registry;
+
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto"; 
+import "google/protobuf/descriptor.proto";
+import "intrinsic/kubernetes/generator/proto/auth_options.proto";
+import "intrinsic/util/status/extended_status.proto"; 
+
+option go_package = "intrinsic/proto_tools/proto/proto_registry_go_proto";
+
+service ProtoRegistry {
+  // Auth annotations for consumption by the following helm_chart:
+  //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+  option (intrinsic_proto.auth.service_options).auth_methods =
+      AUTH_METHOD_API_KEY;
+
+  // Get a specific named file descriptor set.
+  rpc GetNamedFileDescriptorSet(GetNamedFileDescriptorSetRequest)
+      returns (NamedFileDescriptorSet) {
+    option (google.api.http) = {
+      get: "/protoRegistry/v0/fileDescriptorSets:find"
+    };
+  }
+
+
+
+  // Determine whether a specific message type is deemed compatible given two
+  // transitively closed file descriptor sets.
+  // TODO(b/482223254): Remove this endpoint or make it a no-op.
+  rpc DetermineCompatibility(DetermineCompatibilityRequest)
+      returns (DetermineCompatibilityResponse) {}
+
+
+}
+
+message NamedFileDescriptorSet {
+  // Unique name for the specific file descriptor set. The name is arbitrary and
+  // may change in the future, do not make assumptions about its content or
+  // structure. You may pass it to compatibility check or migration requests.
+  string name = 1;
+
+  // A transitively closed file descriptor set.
+  google.protobuf.FileDescriptorSet file_descriptor_set = 2;
+}
+
+message GetNamedFileDescriptorSetRequest {
+  oneof identifier_type {
+    // Intrinsic-style type URL of a message for which to retrieve the file
+    // descriptor set. The file descriptor set is guaranteed to satisfy the
+    // message referenced in the type URL.
+    //
+    // For type URLs in the "assets" area, the descriptor set may not be the
+    // same as when specifying `asset_id` for the same asset. In particular, the
+    // descriptor set returned for the type URL may not contain any descriptors
+    // for components the specified message does not transitively depend on.
+    //
+    // Any message in the "common" area is also accessible through type URLs
+    // starting with `type.googleapis.com` that do not specify an area.
+    //
+    // Examples:
+    // * type.intrinsic.ai/assets/com.example.my_asset/my_package.MyMessage
+    // * type.intrinsic.ai/common/google.protobuf.Duration
+    // * type.googleapis.com/google.protobuf.Duration
+    string type_url = 1;
+
+    // Name of the requested file descriptor set in the proto registry, see
+    // [NamedFileDescriptorSet.name].
+    string name = 2;
+
+    // Asset ID for which to get the file descriptor set of the currently
+    // installed version.
+    string asset_id = 3;
+  }
+}
+
+
+enum MessageCompatibility {
+  MESSAGE_COMPATIBILITY_UNSPECIFIED = 0;
+
+  // A proto from one file descriptor set can be safely assigned to another.
+  // The order of the descriptor sets matters. For a message MA from set A,
+  // and MB from set B, ASSIGNABLE compatibility guarantees that it is safe to
+  // assign MA = MB using binary serialization, i.e.,
+  // MA.ParseFromString(MB.SerializeToString()).
+  //
+  // Optionally, a concrete message instance MB can be taken into account (see
+  // [DetermineCompatibilityRequest.message_b]). If MB is not provided, the
+  // compatibility check will be conservative and assume that all fields *might*
+  // be present. If MB is provided, more cases will generally be considered
+  // assignable. An imcompatible field change (e.g., changing the type of a
+  // field) will only cause the overall result to be "unassignable" if the field
+  // is actually present in MB.
+  MESSAGE_COMPATIBILITY_ASSIGNABLE = 3;
+
+  reserved 1, 2;
+}
+
+message DetermineCompatibilityRequest {
+  // A single requested check.
+  message Check {
+    // Optional description of the check's context. If not empty, will be
+    // included in the user message of the returned ExtendedStatus corresponding
+    // to this check. Phrase this like a title. E.g., if you are checking the
+    // parameter proto for a skill call in a process, you could use 'Parameters
+    // of instance "move home" for skill "ai.intrinsic.move_robot"'.
+    string description = 1;
+
+    // Optional information about what the check is related to. This will be
+    // copied into the [ExtendedStatus.related_to] field of the returned
+    // ExtendedStatus corresponding to this check.
+    intrinsic_proto.status.ExtendedStatus.Relations related_to = 2;
+
+    // First file descriptor set in which to compare message types. The order of
+    // set_a and set_b may matter depending on the compatibility (see above). It
+    // is an error if set_a or set_b are not transitively closed.
+    oneof set_a {
+      // Name of the file descriptor set in the proto registry, see
+      // [NamedFileDescriptorSet.name].
+      string name_a = 11;
+
+      // Intrinsic-style type URL of a message in the file descriptor set (the
+      // message name at the end of the URL will be ignored). E.g.
+      // "type.intrinsic.ai/assets/com.example.my_asset/1.0.0/my_package.MyMessage".
+      string type_url_a = 12;
+
+      // File descriptor set passed as part of the request.
+      google.protobuf.FileDescriptorSet file_descriptor_set_a = 13;
+
+      // If set to true, the message type A is assumed to be an empty type (a
+      // message with no fields) and a corresponding file descriptor set will be
+      // automatically created.
+      bool use_empty_message_descriptor_a = 14;
+
+      // Asset ID of which to use the file descriptor set at the currently
+      // installed version.
+      string asset_id_a = 15;
+    }
+    reserved 16 to 20;
+
+    // Second file descriptor set to compare. Analogous to [set_a].
+    oneof set_b {
+      string name_b = 21;
+      string type_url_b = 22;
+      google.protobuf.FileDescriptorSet file_descriptor_set_b = 23;
+      bool use_empty_message_descriptor_b = 24;
+      string asset_id_b = 25;
+    }
+    reserved 26 to 30;
+
+    // The message types to determine compatibility off. They will be used as
+    // the seed to generate the type trees to compare, i.e., starting from the
+    // corresponding messages in set_a and set_b, recursively consider all
+    // messages referenced as a field type. Message types that are not
+    // referenced (anywhere in the recursion) are ignored. Some or all
+    // compatibilities may require these to be equal (to trigger a real
+    // compatibility check), but the caller may still pass different values for
+    // convenience to avoid an extra equality check on the call-site.
+    string message_full_name_a = 31;
+    string message_full_name_b = 32;
+
+    // An optional instance of the message type specified by
+    // [message_full_name_b] as supported by some compatibilities. May not be
+    // set if [use_empty_message_descriptor_b] is true.
+    google.protobuf.Any message_b = 33;
+
+    // Type of compatibility to check. Must not be empty.
+    MessageCompatibility desired_compatibility = 34;
+  }
+
+  // Batch of requested checks. Must not be empty.
+  repeated Check checks = 2;
+}
+
+message DetermineCompatibilityResponse {
+  // One ExtendedStatus for every requested check representing the check's
+  // result and containing the detailed results of the check as nested
+  // ExtendedStatus'es via [ExtendedStatus.context].
+  //
+  // The general outcome of each check is reported via the severity level of
+  // the corresponding ExtendedStatus:
+  // - Severity is INFO: Check passed
+  // - Severity is WARNING: Check passed with warnings
+  // - Severity is ERROR: Check failed
+  repeated intrinsic_proto.status.ExtendedStatus result_statuses = 1;
+}
+

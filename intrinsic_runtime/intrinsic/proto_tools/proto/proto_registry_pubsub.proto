@@ -1,0 +1,66 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.proto_registry;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/intrinsic-ai/insrc/intrinsic_runtime/intrinsic/proto_tools/proto/proto_registry_pubsub_go_proto";
+
+// The following is for the _types/register queryable to register types for a
+// topic. It is invoked as part of creating a publisher/subscriber. The response
+// is returned on a successful regisration, otherwise an error through the
+// usual Queryable mechanism is returned.
+
+// This registers a new type, or verifies compatibility in case the type already
+// exists
+message RegisterTopicTypeRequest {
+  // Topic name to register the type of.
+  string topic = 1;
+
+  // The full name of the message (<package>.<message name>) that is being sent
+  // or received.
+  string message_full_name = 2;
+
+  // Transitively closed file descriptor set for the given message.
+  google.protobuf.FileDescriptorSet file_descriptor_set = 3;
+}
+
+message RegisterTopicTypeResponse {
+  // Registration info for a topic and message type that has been registered.
+  message RegistrationInfo {
+    // Intrinsic-style type URL for the topic.
+    string type_url = 1;
+
+    // Topic hash, part of the URL.
+    string topic_hash = 2;
+  }
+  RegistrationInfo info = 1;
+}
+
+// This gets type information for a given topic.
+message GetTopicTypeRequest {
+  // Topic name for which to get the transmitted message type.
+  string topic = 1;
+}
+
+message GetTopicTypeResponse {
+  // The full name (<package>.<message name>) of the message type of the topic.
+  string message_full_name = 1;
+
+  // Transitively closed file descriptor set for the given message.
+  google.protobuf.FileDescriptorSet file_descriptor_set = 2;
+}

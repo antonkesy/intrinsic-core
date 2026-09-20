@@ -1,0 +1,169 @@
+# proto-file: intrinsic/assets/services/proto/service_manifest.proto
+# proto-message: intrinsic_proto.services.ServiceManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+metadata {
+  id {
+    package: "ai.intrinsic"
+    name: "gazebo_simulator"
+  }
+  vendor {
+    display_name: "Intrinsic"
+  }
+  documentation {
+    description: "Gazebo simulator service."
+  }
+  display_name: "Gazebo Simulator"
+}
+service_def {
+  service_proto_prefixes: "/intrinsic_proto.simulation.v1.SimulatorControlService/"
+  service_proto_prefixes: "/intrinsic_proto.simulation.v1.GazeboService/"
+
+  # Gazebo is only run when deployed in sim, not on real hardware.
+  real_spec {
+    image {
+      archive_filename: "noop_image.tar"
+    }
+  }
+  # The sim spec is kept in sync with google3/intrinsic/simulation/templates/gzserver.yaml
+  sim_spec {
+    image {
+      archive_filename: "asset-gzserver-image.tar"
+      settings {
+        args: "/intrinsic/simulation/gazebo/asset/asset_simulation_server_main"
+        args: "--forward_transport_to_dds=/stats,/clock"
+        args: "--simulation_service_address=istio-ingressgateway.app-ingress.svc.cluster.local:80"
+        args: "--mesh_savepath=/mnt/gzserver-meshes"
+        args: "--sdf_savepath=/mnt/gzserver-artifacts"
+        args: "--opencensus_tracing=false"
+        args: "--object_interaction_moderator_contact_update_interval_sec=0.04"
+        args: "--object_interaction_moderator_deactivation_time_sec=2.0"
+        args: "--ignore_server_create_error_at_startup"
+        args: "--enable_convex_decomposition=true"
+        args: "--enable_auto_inertial=true"
+        args: "--force_trigger_cameras"
+        env_vars {
+          name: "HOME"
+          value: "/mnt/gzserver"
+        }
+        env_vars {
+          name: "GZ_PARTITION"
+          value: "intrinsic_sim"
+        }
+        # TODO(b/505065228): The following services are not yet available.
+        # But the env vars need to be set, otherwise the gazebo service binary
+        # will crash.
+        env_vars {
+          name: "PINCH_GRIPPER_SERVICE_ADDRESS"
+          value: "0.0.0.0:12393"
+        }
+        env_vars {
+          name: "CAMERA_SERVICE_ADDRESS"
+          value: "0.0.0.0:15333"
+        }
+        env_vars {
+          name: "GPIO_SERVICE_ADDRESS"
+          value: "0.0.0.0:12394"
+        }
+        env_vars {
+          name: "SPAWNER_SERVICE_ADDRESS"
+          value: "0.0.0.0:12395"
+        }
+        env_vars {
+          name: "OUTFEED_SERVICE_ADDRESS"
+          value: "0.0.0.0:12396"
+        }
+        env_vars {
+          name: "ICON_SIM_SERVICE_ADDRESS"
+          value: "0.0.0.0:12347"
+        }
+        env_vars {
+          name: "HEALTH_AGGREGATOR_SERVICE_ADDRESS"
+          value: "0.0.0.0:12377"
+        }
+        env_vars {
+          name: "SET_SIMULATED_INPUTS_SERVICE_ADDRESS"
+          value: "0.0.0.0:12476"
+        }
+        env_vars {
+          name: "WORLD_SERVICE_ADDRESS"
+          value: "istio-ingressgateway.app-ingress.svc.cluster.local:80"
+        }
+        env_vars {
+          name: "GEOMETRY_SERVICE_ADDRESS"
+          value: "istio-ingressgateway.app-ingress.svc.cluster.local:80"
+        }
+        env_vars {
+          name: "NVIDIA_DRIVER_CAPABILITIES"
+          value: "graphics,utility,compute"
+        }
+        resource_requirements {
+          requests { key: "nvidia.com/gpu" value: "0" }
+          limits { key: "nvidia.com/gpu" value: "1" }
+          requests { key: "memory" value: "0" }
+          limits { key: "memory" value: "12Gi" }
+        }
+        volume_mounts {
+          name: "gzserver-meshes-volume"
+          mount_path: "/mnt/gzserver-meshes"
+        }
+        volume_mounts {
+          name: "gzserver-volume"
+          mount_path: "/mnt/gzserver"
+        }
+        volume_mounts {
+          name: "gzserver-artifacts-volume"
+          mount_path: "/mnt/gzserver-artifacts"
+        }
+        volume_mounts {
+          name: "intrinsic-icon"
+          mount_path: "/tmp/intrinsic_icon"
+        }
+        volume_mounts {
+          name: "tmp"
+          mount_path: "/tmp"
+        }
+      }
+    }
+    settings {
+      volumes {
+        name: "gzserver-meshes-volume"
+        host_path {
+          path: "/tmp/service_volumes/intrinsic/gzserver-meshes"
+        }
+      }
+      volumes {
+        name: "gzserver-volume"
+        empty_dir { medium: EMPTY_DIR_MEDIUM_MEMORY }
+      }
+      volumes {
+        name: "gzserver-artifacts-volume"
+        empty_dir { medium: EMPTY_DIR_MEDIUM_MEMORY }
+      }
+      volumes {
+        name: "tmp"
+        empty_dir { medium: EMPTY_DIR_MEDIUM_MEMORY }
+      }
+      volumes {
+        name: "intrinsic-icon"
+        host_path {
+          path: "/tmp/intrinsic_icon"
+        }
+      }
+    }
+  }
+}

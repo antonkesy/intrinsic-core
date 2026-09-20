@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<sdf version="1.9">
+  <model name="quad_table">
+    <link name="table_base">
+      <inertial>
+        <mass>1</mass>
+        <inertia>
+          <ixx>1</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1</iyy>
+          <iyz>0</iyz>
+          <izz>1</izz>
+        </inertia>
+      </inertial>
+      <visual name="visual1">
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic/models/assets/quad_table/quad_table.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="base_collision">
+        <pose>0 0 -0.5296 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>1.524 1.42365 0.8924</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="thorlabs_collision">
+        <pose>0 0 -0.029 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.9144 1.524 0.058</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="right_rails_collision">
+        <pose>0.6195 0 -0.0434 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.285 1.524 0.08</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="left_rails_collision">
+        <pose>-0.6195 0 -0.0434 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.285 1.524 0.08</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+
+    <include>
+      <pose>-0.6195 0.6195 -0.0034 0 0 0</pose>
+      <uri>model://intrinsic/models/assets/universal_plate</uri>
+      <name>northwest_plate</name>
+    </include>
+    <joint name="nwplate_mount" type="fixed">
+        <parent>table_base</parent>
+        <child>northwest_plate::body</child>
+    </joint>
+
+    <include>
+      <pose>0.6195 0.6195 -0.0034 0 0 0</pose>
+      <uri>model://intrinsic/models/assets/universal_plate</uri>
+      <name>northeast_plate</name>
+    </include>
+    <joint name="neplate_mount" type="fixed">
+        <parent>table_base</parent>
+        <child>northeast_plate::body</child>
+    </joint>
+
+    <include>
+      <pose>-0.6195 -0.6195 -0.0034 0 0 0</pose>
+      <uri>model://intrinsic/models/assets/universal_plate</uri>
+      <name>southwest_plate</name>
+    </include>
+    <joint name="swplate_mount" type="fixed">
+        <parent>table_base</parent>
+        <child>southwest_plate::body</child>
+    </joint>
+
+    <include>
+      <pose>0.6195 -0.6195 -0.0034 0 0 0</pose>
+      <uri>model://intrinsic/models/assets/universal_plate</uri>
+      <name>southeast_plate</name>
+    </include>
+    <joint name="seplate_mount" type="fixed">
+        <parent>table_base</parent>
+        <child>southeast_plate::body</child>
+    </joint>
+  </model>
+</sdf>

@@ -1,0 +1,100 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.gripper;
+
+import "google/protobuf/duration.proto";
+import "intrinsic/hardware/gripper/gripper.proto";
+import "intrinsic/hardware/gripper/service/proto/generic_pinch_gripper_configs.proto";
+
+option go_package = "intrinsic/hardware/gripper/service/proto/pinch_gripper_server_go_proto";
+
+service PinchGripperServer {
+  // Creates a pinch gripper with the specified configuration on the server side
+  // and returns a handle to it.
+  rpc CreatePinchGripper(CreatePinchGripperRequest)
+      returns (CreatePinchGripperResponse) {}
+
+  // Reset the pinch gripper.
+  rpc ResetPinchGripper(ResetPinchGripperRequest)
+      returns (ResetPinchGripperResponse) {}
+
+  // Command the pinch gripper to execute an action.
+  rpc CommandPinchGripper(CommandPinchGripperRequest)
+      returns (CommandPinchGripperResponse) {}
+
+  // Get the pinch gripper status.
+  rpc GetPinchGripperStatus(GetPinchGripperStatusRequest)
+      returns (GetPinchGripperStatusResponse) {}
+}
+
+message PinchGripperConfig {
+  string name = 1;
+  oneof pinch_gripper_config_options {
+    GenericPinchGripperConfig generic_pinch_gripper_config = 12;
+  }
+  reserved 11;
+}
+
+message CreatePinchGripperRequest {
+  string pinch_gripper_type = 1;
+  PinchGripperConfig config = 2;
+}
+
+message CreatePinchGripperResponse {
+  // The handle is server specific and an internal identifier for the gripper.
+  // The handle format is considered to be an implementation detail and will
+  // change between different server invocations.
+  string gripper_handle = 1;
+
+  // False if the gripper has been created before, otherwise true if the gripper
+  // is created as a result of this RPC.
+  bool created_before = 2;
+}
+
+message ResetPinchGripperRequest {
+  // Gripper identifier, similar to those in CreatePinchGripperResponse.
+  string gripper_handle = 1;
+}
+
+message ResetPinchGripperResponse {}
+
+message CommandPinchGripperRequest {
+  // Gripper identifier, similar to those in CreatePinchGripperResponse.
+  string gripper_handle = 1;
+
+  // The command we want the gripper to execute.
+  PinchGripperCommand command = 2;
+
+  // Timeout for the command execution, i.e. until the gripper hardware's motion
+  // is stopped.
+  google.protobuf.Duration execution_timeout = 3;
+}
+
+message CommandPinchGripperResponse {
+  // Status of the gripper.
+  PinchGripperStatus status = 1;
+}
+
+message GetPinchGripperStatusRequest {
+  // Gripper identifier, similar to those in CreatePinchGripperResponse.
+  string gripper_handle = 1;
+}
+
+message GetPinchGripperStatusResponse {
+  // Status of the gripper.
+  PinchGripperStatus status = 1;
+}

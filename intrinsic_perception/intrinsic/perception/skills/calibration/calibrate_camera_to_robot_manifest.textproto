@@ -1,0 +1,68 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: SkillManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "calibrate_camera_to_robot"
+}
+display_name: "Calibrate camera-to-robot pose"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+  "The `calibrate_camera_to_robot` skill performs calibration between a camera and\n"
+  "a robot, also known as hand-eye calibration. It supports both stationary cameras\n"
+  "(observing a calibration pattern on the robot) and moving cameras\n"
+  "(mounted on the robot, observing a fixed calibration pattern).\n"
+  "The skill requests the `CalibrationService` to compute the calibration using the\n"
+  "stored data points (robot poses and pattern detections). It validates the result against\n"
+  "requested translation and rotation RMS error thresholds. If successful,\n"
+  "it returns a `CameraToRobotCalibrationResult`.\n"
+  "\n"
+  "This skill causes an update of the camera poses in the execute world to reflect the new\n"
+  "calibration. However, it does not automatically apply the updated camera poses to the\n"
+  "initial world; use `save_calibration_result` for that.\n"
+}
+extended_documentation {
+  prerequisites:
+  "For `calibrate_camera_to_robot` to work, a calibration session must have been initialized\n"
+  "in the `CalibrationService` and data (camera poses and pattern detections) must have been\n"
+  "collected for the camera being calibrated. This is typically done by calling the\n"
+  "`initialize_calibration` and `collect_calibration_data` skills beforehand.\n"
+}
+options {
+  cancellation_ready_timeout {
+    seconds: 30
+  }
+  cc_config {
+    create_skill: "::intrinsic::skills::CalibrateCameraToRobot::CreateSkill"
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.CalibrateCameraToRobotParams"
+  default_value {
+    [type.googleapis.com/intrinsic_proto.skills.CalibrateCameraToRobotParams] {
+      translation_root_mean_square_error_threshold: 0.01
+      rotation_root_mean_square_error_threshold: 1
+    }
+  }
+}
+return_type {
+  message_full_name: "intrinsic_proto.skills.CalibrateCameraToRobotResult"
+}

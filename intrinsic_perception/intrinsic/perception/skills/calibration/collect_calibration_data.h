@@ -1,0 +1,83 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef INTRINSIC_PERCEPTION_SKILLS_CALIBRATION_COLLECT_CALIBRATION_DATA_H_
+#define INTRINSIC_PERCEPTION_SKILLS_CALIBRATION_COLLECT_CALIBRATION_DATA_H_
+
+#include <memory>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "google/protobuf/message.h"
+#include "intrinsic/icon/equipment/channel_factory.h"
+#include "intrinsic/motion_planning/proto/v1/geometric_constraints.pb.h"
+#include "intrinsic/perception/proto/v1/calibration_service.grpc.pb.h"
+#include "intrinsic/platform/pubsub/pubsub.h"
+#include "intrinsic/skills/cc/skill_interface.h"
+#include "intrinsic/skills/proto/footprint.pb.h"
+
+namespace intrinsic {
+namespace skills {
+
+// Skill that performs a data collection for hand-eye calibration of a single
+// robot and a single camera.
+class CollectCalibrationData : public SkillInterface {
+ public:
+  // Constants for required equipment
+  static constexpr char kRobotEquipmentSlot[] = "robot";
+
+  // Skill implementation
+  absl::StatusOr<std::unique_ptr<google::protobuf::Message>> Execute(
+      const ExecuteRequest& request, ExecuteContext& context) override;
+
+  absl::StatusOr<std::unique_ptr<::google::protobuf::Message>> Preview(
+      const PreviewRequest& request, PreviewContext& context) override;
+
+  absl::StatusOr<intrinsic_proto::skills::Footprint> GetFootprint(
+      const GetFootprintRequest& request,
+      GetFootprintContext& context) const override;
+
+  // Constructors and factories.
+  static std::unique_ptr<SkillInterface> CreateSkill();
+  explicit CollectCalibrationData(
+      std::unique_ptr<icon::ChannelFactory> icon_channel_factory)
+      : icon_channel_factory_(std::move(icon_channel_factory)) {}
+  ~CollectCalibrationData() override = default;
+
+  struct InputParameters;
+
+ private:
+  // Factory used to instantiate the connection to ICON. This is injected so
+  // that tests can use FakeChannelFactory.
+  std::unique_ptr<icon::ChannelFactory> icon_channel_factory_;
+  PubSub pubsub_;
+
+  absl::Status CollectDataWithCalibrationService(
+      const InputParameters& input_params, ExecuteContext& context,
+      std::unique_ptr<
+          intrinsic_proto::perception::v1::CalibrationService::StubInterface>
+          calibration_service_stub,
+      const ::google::protobuf::RepeatedPtrField<
+          intrinsic_proto::motion_planning::v1::GeometricConstraint>& waypoints,
+      const intrinsic_proto::motion_planning::v1::GeometricConstraint&
+          waypoint_initial,
+      const intrinsic_proto::world::TransformNodeReference& tool,
+      const intrinsic_proto::world::TransformNodeReference& frame);
+};
+
+}  // namespace skills
+}  // namespace intrinsic
+
+#endif  // INTRINSIC_PERCEPTION_SKILLS_CALIBRATION_COLLECT_CALIBRATION_DATA_H_

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<model>
+  <name>$model_name</name>
+  <version>1.0</version>
+  <sdf version='1.6'>$model_name.sdf</sdf>
+  <author>
+   <name>Marco Feuerstein</name>
+   <email>feuer@google.com</email>
+  </author>
+  <description>
+      Programmatically generated ChArUco marker with a ${cols} x ${rows} chessboard grid, a checker size of ${checker_mm} mm, a marker size of ${marker_mm} mm, and plate dimensions ${board_width_mm} mm x ${board_height_mm} mm.
+  </description>
+</model>

@@ -1,0 +1,74 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Patch created manually by Intrinsic.
+# Replaces ROS logging with absl::log on Universal_Robots_ROS2_Driver-2.4.13.
+# Call correctChain() in the constructor of Calibration.
+
+diff --git a/src/calibration.cpp b/src/calibration.cpp
+--- a/src/calibration.cpp
++++ b/src/calibration.cpp
+@@ -45,11 +45,14 @@
+ 
+ #include <vector>
+ 
++#include "absl/log/log.h"
++
+ namespace ur_calibration
+ {
+ Calibration::Calibration(const DHRobot& robot_parameters) : robot_parameters_(robot_parameters)
+ {
+   buildChain();
++  correctChain();
+ }
+ 
+ Calibration::~Calibration()
+@@ -103,12 +106,12 @@ void Calibration::correctAxis(const size_t link_index)
+   Eigen::ParametrizedLine<double, 3> next_rotation_axis;
+   next_rotation_axis = Eigen::ParametrizedLine<double, 3>::Through(next_root_position, next_d_theta_end);
+ 
+-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("ur_calibration"), "next rotation axis:" << std::endl
+-                                                                                  << "Base:" << std::endl
+-                                                                                  << next_rotation_axis.origin()
+-                                                                                  << std::endl
+-                                                                                  << "Direction:" << std::endl
+-                                                                                  << next_rotation_axis.direction());
++  LOG(INFO) << "next rotation axis:" << std::endl
++            << "Base:" << std::endl
++            << next_rotation_axis.origin()
++            << std::endl
++            << "Direction:" << std::endl
++            << next_rotation_axis.direction();
+ 
+   // XY-Plane of first segment's start
+   Eigen::Hyperplane<double, 3> plane(Eigen::Vector3d(0, 0, 1), Eigen::Vector3d::Zero());
+@@ -129,12 +132,12 @@ void Calibration::correctAxis(const size_t link_index)
+   double new_theta = std::atan2(intersection_point.y(), intersection_point.x()) - subtraction_angle;
+   // Upper and lower arm segments on URs all have negative length due to dh params
+   double new_link_length = -1 * intersection_point.norm();
+-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("ur_calibration"), "Next joint's rotation axis intersecting at "
+-                                                                << std::endl
+-                                                                << intersection_point);
+-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("ur_calibration"), "Angle is " << new_theta);
+-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("ur_calibration"), "Length is " << new_link_length);
+-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("ur_calibration"), "Intersection param is " << intersection_param);
++  LOG(INFO) << "Next joint's rotation axis intersecting at "
++            << std::endl
++            << intersection_point << std::endl
++            << "Angle is " << new_theta << std::endl
++            << "Length is " << new_link_length << std::endl
++            << "Intersection param is " << intersection_param;
+ 
+   // as we move the passive segment towards the first segment, we have to move away the next segment
+   // again, to keep the same kinematic structure.

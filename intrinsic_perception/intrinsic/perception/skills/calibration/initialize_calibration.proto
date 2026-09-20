@@ -1,0 +1,68 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "intrinsic/assets/proto/field_metadata.proto";
+import "intrinsic/assets/proto/v1/resolved_dependency.proto";
+import "intrinsic/perception/proto/v1/pattern_detection_config.proto";
+import "intrinsic/perception/proto/v1/pose_estimator_id.proto";
+import "intrinsic/skills/proto/skill_parameter_metadata.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/perception/skills/calibration/initialize_calibration_go_proto";
+
+// Next ID: 9
+message InitializeCalibrationParams {
+  intrinsic_proto.assets.v1.ResolvedDependency data_assets_service = 5
+      [(intrinsic_proto.assets.field_metadata).dependency = {
+        requires: "grpc://intrinsic_proto.data.v1.DataAssets"
+      }];
+
+  intrinsic_proto.assets.v1.ResolvedDependency calibration_service = 8
+      [(intrinsic_proto.assets.field_metadata).dependency = {
+        requires: "grpc://intrinsic_proto.perception.v1.CalibrationService"
+      }];
+
+  oneof detector_config {
+    // Id of the pose estimator to use for calibration pattern detection.
+    perception.v1.PoseEstimatorId pose_estimator = 1;
+
+    // Pattern detection configuration.
+    intrinsic_proto.perception.v1.PatternDetectionConfig
+        pattern_detection_config = 2;
+  }
+  // Name of the ICON arm part to control. If not provided but only a single
+  // arm part is present in the ICON instance, that part will be used.
+  optional intrinsic_proto.world.ObjectReference arm_part = 3
+      [(intrinsic_proto.skills.skill_parameter_metadata) = {
+        is_icon2_position_part: true
+      }];
+
+  // Unique identifier of the object used for calibration (typically, a
+  // calibration pattern).
+  optional intrinsic_proto.world.ObjectReference calibration_object = 4;
+
+  // Optional ID of the execute/belief world (digital twin). Defaults to "world"
+  // if omitted.
+  optional string belief_world_id = 6;
+
+  // Optional ID of the initial/edit world (base scene). Defaults to
+  // "init_world" if omitted.
+  optional string edit_world_id = 7;
+}
+
+message InitializeCalibrationResult {}

@@ -1,0 +1,57 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.force;
+
+option go_package = "intrinsic/icon/control/primitives/force_control/proto/controller_params_go_proto";
+
+// Parameters that define the controller and are shared between force
+// primitives. They still can be set for every primitive independently.
+//
+// The motion direction is defined by the direction in the force primitive
+// defined
+// intrinsic/icon/control/primitives/force_control/proto/force_primitives.proto.
+message ControllerParams {
+  message NotCompliant {}
+
+  oneof translational_stiffness {
+    // The translational stiffness of the Cartesian impedance controller
+    // orthogonal to the controlled direction. Defaults to 100.0 N/m.
+    //
+    // If the tool is moving in z-Direction, this parameter controls the
+    // stiffness of a translation in the x- and y-direction.
+    double translational_stiffness_orthogonal_to_direction = 1;
+
+    // The robot is rendered stiff in the translational directions orthogonal to
+    // the motion directions.
+    NotCompliant no_translational_compliance = 4;
+  }
+
+  oneof rotational_stiffness {
+    // The rotational stiffness of the Cartesian impedance controller orthogonal
+    // to the controlled direction. Defaults to 100.0 Nm/rad.
+    //
+    // If the tool is moving in z-Direction, this parameter controls the
+    // stiffness of a rotation around the x- and y-axis.
+    double rotational_stiffness_orthogonal_to_direction = 2;
+
+    // The robot not compliant in the rotational directions orthogonal to the
+    // controlled directions.
+    NotCompliant no_rotational_compliance = 5;
+  }
+
+  reserved 3;
+}

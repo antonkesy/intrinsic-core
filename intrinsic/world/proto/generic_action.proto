@@ -1,0 +1,110 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world.generic_action;
+
+import "intrinsic/hardware/gpio/v1/signal.proto";
+
+option go_package = "intrinsic/world/proto/generic_action_go_proto";
+
+message JointReference {
+  // The name of the joint to be controlled. The joint should be under the same
+  // model/object/collection entity where the generic action is defined.
+  string joint_name = 1;
+}
+
+// Defines how a joint can be moved as a generic action
+message JointPositionCommand {
+  JointReference joint_reference = 1;
+
+  // Represents a specific target position
+  message TargetPositionCommand {
+    // Target positions - some joint types have multiple DOFs so allow setting
+    // more than one joint position
+    repeated double joint_positions = 1;
+    // Specific GPIO signals that commands to these joint positions.
+    intrinsic_proto.gpio.v1.SignalValueSet gpio_signals = 2;
+  }
+
+  // A generic joint position command, expect each gpio command to have a float
+  // value
+  message GenericPositionCommand {
+    // If present, represents the signals used to apply joint position commands.
+    // Expected to have the same as the number of DOFs as the controlled joint.
+    repeated intrinsic_proto.gpio.v1.SignalDescription gpio_commands = 1;
+  }
+
+  oneof command {
+    TargetPositionCommand target_position_command = 2;
+    GenericPositionCommand generic_position_command = 3;
+  }
+}
+
+// Read signal requests that are ignored or unsupported by the simulator
+message DummyReadSignals {
+  intrinsic_proto.gpio.v1.SignalValueSet gpio_signals = 1;
+}
+
+// Write signal requests that are ignored or unsupported by the simulator
+message DummyWriteSignals {
+  intrinsic_proto.gpio.v1.SignalValueSet gpio_signals = 1;
+}
+
+// Defines how a joint can be read as a generic action
+message ReadJointPosition {
+  JointReference joint_reference = 1;
+
+  // If present, represents the signals used to apply joint position commands.
+  // Expected to be either empty or the same as the number of DOFs of the
+  // queried joint.
+  repeated intrinsic_proto.gpio.v1.SignalDescription gpio_output = 2;
+}
+
+// Defines how a specific joint configuration can be signaled by GPIO signals
+message MatchJointPosition {
+  JointReference joint_reference = 1;
+
+  repeated double expected_joint_positions = 2;
+
+  // The set of signals to return when the actual joint positions matches the
+  // expected joint positions
+  intrinsic_proto.gpio.v1.SignalValueSet matching_signals = 3;
+
+  // The set of signals to return when the actual joint positions do not match
+  // the expected joint positions.
+  intrinsic_proto.gpio.v1.SignalValueSet non_matching_signals = 4;
+}
+
+// Defines how the simulator is expected to be affected by this command
+message GenericAction {
+  oneof action {
+    JointPositionCommand joint_position_command = 1;
+    ReadJointPosition read_joint_position = 2;
+    MatchJointPosition match_joint_position = 3;
+    DummyReadSignals dummy_read_signals = 4;
+    DummyWriteSignals dummy_write_signals = 5;
+  }
+}
+
+message GenericActionConfig {
+  repeated GenericAction actions = 2;
+}
+
+message GenericActionPluginSpec {
+  // Actions that can be performed on the owning entity or members of its
+  // owning collection entity
+  GenericActionConfig action_configs = 1;
+}

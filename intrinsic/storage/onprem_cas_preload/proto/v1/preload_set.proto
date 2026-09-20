@@ -1,0 +1,84 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.onprem_cas_preload.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "intrinsic/storage/onprem_cas_preload/proto/v1/preload_set_go_proto";
+
+enum RegisteredClient {
+  REGISTERED_CLIENT_UNSPECIFIED = 0;
+  PERCEPTION = 1;
+  GEOMETRY = 2;
+  DEPLOY = 3;
+}
+
+enum PreloadDirective {
+  PRELOAD_DIRECTIVE_UNSPECIFIED = 0;
+  // Download this object and keep it as long as there is at least one preload
+  // set for it.
+  DOWNLOAD_AND_KEEP = 1;
+}
+
+// Make it a message so that we can extend it later, e.g. adding TTL.
+message PreloadStrategy {
+  PreloadDirective preload_directive = 1;
+}
+
+// PreloadSet is the centerpiece of the OCPS API. When this object exists, the
+// OCPS is guaranteed to satisfy the preload strategy for each of the CAS
+// objects referenced in it.
+message PreloadSet {
+  // Machine-friendly name of this preload set as per
+  // https://google.aip.dev/122. Use it in `DeletePreloadSet` or
+  // `UpsertPreloadSet` requests. This name is generated server-side (i.e. by
+  // the OCPS). Clients should treat it as an opaque string.
+  string name = 1;
+
+  // Each preload set must be owned by a service. This is important for the
+  // detection of orphaned preload sets.
+  RegisteredClient owner = 2;
+
+  Metadata metadata = 3;
+
+  // Keys must be valid Intrinsic CAS object IDs.
+  map<string, PreloadStrategy> strategy_by_object = 4;
+}
+
+// Metadata is also used as the metadata field in a
+// `google.longrunning.Operation`.
+message Metadata {
+  // A short human-readable explanation why the owner requests this preload set.
+  //
+  // Example: "charuco 9x14 20mm pose estimator".
+  string usage_description = 1;
+
+  google.protobuf.Timestamp create_time = 2;
+
+  message OperationProgress {
+    // An abstract measure of progress between 0.0 and 1.0. No guarantees on
+    // monotonicity.
+    float progress = 1;
+
+    // Hint for the client when to poll next.
+    google.protobuf.Timestamp eta = 2;
+  }
+
+  // This field is non-empty only if returned as a part of a long running
+  // operation.
+  OperationProgress operation_progress = 3;
+}

@@ -1,0 +1,158 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Build rules for creating Hardware Module Assets."""
+
+
+def _wrap_pbtxt_impl(ctx):
+    out = ctx.actions.declare_file("%s.textproto" % ctx.label.name)
+    ctx.actions.run(
+        inputs = depset([ctx.file.src]),
+        outputs = [out],
+        executable = ctx.executable._wrap_pbtxt,
+        arguments = [
+            ctx.actions.args().add(
+                ctx.file.src,
+                format = "--input=%s",
+            ).add(
+                out,
+                format = "--output=%s",
+            ),
+        ],
+        mnemonic = "WrapPbtxt",
+        progress_message = "Wrapping pbtxt into %s" % out.short_path,
+    )
+    return [
+        DefaultInfo(
+            files = depset([out]),
+            runfiles = ctx.runfiles(files = [out]),
+        ),
+    ]
+
+wrap_in_any_textproto = rule(
+    implementation = _wrap_pbtxt_impl,
+    doc = (
+        "Wraps a pbtxt file in an any proto based on the type information in " +
+        "the pbtxt's header comments. As a side effect, also validates the syntax of the " +
+        "textproto file."
+    ),
+    attrs = {
+        "src": attr.label(
+            mandatory = True,
+            allow_single_file = [".pbtxt", ".textproto"],
+        ),
+        "_wrap_pbtxt": attr.label(
+            default = Label("//intrinsic_control/intrinsic/icon/hal/bzl:wrap_pbtxt"),
+            cfg = "exec",
+            executable = True,
+        ),
+    },
+)
+
+
+
+def _hal_manifest_impl(ctx):
+    out = ctx.actions.declare_file("%s.textproto" % ctx.label.name)
+
+    args = ctx.actions.args().add(
+        ctx.file.manifest,
+        format = "--manifest=%s",
+    ).add(
+        ctx.attr.provides_service_inspection,
+        format = "--provides_service_inspection=%s",
+    ).add(
+        ctx.attr.requires_rtpc_node,
+        format = "--requires_rtpc_node=%s",
+    ).add(
+        ctx.attr.running_ethercat_oss,
+        format = "--running_ethercat_oss=%s",
+    ).add_all(
+        ctx.attr.service_proto_prefixes,
+        format_each = "--service_proto_prefix=%s",
+    ).add(
+        out,
+        format = "--output=%s",
+    )
+
+    if not ctx.file.image and not ctx.file.image_sim:
+        fail("One of image or image_sim must be provided")
+    if ctx.file.image:
+        args = args.add(
+            ctx.file.image,
+            format = "--image=%s",
+        )
+    if ctx.file.image_sim:
+        args = args.add(
+            ctx.file.image_sim,
+            format = "--image_sim=%s",
+        )
+
+    ctx.actions.run(
+        inputs = depset([ctx.file.manifest]),
+        outputs = [out],
+        executable = ctx.executable._hal_manifest,
+        arguments = [args],
+        mnemonic = "HalManifest",
+        progress_message = "Generating complete hal manifest %s" % out.short_path,
+    )
+    return [
+        DefaultInfo(
+            files = depset([out]),
+            runfiles = ctx.runfiles(files = [out]),
+        ),
+    ]
+
+hardware_module_manifest = rule(
+    implementation = _hal_manifest_impl,
+    doc = "Completes a partial resource manifest file for hardware modules",
+    attrs = {
+        "image": attr.label(
+            allow_single_file = [".tar"],
+            doc = "The image archive to be included in the bundle",
+        ),
+        "image_sim": attr.label(
+            allow_single_file = [".tar"],
+            mandatory = True,
+            doc = """The image archive to be included in the bundle for
+            simulation.  This can be the same as image if it supports both sim
+            and real""",
+        ),
+        "manifest": attr.label(
+            allow_single_file = [".textproto"],
+            doc = "The partially complete manifest containing metadata",
+            mandatory = True,
+        ),
+        "provides_service_inspection": attr.bool(
+            default = False,
+            doc = "Flag to indicate that the module provides service inspection",
+        ),
+        "requires_rtpc_node": attr.bool(
+            default = True,
+            doc = "If the hardware module requires a real-time PC or not",
+        ),
+        "running_ethercat_oss": attr.bool(
+            default = False,
+            doc = "If the hardware module is running ethercat oss",
+        ),
+        "service_proto_prefixes": attr.string_list(
+            doc = """The services the module exposes, if any. The ServiceState service is always
+            exposed.""",
+        ),
+        "_hal_manifest": attr.label(
+            default = Label("//intrinsic_control/intrinsic/icon/hal/bzl:hal_manifest"),
+            cfg = "exec",
+            executable = True,
+        ),
+    },
+)

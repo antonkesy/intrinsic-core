@@ -1,0 +1,43 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "intrinsic/icon/skills/aio_read_input_go_proto";
+
+message AioReadInputParams {
+  // Specifies the name of the AIO (Analog Input/Output) block from which
+  // values will be read. You can look up the list of block names, indices, and
+  // current values of analog inputs in the Services panel, on the settings
+  // page of the real-time control or robot control service, in the 'I/O
+  // mapping' window.
+  string block_name = 1;
+
+  // Duration after which the skill will create a timeout error if the desired
+  // if the desired AIOs could not be read.
+  optional google.protobuf.Duration timeout = 2;
+}
+
+message AioReadInputReturnValue {
+  // All signal values of the specified block from the input parameters. The
+  // list contains all analog inputs available in the selected block. The list
+  // is ordered by index. You can look up the order and current values in the
+  // Services panel, on the settings page of the real-time control or robot
+  // control service, in the 'I/O mapping' window.
+  repeated double values = 3;
+}

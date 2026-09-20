@@ -1,0 +1,156 @@
+# proto-file: google/protobuf/any.proto
+# proto-message: google.protobuf.Any
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[type.googleapis.com/intrinsic_proto.icon.HardwareModuleConfig] {
+  # Configures a fake HW module to match the interfaces exposed by the real
+  # hardware.
+  name: "kuka_rsi_hal_module"
+  drives_realtime_clock: true
+  control_frequency_hz: 250
+  module_config {
+    [type.googleapis.com/intrinsic_proto.icon.FakeModuleConfig] {
+      arm_interfaces {
+        control_mode_state_name: "control_mode_state"
+        joint_position_command_name: "joint_position_command"
+        joint_position_state_name: "joint_position_state"
+        joint_velocity_state_name: "joint_velocity_state"
+        joint_acceleration_state_name: "joint_acceleration_state"
+        joint_torque_state_name: "joint_torque_state"
+        payload_command_name: "payload_command"
+        payload_state_name: "payload_state"
+        initial_joint_state {
+          position_sensed: 0.0
+          velocity_sensed: 0.0
+          acceleration_sensed: 0.0
+          torque_sensed: 0.0
+        }
+        initial_joint_state {
+          position_sensed: 0.0
+          velocity_sensed: 0.0
+          acceleration_sensed: 0.0
+          torque_sensed: 0.0
+        }
+        initial_joint_state {
+          position_sensed: 0.0
+          velocity_sensed: 0.0
+          acceleration_sensed: 0.0
+          torque_sensed: 0.0
+        }
+        initial_joint_state {
+          position_sensed: 0.0
+          velocity_sensed: 0.0
+          acceleration_sensed: 0.0
+          torque_sensed: 0.0
+        }
+        initial_joint_state {
+          position_sensed: 0.0
+          velocity_sensed: 0.0
+          acceleration_sensed: 0.0
+          torque_sensed: 0.0
+        }
+        initial_joint_state {
+          position_sensed: 0.0
+          velocity_sensed: 0.0
+          acceleration_sensed: 0.0
+          torque_sensed: 0.0
+        }
+      }
+
+      adio_interface: {
+        initial_adio_state: {
+          digital_inputs: {
+            key: "digital_input_status"
+            value: {
+              signals: {
+                key: 0
+                value: { value: false }
+              }
+              signals: {
+                key: 1
+                value: { value: true }
+              }
+            }
+          }
+          digital_inputs: {
+            key: "digital_output_status"
+            value: {
+              signals: {
+                key: 0
+                value: { value: true }
+              }
+              signals: {
+                key: 1
+                value: { value: true }
+              }
+            }
+          }
+          digital_outputs: {
+            key: "digital_output_command"
+            value: {
+              signals: {
+                key: 0
+                value: { value: true }
+              }
+              signals: {
+                key: 1
+                value: { value: true }
+              }
+            }
+          }
+        }
+        setup_loopback_interfaces: true
+      }
+
+      safety_interface {
+        safety_status_name: "safety_status"
+        initial_safety_status {
+          mode_of_safe_operation: MODE_OF_SAFE_OPERATION_AUTOMATIC
+          estop_button_status: BUTTON_STATUS_DISENGAGED
+          enable_button_status: BUTTON_STATUS_NOT_AVAILABLE
+          requested_behavior: REQUESTED_BEHAVIOR_NORMAL_OPERATION
+        }
+      }
+    }
+  }
+  simulation_module_config {
+    dio_config {
+      inputs {
+        device_name: "digital_input_status"
+        signals: [
+          { name: "di_1" bit: 0 },
+          { name: "di_2" bit: 1 },
+          { name: "di_3" bit: 2 },
+          { name: "di_4" bit: 3 }
+        ]
+      }
+      inputs {
+        device_name: "digital_output_status"
+        signals: [
+          { name: "do_1" bit: 4 },
+          { name: "do_2" bit: 5 }
+        ]
+      }
+      outputs {
+        device_name: "digital_output_command"
+        signals: [
+          { name: "do_1" bit: 4 },
+          { name: "do_2" bit: 5 }
+        ]
+      }
+    }
+  }
+}

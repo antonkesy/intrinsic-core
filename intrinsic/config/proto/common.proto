@@ -1,0 +1,73 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.config;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "intrinsic/config/proto/common_go_proto";
+
+// Shared metadata header for application/process/product/workcell protos.
+message Metadata {
+  enum Category {
+    CATEGORY_UNDEFINED = 0;
+
+    // Defined in Piper and generated via bazel. Read-only for users.
+    TEMPLATE = 1;
+
+    // User-created instance.
+    INSTANCE = 3;
+
+    // User-created branch. Used for solutions that are created from branches.
+    BRANCH = 4;
+
+    reserved 2;
+  }
+
+  // Display name, e.g. 'bluebird', 'bb-02'.
+  string display_name = 1;
+
+  // Resource name.
+  string name = 13;
+
+  // Build target when built by bazel, otherwise empty.
+  string build_target = 7;
+
+  // Auto-populated with server timestamp on update.
+  google.protobuf.Timestamp update_time = 2;
+
+  // Username of the user who last created or updated the document containing
+  // this metadata. This can be empty for templates.
+  string last_updated_by = 3;
+
+  // Username of the user who created the document containing this metadata.
+  // This should be empty and unused for templates.
+  // This should only be set if the document was created by a human user via
+  // externally facing tools (web frontend, dev. container, etc.)
+  string created_by = 15;
+
+  // Possible categories are template and instance.
+  Category category = 4;
+
+  // Set to true if the document is incomplete, e.g. it is a metadata-only view.
+  // If it is set to true, IntrinsicDB will refuse to persist the corresponding
+  // document.
+  bool is_incomplete = 14;
+
+  reserved "docs", "environment", "origin", "owner_org", "parent",
+      "thumbnail_uri", "version";
+  reserved 5, 6, 8, 9, 10, 11, 12, 16;
+}

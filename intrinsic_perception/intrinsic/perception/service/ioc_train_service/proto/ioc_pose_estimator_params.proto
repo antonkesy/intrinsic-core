@@ -1,0 +1,31 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package incode.perception.ioc.proto;
+
+option go_package = "intrinsic_perception/intrinsic/perception/service/ioc_train_service/proto/ioc_pose_estimator_params_go_proto";
+
+// Hyperparameters and detection thresholds for the IOC Pose Estimator.
+message IocPoseEstimatorParams {
+  // Number of refinement iterations for FoundationPose.
+  optional int32 refinement_iters = 1;
+
+  // Confidence / detection score threshold for the object detector.
+  optional float confidence_threshold = 2;
+
+  // Minimum visibility threshold for detected objects.
+  optional float visibility_threshold = 3;
+}

@@ -1,0 +1,60 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: SkillManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "calibrate_intrinsic"
+}
+display_name: "Calibrate intrinsic camera parameters"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description: 
+  "The `calibrate_intrinsic` skill triggers the computation of intrinsic camera parameters within the `CalibrationService`.\n"
+  "It assumes that data has been previously collected for the camera, e.g., by calling `collect_calibration_data`.\n"
+  "The skill sends a request to the service to run the calibration algorithm, which estimates\n"
+  "parameters like focal length, principal point, and lens distortion coefficients. The results are returned in an\n"
+  "`IntrinsicCalibrationResult` message for each calibrared camera. This skill does not automatically apply the\n"
+  "results to the world; use `save_calibration_result` for that."
+}
+extended_documentation {
+  prerequisites: 
+  "For `calibrate_intrinsic` to work, a calibration session must have been initialized\n"
+  "in the `CalibrationService` and data (camera poses and pattern detections) must have been\n"
+  "collected for the camera being calibrated. This is typically done by calling the\n"
+  "`initialize_calibration` and `collect_calibration_data` skills beforehand.\n"
+}
+options {
+  cancellation_ready_timeout {
+    seconds: 30
+  }
+  cc_config {
+    create_skill: "::intrinsic::skills::CalibrateCameraIntrinsic::CreateSkill"
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.CalibrateCameraIntrinsicParams"
+  default_value {
+    [type.googleapis.com/intrinsic_proto.skills.CalibrateCameraIntrinsicParams] {
+    }
+  }
+}
+return_type {
+  message_full_name: "intrinsic_proto.skills.CalibrateCameraIntrinsicResult"
+}

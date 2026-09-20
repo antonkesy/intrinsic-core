@@ -1,0 +1,80 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.scene_object.v1;
+
+import "intrinsic/math/proto/pose.proto";
+
+option go_package = "intrinsic/scene/proto/v1/imported_scene_updates_go_proto";
+
+// Collection of updates to reconstruct a imported scene from
+// ImportedSceneObjectInstances.
+message ImportedSceneUpdates {
+  // Updates to be applied to scene object instances to
+  // reconstruct an imported scene for further edits.
+  repeated ImportedSceneUpdate updates = 1;
+}
+
+// Single update that can be applied to ImportedSceneObjectInstances in an
+// imported scene.
+message ImportedSceneUpdate {
+  oneof update {
+    ReparentSceneObjectInstance reparent = 1;
+  }
+}
+
+// Reparents one ImportedSceneObjectInstance to another instance or the root of
+// the scene.
+message ReparentSceneObjectInstance {
+  // Reference to find the entity that child_object's root entity should attach
+  // to
+  EntityReference parent_entity = 1;
+
+  // Reference to find child_object's. Note we don't want to pick an entity
+  // because the ObjectWorld only allows attaching root entity of an object.
+  SceneObjectInstanceReference child_object = 2;
+
+  // The pose of child_object's root entity will be updated according to one of
+  // the attachment options.
+  oneof attachment_options {
+    // Only replace child_object's root entity's parent, the entity's
+    // parent_t_this remains unchanged.
+    KeepRelativePose keep_relative_pose = 3;
+    // Overrides child_object's root entity's parent_t_this.
+    SetRelativePose set_relative_pose = 4;
+  }
+}
+
+// A reference to an Entity in a SceneObjectInstance.
+message EntityReference {
+  // Reference to a ImportedSceneObjectInstance.
+  SceneObjectInstanceReference instance_ref = 1;
+  // The name of an entity in the ImportedSceneObjectInstance referenced by
+  // instance_ref.
+  string entity_name = 2;
+}
+
+// A reference to a SceneObjectInstance.
+message SceneObjectInstanceReference {
+  // The id of an instance in ImportedSceneObjectInstances.
+  string instance_id = 1;
+}
+
+message KeepRelativePose {}
+
+message SetRelativePose {
+  intrinsic_proto.Pose new_pose = 1;
+}

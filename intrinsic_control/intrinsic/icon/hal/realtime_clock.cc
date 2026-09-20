@@ -1,0 +1,117 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "intrinsic/icon/hal/realtime_clock.h"
+
+#include <stdint.h>
+
+#include <memory>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "intrinsic/icon/interprocess/shared_memory_lockstep/shared_memory_lockstep.h"
+#include "intrinsic/icon/interprocess/shared_memory_manager/memory_segment.h"
+#include "intrinsic/icon/interprocess/shared_memory_manager/shared_memory_manager.h"
+#include "intrinsic/icon/utils/clock.h"
+#include "intrinsic/icon/utils/clock_base.h"
+#include "intrinsic/icon/utils/realtime_guard.h"
+#include "intrinsic/icon/utils/realtime_status.h"
+#include "intrinsic/icon/utils/realtime_status_macro.h"
+#include "intrinsic/util/status/status_macros.h"
+#include "intrinsic/util/thread/lockstep.h"
+
+namespace intrinsic::icon {
+
+static constexpr absl::Duration kStartUpLockstepTimeout = absl::Minutes(1);
+
+RealtimeClock::RealtimeClock(
+    SharedMemoryLockstep lockstep,
+    ReadWriteMemorySegment<RealtimeClockUpdate> realtime_clock_update)
+    : lockstep_(std::move(lockstep)),
+      update_(std::move(realtime_clock_update)) {
+  // This matches the first EndOperationA in TickBlockingWithTimeout. See
+  // comments in TickBlockingWithTimeout.
+  // During startup it might take several seconds until both sides of the
+  // lockstep are available.
+  CHECK_OK(lockstep_->StartOperationAWithTimeout(
+      /*timeout=*/kStartUpLockstepTimeout));
+}
+
+RealtimeClock::~RealtimeClock() {
+  // This matches the final StartOperationA in TickBlockingWithTimeout. See
+  // comments in TickBlockingWithTimeout.
+  if (RealtimeStatus status = lockstep_->EndOperationA(); !status.ok()) {
+    LOG(WARNING) << "Error destructing RealtimeClock: " << status.message();
+  }
+}
+
+RealtimeStatus RealtimeClock::TickBlockingWithDeadline(
+    intrinsic::Time current_timestamp, absl::Time deadline) {
+  // This is called from the clock owner's thread. Everything *outside* this
+  // method is "Operation A", which is the reason for the inversion here
+  // (End, then Start). The initial call to StartOperationA is in the
+  // constructor.
+
+  // Store `current_timestamp` before allowing "Operation B" (the control
+  // update) to run.
+  update_.GetValue().cycle_start_nanoseconds =
+      toNSec<int64_t>(current_timestamp);
+
+  INTRINSIC_RT_RETURN_IF_ERROR(lockstep_->EndOperationA());
+  // ...
+  // RTCL's turn! Cyclic update occurs here in the ICON control process.
+  // ...
+
+  // For the final call to TickBlockingWithTimeout(), the
+  // StartOperationAWithDeadline() here matches the EndOperationA() in the
+  // destructor.
+  return lockstep_->StartOperationAWithDeadline(deadline);
+}
+
+RealtimeStatus RealtimeClock::Reset(absl::Duration timeout) {
+  // Cancel, in case someone is still waiting or about to wait.
+  lockstep_->Cancel();
+  auto status = lockstep_->Reset(timeout);
+  // StartOperationA matches the first EndOperationA in TickBlockingWithTimeout.
+  // See comments in TickBlockingWithTimeout.
+  return OverwriteIfNotInError(status,
+                               lockstep_->StartOperationAWithTimeout(timeout));
+}
+
+absl::StatusOr<std::unique_ptr<RealtimeClock>> RealtimeClock::Create(
+    SharedMemoryManager& shm_manager) {
+  INTRINSIC_ASSERT_NON_REALTIME();
+  INTR_ASSIGN_OR_RETURN(SharedMemoryLockstep lockstep,
+                        CreateSharedMemoryLockstep(
+                            shm_manager, kRealtimeClockLockstepInterfaceName));
+
+  INTR_RETURN_IF_ERROR(
+      shm_manager.AddSegmentWithDefaultValue<icon::RealtimeClockUpdate>(
+          kRealtimeClockUpdateInterfaceName, /*must_be_used=*/false));
+
+  INTR_ASSIGN_OR_RETURN(
+      ReadWriteMemorySegment<RealtimeClockUpdate> update,
+      shm_manager.Get<ReadWriteMemorySegment<RealtimeClockUpdate>>(
+          kRealtimeClockUpdateInterfaceName));
+
+  return absl::WrapUnique(
+      new RealtimeClock(std::move(lockstep), std::move(update)));
+}
+
+}  // namespace intrinsic::icon

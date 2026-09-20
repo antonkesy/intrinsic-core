@@ -1,0 +1,131 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package ai.intrinsic;
+
+import "intrinsic/assets/proto/v1/resolved_dependency.proto";
+import "intrinsic/assets/proto/field_metadata.proto";
+import "intrinsic/assets/proto/id.proto";
+import "intrinsic/math/proto/pose.proto";
+import "intrinsic/math/proto/vector3.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/world/skills/create_object/create_object_go_proto";
+
+message CreateObjectParams {
+  // The resolved dependency for the Intrinsic runtime.
+  intrinsic_proto.assets.v1.ResolvedDependency intrinsic_runtime = 9
+      [(intrinsic_proto.assets.field_metadata).dependency = {
+        requires: "grpc://intrinsic_proto.assets.v1.InstalledAssetsReader"
+      }];
+
+  // The resolved dependency for the Spawner service. This field name matches
+  // the legacy manifest-declared equipment key for backwards compatibility.
+  intrinsic_proto.assets.v1.ResolvedDependency create_object_service = 10
+      [(intrinsic_proto.assets.field_metadata).dependency = {
+        requires: "grpc://intrinsic_proto.simulation.Spawner",
+        skill_annotations: {
+          always_provide_connection_info: true
+          fallback_manifest_dependency_key: "create_object_service"
+        }
+      }];
+
+  // The id of the Scene Object asset to create objects from. The asset must be
+  // installed in the solution.
+  intrinsic_proto.assets.Id object_to_create = 1
+      [(intrinsic_proto.assets.field_metadata) = {
+        is_installed_scene_object_asset: true
+      }];
+
+  enum NamingSuffix {
+    // When unspecified, `TIMESTAMP` will be used.
+    SUFFIX_UNSPECIFIED = 0;
+    // Name objects sequentially starting with 0 index, e.g. "object_0",
+    // "object_1", etc.
+    INDEX = 1;
+    // Name objects using the timestamp, e.g. "object_<timestamp>".
+    // Helpful in avoiding name collisions with other objects in the world.
+    TIMESTAMP = 2;
+  }
+
+  // Object naming schema: <prefix>_<suffix>.
+  message ObjectNamingSchema {
+    // The prefix to use for the object names.
+    // If unset, the skill will generate a prefix based on `object_to_create`
+    // asset's internal details. The users should not rely on the generated
+    // prefix, and instead use `CreateObjectResult` return from the skill to get
+    // the names of the created objects.
+    optional string prefix = 1;
+    optional NamingSuffix suffix = 2;
+  }
+
+  // The naming schema to use for the created objects. Only one of
+  // `object_naming_schema` or `object_names` should be set.
+  ObjectNamingSchema object_naming_schema = 7;
+
+  // A list of names to use for the created objects. If set, the number of names
+  // must match the number of poses. Only one of `object_naming_schema` or
+  // `object_names` should be set.
+  repeated string object_names = 8;
+
+  // The frame to create objects relative to. If unset, the objects will be
+  // created relative to the root of the world.
+  intrinsic_proto.world.TransformNodeReference create_at_frame = 5;
+
+  // If true, the objects will be attached to create_at_frame. Otherwise, the
+  // objects will be created relative to the root of the world.
+  bool attach_to_create_at_frame = 6;
+
+  // The poses to create objects at. The poses are relative to the
+  // create_at_frame. Each pose will be randomized individually by
+  // randomization.
+  repeated intrinsic_proto.Pose poses = 2;
+
+  message Randomization {
+    // If set, the position of the objects will deviate from the specified pose
+    // by a random vector uniformly sampled within the domain.
+    optional intrinsic_proto.Vector3 positional_randomization_domain = 1;
+
+    oneof rotation_randomization {
+      // If true, the rotation of the objects will be randomized uniformly.
+      bool randomize_any_rotation = 2;
+      // TODO(b/404779647): Add support for axially constrained rotation once we
+      // have a need and an agreed upon convention.
+    }
+  }
+
+  // If set, the poses of the objects will be randomized indivisually by the
+  // domains specified.
+  optional Randomization randomization = 3;
+
+  enum TargetWorld {
+    // When unspecified, objects will be created in the belief world.
+    UNSPECIFIED = 0;
+    // Create objects in the belief world.
+    BELIEF = 1;
+    // Create objects in the sim world.
+    SIM = 2;
+    // Create objects in both the belief and sim world.
+    BELIEF_AND_SIM = 3;
+  }
+  // If set, the objects will be created in the specified world.
+  TargetWorld create_in_world = 4;
+}
+
+message CreateObjectResult {
+  // The objects that were created.
+  repeated intrinsic_proto.world.ObjectReference objects = 1;
+}

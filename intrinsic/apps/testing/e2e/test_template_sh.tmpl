@@ -1,0 +1,53 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#!/bin/bash
+set -euo pipefail
+
+source "$(rlocation "intrinsic-core/intrinsic/apps/testing/e2e/app_e2e_test.sh")"
+
+readonly INTRINSIC_SOLUTION="$(rlocation "{{.Solution}}")"
+readonly OPERATION_MODE="{{.OperationMode}}"
+
+{{define "join_quoted_escaped" -}}
+{{/* Escapes quotes within elements and quote each element as a whole by using %q. Then join using spaces. */ -}}
+{{range $i, $v := .}}{{if $i}} {{end}}{{printf "%q" $v}}{{end}}
+{{- end}}
+
+function main() {
+  setup_all_tests
+  trap 'teardown_all_tests' EXIT
+
+  local failures=0
+  local test_file
+
+  {{range .TestFunctions}}
+  echo "========================================"
+  echo "Testing {{.TestType}} {{.TestFile}}"
+  echo "========================================"
+  test_file="$(rlocation "{{.TestFile}}")"
+  if ! test_{{.TestType}} "${test_file}"{{if .TestParams}} {{template "join_quoted_escaped" .TestParams}}{{end}}; then
+    echo "ERROR: Test failed: {{.TestType}} {{.TestFile}}" >&2
+    failures=$((failures + 1))
+  fi
+  {{end}}
+
+  if [[ ${failures} -gt 0 ]]; then
+    echo "FAILED: ${failures} test(s) failed." >&2
+    exit 1
+  fi
+  echo "PASS: All tests passed."
+}
+
+main "$@"

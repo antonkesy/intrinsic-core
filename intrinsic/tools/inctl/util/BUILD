@@ -1,0 +1,188 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//bazel:go_macros.bzl", "go_library")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "buildozer",
+    srcs = ["buildozer.go"],
+    importpath = "intrinsic/tools/inctl/util/buildozer",
+    deps = ["@com_github_bazelbuild_buildtools//edit:go_default_library"],
+)
+
+go_library(
+    name = "printer",
+    srcs = ["printer.go"],
+    importpath = "intrinsic/tools/inctl/util/printer",
+    deps = ["@com_github_spf13_cobra//:go_default_library"],
+)
+
+go_library(
+    name = "cobrautil",
+    srcs = ["cobrautil.go"],
+    importpath = "intrinsic/tools/inctl/util/cobrautil",
+    deps = ["@com_github_spf13_cobra//:go_default_library"],
+)
+
+go_library(
+    name = "vmalias",
+    srcs = ["vmalias.go"],
+    importpath = "intrinsic/tools/inctl/util/vmalias",
+    deps = [
+        ":color",
+        "//intrinsic/tools/internal:k8sclientutil",
+    ],
+)
+
+go_library(
+    name = "releaseutil",
+    srcs = ["releaseutil.go"],
+    importpath = "intrinsic/tools/inctl/util/releaseutil",
+    deps = [
+        ":color",
+        "//intrinsic/storage/content_addressable_storage/pkg/crossproject",
+        "//intrinsic/storage/content_addressable_storage/pkg/filetocas",
+        "@com_github_golang_glog//:go_default_library",
+        "@intrinsic_apis//intrinsic/kubernetes/workcell_spec/proto:transfer_go_proto",
+        "@intrinsic_apis//intrinsic/storage/content_addressable_storage/proto:cas_service_go_proto",
+        "@io_opencensus_go//trace:go_default_library",
+        "@org_golang_google_grpc//codes:go_default_library",
+        "@org_golang_google_grpc//status:go_default_library",
+        "@org_golang_x_sync//errgroup:go_default_library",
+    ],
+)
+
+go_library(
+    name = "resolve",
+    srcs = ["resolve.go"],
+    importpath = "intrinsic/tools/inctl/util/resolve",
+    deps = [
+        "//intrinsic/util/path_resolver:pathresolver",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_library(
+    name = "introspection",
+    srcs = ["introspection.go"],
+    importpath = "intrinsic/tools/inctl/util/introspection",
+)
+
+go_library(
+    name = "gcpauth",
+    srcs = ["gcpauth.go"],
+    importpath = "intrinsic/tools/inctl/util/gcpauth",
+    deps = [
+        "//intrinsic/config:environments",
+        "//intrinsic/tools/inctl/auth",
+        "@com_github_golang_glog//:go_default_library",
+        "@com_github_google_go_containerregistry//pkg/v1/google:go_default_library",
+        "@com_github_google_go_containerregistry//pkg/v1/remote:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@io_opencensus_go//plugin/ocgrpc:go_default_library",
+        "@org_golang_google_api//option:go_default_library",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//credentials:go_default_library",
+        "@org_golang_google_grpc//credentials/oauth:go_default_library",
+        "@org_golang_x_oauth2//:go_default_library",
+        "@org_golang_x_oauth2//google:go_default_library",
+    ],
+)
+
+go_library(
+    name = "traceutil",
+    srcs = ["traceutil.go"],
+    importpath = "intrinsic/tools/inctl/util/traceutil",
+    deps = [
+        ":orgutil",
+        "@com_github_golang_glog//:go_default_library",
+        "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:go_default_library",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//semconv/v1.34.0:v1_34_0",
+        "@io_opentelemetry_go_otel_bridge_opencensus//:opencensus",
+        "@io_opentelemetry_go_otel_sdk//resource",
+        "@io_opentelemetry_go_otel_sdk//trace",
+    ],
+)
+
+go_library(
+    name = "templateutil",
+    srcs = ["templateutil.go"],
+    importpath = "intrinsic/tools/inctl/util/templateutil",
+)
+
+go_library(
+    name = "color",
+    srcs = ["color.go"],
+    importpath = "intrinsic/tools/inctl/util/color",
+)
+
+go_library(
+    name = "util",
+    srcs = ["spinner.go"],
+    importpath = "intrinsic/tools/inctl/util",
+    deps = [
+        ":color",
+    ],
+)
+
+go_library(
+    name = "viperutil",
+    srcs = ["viperutil.go"],
+    importpath = "intrinsic/tools/inctl/util/viperutil",
+    deps = [
+        "@com_github_spf13_pflag//:go_default_library",
+        "@com_github_spf13_viper//:go_default_library",
+    ],
+)
+
+go_library(
+    name = "orgutil",
+    srcs = ["orgutil.go"],
+    importpath = "intrinsic/tools/inctl/util/orgutil",
+    deps = [
+        ":color",
+        ":viperutil",
+        "//intrinsic/config:environments",
+        "//intrinsic/tools/inctl/auth",
+        "//intrinsic/tools/inctl/config",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@com_github_spf13_viper//:go_default_library",
+    ],
+)
+
+go_library(
+    name = "agents",
+    srcs = ["agents.go"],
+    importpath = "intrinsic/tools/inctl/util/agents",
+    deps = [
+        "@com_github_spf13_cobra//:go_default_library",
+    ],
+)
+
+go_library(
+    name = "casgeometryuploader",
+    srcs = ["cas_geometry_uploader.go"],
+    importpath = "intrinsic/tools/inctl/util/casgeometryuploader",
+    deps = [
+        "//intrinsic/storage/content_addressable_storage/pkg/filetocas",
+        "@com_github_golang_glog//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@io_opencensus_go//trace:go_default_library",
+        "@org_golang_x_sync//errgroup:go_default_library",
+    ],
+)

@@ -1,0 +1,116 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.manipulation.skills;
+
+import "intrinsic/manipulation/skills/force/contact_stiffness.proto";
+import "intrinsic/math/proto/vector3.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/manipulation/skills/force/move_to_contact_go_proto";
+
+message MoveToContactParams {
+  // Tool frame for which motion and forces are being commanded. Must be a
+  // descendant of a wrist mounted FT sensor.
+  intrinsic_proto.world.TransformNodeReference tool = 1;
+
+  // The direction the tool frame should move linearly to make a contact.
+  oneof motion_direction {
+    // Direction of tool specified as a vector with respect to a given
+    // reference. If reference frame is not provided, defaults to `tool`.
+    FixedVector fixed_vector = 2;
+
+    // Direction of tool specified as a target frame to move towards. Must
+    // have a different translation than `tool` at the start of this skill.
+    // Note that this frame only defines a direction, and that the tool may
+    // move *past* this target if contact has yet to be made.
+    intrinsic_proto.world.TransformNodeReference target = 3;
+  }
+
+  // The feedforward force (in `N`) to exert along the specified
+  // `motion_direction`. Must be positive.
+  // A higher contact_force also results in a higher approach velocity. The
+  // skill does the fastest possible approach with the goal of not exceeding the
+  // contact_force. Control deviations can result in slightly higher forces ad
+  // the defined contact_force.
+  optional double contact_force = 4;
+
+  // Time (in seconds) within which the contact force must be stably reached
+  // before the skill fails.
+  optional double timeout_sec = 7;
+
+  message NotCompliant {}
+
+  oneof translational_stiffness {
+    // Translational stiffness (in `N/m`) of an idealized spring between the
+    // tool frame and the direction of motion; spring is only applied for
+    // directions orthogonal to the motion. For context, a value of 100 implies
+    // a disturbance of 10 N results in a displacement of 10 cm. Reasonable
+    // values are in the range of [200, 500].
+    double tool_translational_stiffness_in_nullspace = 8;
+
+    // The robot not compliant in the translational directions orthogonal to
+    // the motion direction.
+    NotCompliant no_translational_compliance = 15;
+  }
+
+  oneof rotational_stiffness {
+    // Rotational stiffness (in `N m/rad`) of an idealized spring about the tool
+    // and direction of motion. Spring is only applied for directions orthogonal
+    // to the motion. For context, a typical doorknob deflects about 0.785 rad
+    // (45 degrees) with approximately 0.2 `Nm` of torque, implying a stiffness
+    // of 0.25 `N m/rad`.
+    double tool_rotational_stiffness_in_nullspace = 9;
+
+    // The robot not compliant in the rotational directions.
+    NotCompliant no_rotational_compliance = 16;
+  }
+
+  // The contact stiffness influences the dynamic of the force when making
+  // contact. A lower stiffness will result in a faster approach but can
+  // create oscillations.
+  oneof contact_stiffness {
+    // Mechanical stiffness (in `N/m`) when the robot is in contact with its
+    // environment. For example, the presence of a mechanical compliance device
+    // on the arm's EOAT, or a soft surface on which the system tool is making
+    // contact should be modeled here. Typically in the range from 1,000 to
+    // 200,000.
+    double mechanical_stiffness_at_contact = 10;
+
+    // Predefined stiffness values which should handle most applications. Set
+    // mechanical_stiffness_at_contact if fine tuning the skill is required.
+    ContactStiffnessValues default_contact_stiffness = 13;
+  }
+
+  // The maximal allowed approach velocity of the skill. The expected velocity
+  // is computed based on the contact force and the contact stiffness. Higher
+  // contact force and lower stiffness result in a higher approach velocity. If
+  // the max_approach_velocity is lower than the expected velocity, the skill
+  // fails.
+  // Defaults to the application limits.
+  optional double max_approach_velocity = 14;
+
+  reserved 5, 6, 11, 12;
+}
+
+message FixedVector {
+  // A three dimensional vector to define the movement direction. Must have a
+  // norm greater than zero. Defaults to [0., 0., 1.]
+  optional intrinsic_proto.Vector3 direction = 1;
+
+  // Reference frame of the given direction.
+  optional intrinsic_proto.world.TransformNodeReference reference = 2;
+}

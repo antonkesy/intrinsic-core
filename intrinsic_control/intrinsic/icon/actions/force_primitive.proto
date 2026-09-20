@@ -1,0 +1,69 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.icon.actions.proto;
+
+import "intrinsic/icon/control/primitives/force_control/proto/force_primitives.proto";
+import "intrinsic/icon/equipment/force_control_settings.proto";
+import "intrinsic/icon/proto/cart_space.proto";
+import "intrinsic/kinematics/types/joint_limits.proto";
+import "intrinsic/manipulation/skills/force/contact_stiffness.proto";
+import "intrinsic/math/proto/pose.proto";
+
+option go_package = "intrinsic/icon/actions/force_primitive_go_proto";
+
+// Parameters which are constant over a whole skill execution. A skill will use
+// multiple ForcePrimitive actions with different primitives, but the TaskParams
+// are constant over the whole execution.
+message TaskParams {
+  // The pose of the tool in the tip frame.
+  intrinsic_proto.Pose robot_tip_t_robot_tool = 1;
+
+  // The frame in which the force primitive is expressed. The task frame is
+  // defined w.r.t. the robot base frame.
+  intrinsic_proto.Pose robot_base_t_task = 4;
+
+  // Stiffness of the environment.
+  intrinsic_proto.manipulation.skills.ContactStiffnessParams
+      environment_stiffness = 3;
+
+  // The joint limits to apply to the motion.
+  optional intrinsic_proto.JointLimits joint_limits = 5;
+
+  // Cartesian limits for the motion expressed in the robot base frame. Action
+  // will fail if a motion target violates Cartesian limits.
+  optional intrinsic_proto.icon.CartesianLimits cartesian_limits = 6;
+
+  reserved 2;
+}
+
+// Parameters for the force primitive action.
+message ForcePrimitiveFixedParams {
+  // Defines the action behavior.
+  oneof primitive {
+    // Used for building CartesianAdmittance actions.
+    intrinsic_proto.force.ForcePrimitive force_primitive = 1;
+  }
+
+  // Parametrization of the controller, defined in the force/torque sensor part
+  // configuration.
+  intrinsic_proto.icon.ForceControlSettings force_control_settings = 2;
+  // Parameters that are constant over a multiple actions in one skill.
+  TaskParams task_params = 3;
+  // If true, disables the reference lowpass filter. This is recommended, if the
+  // action is started already in contact with the environment.
+  bool disable_reference_lowpass_filter = 4;
+}

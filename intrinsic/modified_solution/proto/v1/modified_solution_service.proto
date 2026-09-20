@@ -1,0 +1,118 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.modified_solution.v1;
+
+import "google/longrunning/operations.proto";
+import "intrinsic/assets/proto/id.proto";
+import "intrinsic/modified_solution/proto/v1/modified_solution_metadata.proto";
+import "intrinsic/solution_versions/proto/v1/snapshot.proto";
+
+option go_package = "intrinsic/modified_solution/proto/v1/modified_solution_service_go_proto";
+
+// Service that allows interacting with modified solutions.
+service ModifiedSolutionService {
+  // Save the modified solution based on the currently running solution. A new
+  // modified solution will be written to CAS and the corresponding metadata
+  // proto is created or updated. Only one save request will be processed at a
+  // time. If a save is ongoing when a new request comes in, the new request
+  // will stall until the previous save completes. This ensures that the
+  // chronological order of save requests matches that of the modified solutions
+  // saved by the service.
+  rpc SaveModifiedSolution(SaveModifiedSolutionRequest)
+      returns (SaveModifiedSolutionResponse) {}
+
+  // Upload an arbitrary number of resource-backed assets. This will upload any
+  // components of the asset, such as container images, to long-term storage
+  // dedicated to persisting assets.  The entry in RuntimeDB will be updated.
+  // The assets must be present in RuntimeDB at call-time. Information about
+  // uploads can be retrieved through the operation metadata. The solution
+  // including the sideloaded assets will automatically be saved after the
+  // upload completes. The operation is marked done once saving is complete.
+  //
+  // A maximum of 50 operations can be queued on the service (across all RPCs)
+  // in total. Further requests will immediately yield RESOURCE_EXHAUSTED until
+  // an operation in the queue is finished.
+  rpc UploadAssets(UploadAssetsRequest) returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      response_type: "UploadAssetsResponse"
+      metadata_type: "UploadAssetsMetadata"
+    };
+  }
+
+  // Upload all currently available assets to upload.  This is for callers
+  // without specific information about asset installation and want to guarantee
+  // the success of an upload.  See UploadAssets for additional details.  This
+  // will be all assets listed on the installed asset service that were locally
+  // installed (i.e. not from a catalog).
+  rpc UploadAllAssets(UploadAllAssetsRequest)
+      returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      response_type: "UploadAssetsResponse"
+      metadata_type: "UploadAssetsMetadata"
+    };
+  }
+}
+
+// Used to save the modified data about the currently running solution. Data is
+// collected automatically from cluster services.
+message SaveModifiedSolutionRequest {}
+
+message SaveModifiedSolutionResponse {
+  // Updated (or created) metadata of the modified solution.
+  //
+  // The response will contain either this metadata or the `snapshot`, but not
+  // both.
+  ModifiedSolutionMetadata metadata = 1;
+
+  // List of assets that are not yet saved in a portable way.
+  repeated intrinsic_proto.assets.IdVersion incomplete_assets = 2;
+
+  // The snapshot that was committed to the branch of the solution.
+  //
+  // The response will contain either this snapshot or the `metadata`, but not
+  // both.
+  intrinsic_proto.solution_versions.v1.Snapshot snapshot = 3;
+}
+
+message UploadAssetsRequest {
+  // Generated sideloaded ID-Version of the resource type to upload. This ID
+  // must be available for a resource type in RuntimeDB.  Only assets sideloaded
+  // during this deployment may be specified.  Catalog and restored assets will
+  // lead to INVALID_ARGUMENT.
+  repeated intrinsic_proto.assets.IdVersion assets = 1;
+}
+
+message UploadAssetsResponse {
+  // Asset ID-versions of the resource types updated in RuntimeDB.
+  repeated intrinsic_proto.assets.IdVersion updated_assets = 1;
+}
+
+message UploadAssetsMetadata {
+  // Generated sideloaded ID-version of the resource type being uploaded. This
+  // is always set when the operation is started.
+  repeated intrinsic_proto.assets.IdVersion assets = 1;
+}
+
+message UploadAllAssetsRequest {}
+
+// Event published when a modified solution is successfully saved.
+message SaveEvent {
+  // The snapshot that was committed to the branch.
+  intrinsic_proto.solution_versions.v1.Snapshot snapshot = 1;
+  // The ID of the branch that was saved.
+  string branch_id = 2;
+}

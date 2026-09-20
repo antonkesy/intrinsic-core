@@ -1,0 +1,162 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: SkillManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "estimate_pose_multi_view"
+}
+display_name: "Estimate pose multi view"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+    "The `estimate_pose_multi_view` skill can be used to estimate the pose \n"
+    "of objects in the scene given at least 2 cameras \n"
+    "(and a maximum of 4 cameras). We recommend using 3 \n"
+    "cameras in a triangular configuration for the best estimation performance.\n"
+    "The skill uses the input images obtained from the cameras to \n"
+    "estimate the 6 DOF pose of every instance of the \n"
+    "desired object in the scene. The CAD model of the \n"
+    "object to be estimated is defined at training time, which \n"
+    "is why it is important that the object matches the \n"
+    "CAD model provided. The skill succeeds if the number of detections is \n"
+    "equal or greater than the `min_num_instances` specified. The skill returns \n"
+    "the pose, score and ID for each detected object instance.\n "
+    "This skill does not update the pose of the detected object \n"
+    "instances in the belief world. Instead, skills such as `update_world` \n"
+    "or `sync_product_objects` can use the output of this skill to \n"
+    "update the belief world. The skill can use any ML multi-view pose estimator \n"
+    "or One Shot pose estimator as long as the pose estimator is created on the \n"
+    "same camera configuration.\n"
+}
+extended_documentation {
+  prerequisites:
+    "Required assets: \n\n"
+    "- *Cameras :* The skill can be run with a minimum of 2 cameras and a "
+    "maximum of 4. If less than 4 cameras are available, the remaining slots "
+    "can be filled with an already passed camera. The cameras should be "
+    "placed at similar distances to the objects to be detected. The distances "
+    "and angles of all cameras w.r.t the objects in the region of interest "
+    "should fall within the pose range specified at training time. \n"
+    "- *Pose estimator :* the pose estimator for the object to be detected "
+    "should be created in advance following the ML Multi&hyphen;view pose estimator "
+    "training process or the One Shot pose estimator creation process."
+    # txtpbfmt: off
+    # "training process"
+    # Commenting the path below because the new path is not yet published.
+    # " [ML Multi-view pose estimator "
+    # "training process](docs/guides/build_with_flowstate/build_a_solution/"
+    # "create_a_workcell/add_perception_capabilities/train_a_pose_estimator.md#step-1-setup)."
+    # txtpbfmt: on
+    "\n\nThe cameras must be extrinsically calibrated w.r.t each other. "
+    "This means that, if the solution is running in real world, the relative "
+    "position and orientation of the cameras should match (up to the "
+    "calibration accuracy) the real world position. Follow the camera-to-camera "
+    "calibration process for more "
+    # txtpbfmt: off
+    # Commenting the path below because the new path is not yet published.
+    # "Follow [camera-to-camera "
+    # "calibration process](/docs/guides/build_with_flowstate/build_a_solution/"
+    # "create_a_workcell/add_a_camera/camera_to_camera_calibration) for more "
+    # txtpbfmt: on
+    "information on how to calibrate multiple cameras."
+  usage_example:
+    "- Set the `Cameras` that need to be used for pose estimation. The "
+    "skill provides up to 4 possible slots. However, if less than 4 cameras are "
+    "available, the remaining slots can be filled with an already passed in camera.\n"
+    "- Set the `Pose estimator` to be used for the object that needs to be detected. "
+    "The `Pose estimator` should be of type **ML Multi&hyphen;view pose estimator** "
+    "or **One Shot pose estimator**.\n\n"
+    "(Optional parameters):\n"
+    "- Set the `Min num instances` parameter to define the minimum "
+    "number of instances that the pose estimator should detect in "
+    "the scene. The skill will fail if the not enough parts are detected in the "
+    "scene. Default: 0.\n"
+    "- Set `Update object pose` to update the pose of an object in the belief "
+    "world with the first returned pose of the pose estimator.\n"
+    "- Set `Visibility score params` to additionally calculate the "
+    "visibility score of each detected part in the scene. Visibility score "
+    "defines how visible the part is and it can be used for grasp planning "
+    "to tell the robot which part to pick up first.\n"
+    "- Set `Region of interest` to limit the search space for the pose estimator."
+    "Only objects within the region of interest will be considered for pose "
+    "estimation. This also reduces the runtime for one shot pose estimation. \n\n"
+    "When the skill is run, the skill dialog will display two images:\n\n"
+    "- A raw image from the first camera \n"
+    "- An annotated image where every detected object instance is highlighted. \n\n"
+    "### Update the digital twin (belief world) \n\n"
+    "To update the digital twin (belief world) with all the pose estimates returned by this skill, "
+    "you can use the `sync_product_objects` skill or `update_world` skill as described "
+    "for the [`estimate_pose` skill documentation]((https://flowstate.intrinsic.ai/docs/skill_guides/perception/estimate_pose/#update-the-digital-twin-belief-world)."
+
+}
+options {
+  execution_timeout: {
+    seconds: 600
+  }
+  supports_cancellation: true
+  python_config {
+    skill_module: "intrinsic.perception.skills.multi_view.estimate_pose_multi_view"
+    proto_module: "intrinsic.perception.skills.multi_view.estimate_pose_multi_view_pb2"
+    create_skill: "intrinsic.perception.skills.multi_view.estimate_pose_multi_view.EstimatePoseMultiView"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "camera_1"
+    value {
+      capability_names: "CameraConfig"
+    }
+  }
+  required_equipment {
+    key: "camera_2"
+    value {
+      capability_names: "CameraConfig"
+    }
+  }
+  required_equipment {
+    key: "camera_3"
+    value {
+      capability_names: "CameraConfig"
+    }
+  }
+  required_equipment {
+    key: "camera_4"
+    value {
+      capability_names: "CameraConfig"
+    }
+  }
+  required_equipment {
+    key: "perception"
+    value {
+      capability_names: "intrinsic_proto.perception.v1.PoseEstimationService"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.EstimatePoseMultiViewParams"
+  default_value: {
+    [type.googleapis.com/intrinsic_proto.skills.EstimatePoseMultiViewParams] {
+      log_debug_data: true
+    }
+  }
+}
+return_type {
+  message_full_name: "intrinsic_proto.skills.EstimatePoseMultiViewResult"
+}

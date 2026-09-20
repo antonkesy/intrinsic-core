@@ -1,0 +1,67 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// The options defined in this file are consumed by the service_ingress_values()
+// build rule. Documentation:
+//
+// http://intrinsic/kubernetes/api_relay/README.md#config
+
+syntax = "proto3";
+
+package intrinsic_proto.auth;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "intrinsic/kubernetes/generator/proto/auth_options_go_proto";
+
+enum AuthMethod {
+  AUTH_METHOD_UNSPECIFIED = 0;
+  AUTH_METHOD_API_KEY = 1;
+}
+
+enum Exposure {
+  EXPOSURE_UNSPECIFIED = 0;
+  // Exposed on all projects (internal and external).
+  EXPOSURE_EXTERNAL = 1;
+  // Exposed only on internal projects (= projects which have the
+  // feature_option enable_service_exposure_override set).
+  EXPOSURE_INTERNAL = 2;
+}
+
+message AuthOptions {
+  // Defines which authentication methods are allowed for this service.
+  repeated AuthMethod auth_methods = 1;
+  // Defines on which projects (e.g., internal or internal + external) the
+  // service should be exposed.
+  // Defaults to external exposure.
+  Exposure exposure = 2;
+}
+
+message BackendOptions {
+  // Name of the cloud k8s service which hosts the gRPC service.
+  // Leave unset for on-prem services.
+  string backend_service = 1;
+  // Port of the cloud k8s service which hosts the gRPC service.
+  // Leave unset for on-prem services.
+  int32 backend_port = 2;
+}
+
+extend google.protobuf.ServiceOptions {
+  optional AuthOptions service_options = 50000000;
+  optional BackendOptions backend_options = 50000001;
+}
+
+extend google.protobuf.MethodOptions {
+  optional AuthOptions method_options = 50000002;
+}

@@ -1,0 +1,72 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: Manifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+id {
+  package: "ai.intrinsic"
+  name: "homing"
+}
+display_name: "Homing"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+    "Homes the provided drive of a robot.\n"
+    "\n"
+    "The `drive_name` parameter must be set as specified in the ICON `HalArmPart` homing config.\n"
+    "\n"
+    "The following homing parameters can be set:\n"
+    "* `homing_method`: (optional, default: 37, which homes at current position. Old drives might want 35 instead). "
+    "  There are a few standard methods, but the drive manufacturer can define custom methods as well (then often using negative values). "
+    "  Valid values are in the range [-128, 127].\n"
+    "* `search_speed`: The search speed to use for homing (0x6099.1). This is the speed at which the drive will search a switch point. "
+    "  For the unit please see the manufacturer's documentation. Defaults to 10.\n"
+    "* `creep_speed`: The creep speed to use for homing (0x6099.2). This is the speed at which the drive will approach the zero point. "
+    "  For the unit please see the manufacturer's documentation. Defaults to 10.\n"
+    "* `acceleration`: The acceleration to use for homing (0x609A). This is the acceleration at which the drive will approach the zero point. "
+    "  For the unit please see the manufacturer's documentation. Defaults to 100.\n"
+    "* `offset`: The offset to use for homing (0x607C). This is the offset that'll be applied to the new home position after homing. "
+    "  For the unit please see the manufacturer's documentation. Defaults to 0.\n"
+}
+options {
+  supports_cancellation: true
+  cancellation_ready_timeout {
+    seconds: 10
+  }
+  cc_config {
+    create_skill: "::intrinsic::skills::Homing::CreateSkill"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "robot"
+    value {
+      capability_names: "intrinsic_proto.icon.v1.IconApi"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.HomingParams"
+  default_value {
+    [type.googleapis.com/intrinsic_proto.skills.HomingParams] {
+      drive_name: "joint_1"
+      timeout {
+        seconds: 10
+      }
+    }
+  }
+}

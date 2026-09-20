@@ -1,0 +1,59 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic;
+
+option go_package = "intrinsic/motion_planning/trajectory_planning/topp/joint_optimization_options_go_proto";
+
+// Used to configure if Cartesian constraints based on a kinematics model are
+// active. It includes Cartesian velocity and Cartesian acceleration
+// constraints. By default:
+// * activate_cartesian_velocity_constraints = false
+// * activate_cartesian_acceleration_constraints = false
+message CartesianOptimizationOptions {
+  optional bool activate_cartesian_velocity_constraints = 1;
+  optional bool activate_cartesian_acceleration_constraints = 2;
+
+  reserved 3;
+}
+
+// Used to configure if constraints based on a dynamics model are active. It
+// includes torque and torque rate constraints. By default:
+// * activate_joint_torque_constraints = true
+// * activate_joint_torque_rate_constraints = false
+message DynamicJointOptimizationOptions {
+  optional bool activate_joint_torque_constraints = 1;
+  optional bool activate_joint_torque_rate_constraints = 2;
+}
+
+// Used to configure constraints over joint acceleration and joint jerk. By
+// default:
+// * activate_joint_acceleration_constraints = true
+// * activate_joint_jerk_constraints = false
+message KinematicJointOptimizationOptions {
+  optional bool activate_joint_acceleration_constraints = 1;
+  optional bool activate_joint_jerk_constraints = 2;
+}
+
+// Used to configure all constraints to be satisfied by the optimized
+// trajectory.
+message OptimizationOptions {
+  oneof kino_dynamic_constraints {
+    DynamicJointOptimizationOptions dynamic_constraints = 1;
+    KinematicJointOptimizationOptions kinematic_constraints = 2;
+  }
+  optional CartesianOptimizationOptions cartesian_constraints = 3;
+}

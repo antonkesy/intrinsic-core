@@ -1,0 +1,74 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef INTRINSIC_PLATFORM_PUBSUB_PUBSUB_CALLBACKS_H_
+#define INTRINSIC_PLATFORM_PUBSUB_PUBSUB_CALLBACKS_H_
+
+#include <functional>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
+namespace intrinsic {
+
+// The following two callbacks are defined to be used asynchronously when a
+// message arrives on a topic that a subscription was requested to.
+//
+// SubscriptionOkCallback is called whenever a valid message is received. This
+// callback returns typed message.
+template <typename T>
+using SubscriptionOkCallback = std::function<void(const T& message)>;
+
+template <typename T>
+using SubscriptionOkExpandedCallback =
+    std::function<void(absl::string_view topic, const T& message)>;
+
+// Called when a key is deleted from a key-value store.
+using DeletionCallback = std::function<void(std::string_view key)>;
+
+// SubscriptionErrorCallback is called whenever a message is received on a
+// subscribed topic but the message could not be parsed or converted to the
+// desired type. This function returns the raw value of the received packet and
+// status error indicating the problem.
+using SubscriptionErrorCallback =
+    std::function<void(absl::string_view packet, absl::Status error)>;
+
+using SubscriptionErrorExpandedCallback = std::function<void(
+    absl::string_view topic, absl::string_view packet, absl::Status error)>;
+
+// LivelinessCallback is called when status of a liveliness token changes.
+//
+// Parameters:
+//  - key: Key whose liveliness status changed.
+//  - alive: Current liveliness status.
+using LivelinessCallback =
+    std::function<void(std::string_view key, bool alive)>;
+
+// LivelinessGetCallback is called when a currently alive token is found
+// by `LivelinessGet`.
+//
+// Parameters:
+//  - key: Key expression on which the token was declared.
+using LivelinessGetCallback = std::function<void(absl::string_view key)>;
+
+// LivelinessGetOnDoneCallback is called by `LivelinessGet` after all currently
+// alive tokens are found.
+//
+// Parameters:
+//  - key: Key expression passed to `LivelinessGet`.
+using LivelinessGetOnDoneCallback = std::function<void(absl::string_view key)>;
+
+}  // namespace intrinsic
+
+#endif  // INTRINSIC_PLATFORM_PUBSUB_PUBSUB_CALLBACKS_H_

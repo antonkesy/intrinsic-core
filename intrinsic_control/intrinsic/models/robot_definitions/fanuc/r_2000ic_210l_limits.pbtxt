@@ -1,0 +1,178 @@
+# proto-file: intrinsic/scene/proto/v1/scene_object_updates.proto
+# proto-message: intrinsic_proto.scene_object.v1.SceneObjectUpdates
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+updates: {
+  update_joints {
+    joint_system_limits: {
+      key: "joint_a1"
+      value: {
+        min_position: -3.22886
+        max_position: 3.22886
+        max_velocity: 1.7959438003021653
+        max_acceleration: 2.4490141075393028
+        max_jerk: 6.6791300467536443
+        # The robot has a reach of 3.1m, and a max payload of 210kg
+        # Just holding that payload requires
+        # 210kg * 9.81 N / kg * 3.1m = 6386.31Nm
+        #
+        # This system limit gives some additional leeway to
+        # accelerate and decelerate (this is a factor of 1.4092645049).
+        max_effort: 9000
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a2"
+      value: {
+        min_position: -1.04720
+        max_position: 1.32645
+        max_velocity: 0.72692963345563821
+        max_acceleration: 0.99126772381257011
+        max_jerk: 2.7034574874338255
+        # The robot has a reach of 3.1m, and a max payload of 210kg
+        # Just holding that payload requires
+        # 210kg * 9.81 N / kg * 3.1m = 6386.31Nm
+        #
+        # This system limit gives some additional leeway to
+        # accelerate and decelerate (this is a factor of 1.4092645049).
+        max_effort: 9000
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a3"
+      value: {
+        min_position: -2.61799
+        max_position: 2.61799
+        max_velocity: 0.72692963345563821
+        max_acceleration: 0.99126772381257011
+        max_jerk: 2.7034574874338255
+        # The horizontal distance from the first joint to the base of the third
+        # is 1.387m.
+        # Using the same math as above, we get
+        # 210kg * 9.81 N / kg * 1,713m = 3528.9513Nm
+        # With a similar reserve as the first two joints, that comes out to...
+        max_effort: 5000
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a4"
+      value: {
+        min_position: -6.28319
+        max_position: 6.28319
+        max_velocity: 2.0525072003453313
+        max_acceleration: 2.7988735262321409
+        max_jerk: 7.6332914832258956
+        # Value taken from Fanuc's documentation, which says
+        # Moment/Inertia (Nm/kgm^2) = 1700/320
+        max_effort: 1700
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a5"
+      value: {
+        min_position: -2.18166
+        max_position: 2.18166
+        max_velocity: 2.0525072003453313
+        max_acceleration: 2.7988735262321409
+        max_jerk: 7.6332914832258956
+        # Moment/Inertia (Nm/kgm^2) = 1700/320
+        max_effort: 1700
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a6"
+      value: {
+        min_position: -6.28319
+        max_position: 6.28319
+        max_velocity: 3.4208453339088858
+        max_acceleration: 4.6647894709412885
+        max_jerk: 12.722152819258957
+        # Moment/Inertia (Nm/kgm^2) = 900/320
+        max_effort: 900
+      }
+    }
+
+    # Joint position limits are set 0.1 rad below system limits.
+    # All other application limits have been set at 10% below system limits.
+    joint_application_limits: {
+      key: "joint_a1"
+      value: {
+        min_position: -3.12886
+        max_position: 3.12886
+        max_velocity: 1.7059670159070266
+        max_acceleration: 2.3263185007515839
+        max_jerk: 6.3445056314112858
+        max_effort: 8100  # 90% of system limits
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a2"
+      value: {
+        min_position: -0.93720
+        max_position: 1.22645
+        max_velocity: 0.69051045881951068
+        max_acceleration: 0.94160521084956028
+        max_jerk: 2.5680142673133908
+        max_effort: 8100  # 90% of system limits
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a3"
+      value: {
+        min_position: -2.51799
+        max_position: 2.51799
+        max_velocity: 0.69051045881951068
+        max_acceleration: 0.94160521084956028
+        max_jerk: 2.5680142673133908
+        max_effort: 4500  # 90% of system limits
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a4"
+      value: {
+        min_position: -6.18319
+        max_position: 6.18319
+        max_velocity: 1.9496765896080301
+        max_acceleration: 2.6586499625679108
+        max_jerk: 7.2508635799162775
+        max_effort: 1530  # 90% of system limits
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a5"
+      value: {
+        min_position: -2.08166
+        max_position: 2.08166
+        max_velocity: 1.9496765896080301
+        max_acceleration: 2.6586499625679108
+        max_jerk: 7.2508635799162775
+        max_effort: 1530  # 90% of system limits
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a6"
+      value: {
+        min_position: -6.18319
+        max_position: 6.18319
+        max_velocity: 3.2494609826800502
+        max_acceleration: 4.43108351844713
+        max_jerk: 12.084772963014082
+        max_effort: 810  # 90% of system limits
+      }
+    }
+  }
+}

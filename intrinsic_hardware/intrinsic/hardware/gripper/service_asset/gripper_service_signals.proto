@@ -1,0 +1,54 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.gripper_service;
+
+option go_package = "intrinsic/hardware/gripper/service_asset/gripper_service_signals_go_proto";
+
+// Maps of various types that capture signal names and their values.
+message Signals {
+  map<string, bool> bool_values = 1;
+  map<string, int32> int_values = 2;
+  map<string, uint32> uint_values = 3;
+  map<string, float> float_values = 4;
+  map<string, double> double_values = 5;
+  map<string, int32> int8_values = 6;
+  map<string, uint32> uint8_values = 7;
+}
+
+// Contains signal configuration for pinch grippers. What the signals refer to
+// depends on the context. The signals contain node ids in XML notation for
+// grippers that are controlled by an OPC UA server. They hold signal names when
+// controlled by a realtime control service.
+message PinchGripperSignals {
+  Signals grasp = 1;
+  Signals release = 2;
+  Signals gripping_indicated = 3;
+}
+
+// Contains signal configuration for suction grippers. What the signals refer to
+// depends on the context. The signals contain node ids in XML notation for
+// grippers that are controlled by an OPC UA server. They hold signal names when
+// controlled by a realtime control service.
+message SuctionGripperSignals {
+  Signals grasp = 1;
+  Signals release = 2;
+  // Turn on blow off
+  Signals blowoff_on = 3;
+  // Turn off blow off
+  Signals blowoff_off = 4;
+  Signals gripping_indicated = 5;
+}

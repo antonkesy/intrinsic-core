@@ -1,0 +1,56 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: SkillManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "save_calibration_result"
+}
+display_name: "Save calibration result"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description: 
+  "The `save_calibration_result` skill is used to persist the results of a successful calibration session.\n"
+  "It takes the calibration results as input and applies them to the appropriate storage. Intrinsic parameters\n"
+  "are updated in the resource registry through the corresponding camera configs. Extrinsic parameters, i.e., updated camera poses\n"
+  "following a successful camera-to-robot or camera-to-camera calibration, are saved to the initial world,\n"
+  "thus becoming available for subsequent operations and digital twin visualization.\n"
+  "In the latter case, the solution is saved so that the camera poses can be persisted across solution restarts."
+}
+extended_documentation {
+  prerequisites: 
+  "For `save_calibration_result` to work, a calibration session must have been initialized\n"
+  "in the `CalibrationService`, data (camera poses and pattern detections) must have been\n"
+  "collected for the cameras being calibrated, and a successful calibration result must be available.\n"
+  "This is typically achieved by calling the `initialize_calibration` skill, followed by\n"
+  "`collect_calibration_data` and one of the `calibrate_intrinsic`, `calibrate_camera_to_robot`\n"
+  "or `calibrate_camera_to_camera` skills.\n"
+}
+options {
+  cancellation_ready_timeout {
+    seconds: 30
+  }
+  cc_config {
+    create_skill: "::intrinsic::skills::SaveCalibrationResult::CreateSkill"
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.SaveCalibrationResultParams"
+}
+

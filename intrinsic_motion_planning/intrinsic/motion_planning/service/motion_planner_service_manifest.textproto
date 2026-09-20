@@ -1,0 +1,105 @@
+# proto-file: intrinsic/assets/services/proto/service_manifest.proto
+# proto-message: intrinsic_proto.services.ServiceManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+metadata {
+  id {
+    package: "ai.intrinsic"
+    name: "motion_planner_service"
+  }
+  vendor {
+    display_name: "Intrinsic"
+  }
+  documentation {
+    description: "Provides motion planning capabilities including Forward Kinematics, Inverse Kinematics, collision checking, path planning, and trajectory planning."
+  }
+  display_name: "Motion Planner Service"
+}
+service_def {
+  service_proto_prefixes: "/intrinsic_proto.motion_planning.v1.MotionPlannerService/"
+  config_message_full_name: "intrinsic_proto.motion_planning.v1.MotionPlannerServiceConfig"
+  http_config: {}
+  # LINT.IfChange(real_spec)
+  real_spec {
+    image {
+      archive_filename: "motion-planner-service-image.tar"
+      settings {
+        args: "intrinsic_motion_planning/intrinsic/motion_planning/service/motion_planner_service_assetized_main"
+        args: "--world_service_address=world.app-intrinsic-base.svc.cluster.local:8080"
+        args: "--geometry_service_address=geomservice.app-intrinsic-base.svc.cluster.local:8080"
+        args: "--cas_grpc_service_address=content-addressable-storage.app-intrinsic-base.svc.cluster.local:9747"
+        security_context: {
+          posix_capabilities: {
+            add: POSIX_CAPABILITY_SYS_RAWIO
+          }
+        }
+        volume_mounts {
+          name: "tmp"
+          mount_path: "/tmp"
+        }
+        requires_rtpc_node: false
+      }
+    }
+    extra_images {
+      archive_filename: "motion_planner_service_httpjson_bridge.tar"
+    }
+    settings {
+      volumes {
+        name: "tmp"
+        empty_dir {
+          medium: EMPTY_DIR_MEDIUM_MEMORY
+        }
+      }
+    }
+  }
+  # LINT.ThenChange(:sim_spec)
+  # Note: The sim spec is the same as the real spec and should be kept in sync.
+  # LINT.IfChange(sim_spec)
+  sim_spec {
+    image {
+      archive_filename: "motion-planner-service-image.tar"
+      settings {
+        args: "intrinsic_motion_planning/intrinsic/motion_planning/service/motion_planner_service_assetized_main"
+        args: "--world_service_address=world.app-intrinsic-base.svc.cluster.local:8080"
+        args: "--geometry_service_address=geomservice.app-intrinsic-base.svc.cluster.local:8080"
+        args: "--cas_grpc_service_address=content-addressable-storage.app-intrinsic-base.svc.cluster.local:9747"
+        security_context: {
+          posix_capabilities: {
+            add: POSIX_CAPABILITY_SYS_RAWIO
+          }
+        }
+        volume_mounts {
+          name: "tmp"
+          mount_path: "/tmp"
+        }
+        requires_rtpc_node: false
+      }
+    }
+    extra_images {
+      archive_filename: "motion_planner_service_httpjson_bridge.tar"
+    }
+    settings {
+      volumes {
+        name: "tmp"
+        empty_dir {
+          medium: EMPTY_DIR_MEDIUM_MEMORY
+        }
+      }
+    }
+  }
+  # LINT.ThenChange(:real_spec)
+}

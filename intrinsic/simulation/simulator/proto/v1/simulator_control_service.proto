@@ -1,0 +1,89 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.simulation.v1;
+
+import "google/rpc/status.proto";
+
+option go_package = "intrinsic/simulation/simulator/v1/proto/simulator_control_service_go_proto";
+
+// SimulatorControlService defines the gRPC API for controlling the flow of
+// time in the simulator. The Simulation Service will call these RPCs to
+// coordinate the simulation with process execution and synchronize the
+// simulated scene with the Intrinsic World.
+service SimulatorControlService {
+  // Resets the simulator scene from the provided World state, and rewinds time
+  // to zero.
+  rpc ResetSimulator(ResetSimulatorRequest) returns (ResetSimulatorResponse) {}
+
+  // Pauses time in the simulator.
+  // The simulator should continue to service requests for sensor data and
+  // accept user commands when paused.
+  rpc PauseSimulator(PauseSimulatorRequest) returns (PauseSimulatorResponse) {}
+
+  // Unpauses time in the simulator.
+  rpc UnpauseSimulator(UnpauseSimulatorRequest)
+      returns (UnpauseSimulatorResponse) {}
+
+  // Returns the current simulation status
+  rpc GetSimulatorStatus(GetSimulatorStatusRequest)
+      returns (GetSimulatorStatusResponse) {}
+}
+
+message ResetSimulatorRequest {
+  // Whether the simulator should be in a `Paused` state after `Reset`.
+  // By default, the simulator should start running unpaused after `Reset`.
+  bool start_paused = 1;
+
+  // The world in World Service from which scene data should be fetched to
+  // reset the simulator. The world must be available before calling `Reset`.
+  string simulator_world_id = 2;
+}
+
+message ResetSimulatorResponse {}
+
+message PauseSimulatorRequest {}
+
+message PauseSimulatorResponse {}
+
+message UnpauseSimulatorRequest {}
+
+message UnpauseSimulatorResponse {}
+
+message GetSimulatorStatusRequest {}
+
+enum SimulatorState {
+  SIMULATOR_STATE_UNSPECIFIED = 0;
+
+  // Simulator is currently running unpaused.
+  RUNNING = 1;
+
+  // Simulator is currently paused.
+  PAUSED = 2;
+
+  // Simulator is currently stopped (possibly due to an error). Calling
+  // `ResetSimulator` will restart it.
+  STOPPED = 3;
+}
+
+message GetSimulatorStatusResponse {
+  // The current run state of the simulator.
+  SimulatorState simulator_state = 1;
+
+  // Optional error message that should be populated if the simulator is in a
+  // `Stopped` state.
+  google.rpc.Status status = 2;
+}

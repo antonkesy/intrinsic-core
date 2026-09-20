@@ -1,0 +1,83 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// assetinstancegen creates an AssetInstanceInfo proto which configures an asset instance.
+package main
+
+import (
+	"flag"
+	"fmt"
+	"os"
+	"regexp"
+
+	"intrinsic/production/intrinsic"
+	"intrinsic/util/proto/protoio"
+
+	log "github.com/golang/glog"
+
+	assetpb "intrinsic/assets/build_defs/asset_go_proto"
+)
+
+var (
+	configPath           = flag.String("config_path", "", "The asset's configuration file path.")
+	asset                = flag.String("asset", "", "The asset in the solution.  By convention this is the id (some.package.name).")
+	instanceName         = flag.String("instance_name", "", "The asset's instance name.")
+	requiredNodeHostname = flag.String("required_node_hostname", "", "The node's hostname where asset is required to be run (only applicable for services).")
+	outputAssetInstance  = flag.String("output_asset_instance", "", "Output AssetInstance proto path.")
+)
+
+var validInstanceNameRegexp = regexp.MustCompile(`^[a-z]([a-z0-9_]*[a-z0-9])?$`)
+
+func validateInstanceName(name string) error {
+	if !validInstanceNameRegexp.MatchString(name) {
+		return fmt.Errorf("name must start with a lowercase letter, must use only lowercase letters, numbers and underscores, and must not end with an underscore (got: %q)", name)
+	}
+	return nil
+}
+
+func main() {
+	intrinsic.Init()
+	if *outputAssetInstance == "" {
+		log.Exitf("--output_asset_instance is required")
+	}
+
+	if err := validateInstanceName(*instanceName); err != nil {
+		log.Exitf("invalid asset instance name: %v", err)
+	}
+
+	var config *assetpb.AssetInstanceInfo_TextProto
+	if *configPath != "" {
+		b, err := os.ReadFile(*configPath)
+		if err != nil {
+			log.Exitf("could not read asset instance config for %q: %v", *asset, err)
+		}
+		config = &assetpb.AssetInstanceInfo_TextProto{
+			TextProto: string(b),
+		}
+	}
+	// Presume empty should remain unset.
+	if *requiredNodeHostname == "" {
+		requiredNodeHostname = nil
+	}
+
+	instance := &assetpb.AssetInstanceInfo{
+		Asset:                *asset,
+		InstanceName:         *instanceName,
+		Config:               config,
+		RequiredNodeHostname: requiredNodeHostname,
+	}
+	if err := protoio.WriteBinaryProto(*outputAssetInstance, instance, protoio.WithDeterministic(true)); err != nil {
+		log.Exitf("could not write instance for %q: %v", *instanceName, err)
+	}
+}

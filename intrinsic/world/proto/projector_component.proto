@@ -1,0 +1,49 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+option go_package = "intrinsic/world/proto/projector_component_go_proto";
+
+// Component indicating the owning Entity is a projector
+// Next tag: 6
+message ProjectorComponent {
+  message Clip {
+    // The near clipping plane in meters.
+    double near = 1;
+
+    // The far clipping plane in meters.
+    double far = 2;
+  }
+
+  // Horizontal field of view in radians.
+  double horizontal_fov = 1;
+
+  // Projector frustum clipping plane distances
+  Clip clip = 2;
+
+  // Visibility flags bits
+  // For simulation use only.
+  uint32 visibility_flags = 3;
+
+  // Raw texture data of this projector's projected pattern.
+  // For simulation use only.
+  bytes texture_data = 4;
+
+  // File format of this projector's texture.
+  // For simulation use only.
+  string texture_format = 5;
+}

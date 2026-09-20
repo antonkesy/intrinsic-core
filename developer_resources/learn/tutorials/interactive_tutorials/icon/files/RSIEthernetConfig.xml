@@ -1,0 +1,70 @@
+<ROOT>
+  <CONFIG>
+    <!-- IP-number of the external socket, i.e. the Intrinsic cluster -->
+    <IP_NUMBER>192.168.10.123</IP_NUMBER>
+    <!-- Port-number of the external socket -->
+    <PORT>5852</PORT>
+    <!-- The name of your system send in <Sen Type="" > -->
+    <SENTYPE>Intrinsic</SENTYPE>
+    <!-- TRUE means the client doesn't expect answers. Do not send anything to robot -->
+    <ONLYSEND>FALSE</ONLYSEND>
+  </CONFIG>
+  <!-- RSI Data: TYPE=  "BOOL", "STRING", "LONG", "DOUBLE" -->
+  <!-- INDX= "INTERNAL" switch on internal read values. Needed by DEF_... -->
+  <!-- INDX= "nmb" Input/Output index of RSI-Object of the Ethernet object in RSIContext / Maximum of RSI Channels: 64  -->
+  <!-- HOLDON="1", set this output index of RSI Object to the last value  -->
+  <!-- DEF_Delay count the late packages and send it back to server  -->
+  <!-- DEF_Tech: .T = advance .C = main run / .T1 advance set function generator 1 -->
+  <SEND>
+    <ELEMENTS>
+      <ELEMENT TAG="DEF_Delay" TYPE="LONG" INDX="INTERNAL" />
+      <!-- Actual joint positions -->
+      <ELEMENT TAG="Pos.A1" TYPE="DOUBLE" INDX="1" />
+      <ELEMENT TAG="Pos.A2" TYPE="DOUBLE" INDX="2" />
+      <ELEMENT TAG="Pos.A3" TYPE="DOUBLE" INDX="3" />
+      <ELEMENT TAG="Pos.A4" TYPE="DOUBLE" INDX="4" />
+      <ELEMENT TAG="Pos.A5" TYPE="DOUBLE" INDX="5" />
+      <ELEMENT TAG="Pos.A6" TYPE="DOUBLE" INDX="6" />
+      <!-- Estimated joint torque -->
+      <ELEMENT TAG="Trq.A1" TYPE="DOUBLE" INDX="7" />
+      <ELEMENT TAG="Trq.A2" TYPE="DOUBLE" INDX="8" />
+      <ELEMENT TAG="Trq.A3" TYPE="DOUBLE" INDX="9" />
+      <ELEMENT TAG="Trq.A4" TYPE="DOUBLE" INDX="10" />
+      <ELEMENT TAG="Trq.A5" TYPE="DOUBLE" INDX="11" />
+      <ELEMENT TAG="Trq.A6" TYPE="DOUBLE" INDX="12" />
+      <!-- Status of external sensor (unused) -->
+      <ELEMENT TAG="SensorStatus" TYPE="LONG" INDX="13" />
+      <!-- Operation mode, e.g. T1 or External -->
+      <ELEMENT TAG="ModeOp" TYPE="LONG" INDX="14" />
+      <!-- KUKA Ipo State -->
+      <ELEMENT TAG="IpoState" TYPE="LONG" INDX="15" />
+      <!-- Customizable digital inputs/outputs. Input Tags need to be of format "DigIn.DI<number>",
+      where the number needs to be ascending without gaps. Outputs must be similarily tagged
+      "DigOut.DO<number>" -->
+      <ELEMENT TAG="DigIn.DI1" TYPE="LONG" INDX="16" />
+      <ELEMENT TAG="DigIn.DI2" TYPE="LONG" INDX="17" />
+      <ELEMENT TAG="DigIn.DI3" TYPE="LONG" INDX="18" />
+      <ELEMENT TAG="DigIn.DI4" TYPE="LONG" INDX="19" />
+      <ELEMENT TAG="DigOut.DO1" TYPE="LONG" INDX="20" />
+      <ELEMENT TAG="DigOut.DO2" TYPE="LONG" INDX="21" />
+    </ELEMENTS>
+  </SEND>
+  <RECEIVE>
+    <ELEMENTS>
+      <!-- Joint position correction, i.e. joint target position -->
+      <ELEMENT TAG="AK.A1" TYPE="DOUBLE" INDX="1" HOLDON="1" />
+      <ELEMENT TAG="AK.A2" TYPE="DOUBLE" INDX="2" HOLDON="1" />
+      <ELEMENT TAG="AK.A3" TYPE="DOUBLE" INDX="3" HOLDON="1" />
+      <ELEMENT TAG="AK.A4" TYPE="DOUBLE" INDX="4" HOLDON="1" />
+      <ELEMENT TAG="AK.A5" TYPE="DOUBLE" INDX="5" HOLDON="1" />
+      <ELEMENT TAG="AK.A6" TYPE="DOUBLE" INDX="6" HOLDON="1" />
+      <!-- Stop the RSI interface on KUKA side -->
+      <ELEMENT TAG="STOP" TYPE="BOOL" INDX="7" HOLDON="1" />
+      <!-- Customizable digital outputs. Tags need to be of format "DigOut.DO<number>",
+      where the number needs to be ascending without gaps. The number of outputs needs to be same
+      as outputs in the SEND-section. -->
+      <ELEMENT TAG="DigOut.DO1" TYPE="LONG" INDX="8" HOLDON="1" />
+      <ELEMENT TAG="DigOut.DO2" TYPE="LONG" INDX="9" HOLDON="1" />
+    </ELEMENTS>
+  </RECEIVE>
+</ROOT>

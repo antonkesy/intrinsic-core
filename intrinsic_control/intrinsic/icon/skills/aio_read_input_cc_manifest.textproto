@@ -1,0 +1,65 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: Manifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "aio_read_input"
+}
+display_name: "AIO read input"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+    "This skill reads the value of one or multiple "
+    "specific analog inputs. The values will be returned as a list of doubles "
+    "in the output parameters of the skill. It is possible that the "
+    "values have already changed in the meantime due to asynchronous calls from "
+    "other parts of the system.\n\n"
+    "For 'Adio', select the real-time control service that controls the "
+    "analog inputs. When the analog input is provided by a robot control box"
+    " or EtherCAT, this is usually named 'robot_controller'."
+}
+options {
+  supports_cancellation: false
+  cc_config {
+    create_skill: "::intrinsic::skills::AioReadInput::CreateSkill"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "adio"
+    value {
+      capability_names: "Icon2AdioPart"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.AioReadInputParams"
+  default_value {
+    [type.googleapis.com/intrinsic_proto.skills.AioReadInputParams] {
+      timeout: {
+        seconds: 1
+        nanos: 0
+      }
+    }
+  }
+}
+return_type {
+  message_full_name: "intrinsic_proto.skills.AioReadInputReturnValue"
+}

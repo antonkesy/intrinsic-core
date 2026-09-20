@@ -1,0 +1,222 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.scene_object.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "intrinsic/kubernetes/generator/proto/auth_options.proto";
+import "intrinsic/scene/proto/v1/scene_object.proto";
+import "intrinsic/scene/proto/v1/scene_object_updates.proto";
+
+option go_package = "intrinsic/scene/proto/v1/scene_object_edit_service_go_proto";
+
+// Provides access to a managed set of scene object protos.
+//
+// All methods in this service provide mutual exclusion with respect to scene
+// object operations. In other words, if two clients mutate the same scene
+// object, then the operations will be atomic but in an indeterminate order.
+service SceneObjectEditService {
+  // Adds a new scene object to this service.
+  rpc CreateSceneObject(CreateSceneObjectRequest)
+      returns (SceneObjectWithMetadata) {
+    // Auth annotations for consumption by the following helm_chart:
+    //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+    option (intrinsic_proto.auth.method_options).auth_methods =
+        AUTH_METHOD_API_KEY;
+  }
+
+  // Returns the scene object and its metadata.
+  rpc GetSceneObject(GetSceneObjectRequest) returns (SceneObjectWithMetadata) {
+    // Auth annotations for consumption by the following helm_chart:
+    //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+    option (intrinsic_proto.auth.method_options).auth_methods =
+        AUTH_METHOD_API_KEY;
+  }
+
+  // Returns the scene object, its metadata and the update journal.
+  rpc GetSceneObjectJournal(GetSceneObjectJournalRequest)
+      returns (GetSceneObjectJournalResponse) {
+    // Auth annotations for consumption by the following helm_chart:
+    //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+    option (intrinsic_proto.auth.method_options).auth_methods =
+        AUTH_METHOD_API_KEY;
+  }
+
+  // Clones a scene object and creates a new copy.
+  rpc CloneSceneObject(CloneSceneObjectRequest)
+      returns (SceneObjectWithMetadata) {
+    // Auth annotations for consumption by the following helm_chart:
+    //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+    option (intrinsic_proto.auth.method_options).auth_methods =
+        AUTH_METHOD_API_KEY;
+  }
+
+  // Deletes a scene object from the service.
+  rpc DeleteSceneObject(DeleteSceneObjectRequest)
+      returns (google.protobuf.Empty) {
+    // Auth annotations for consumption by the following helm_chart:
+    //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+    option (intrinsic_proto.auth.method_options).auth_methods =
+        AUTH_METHOD_API_KEY;
+  }
+
+  // Updates advanced properties of an object.
+  rpc UpdateSceneObject(UpdateSceneObjectRequest)
+      returns (SceneObjectWithMetadata) {
+    // Auth annotations for consumption by the following helm_chart:
+    //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+    option (intrinsic_proto.auth.method_options).auth_methods =
+        AUTH_METHOD_API_KEY;
+  }
+}
+
+// See //intrinsic/scene/util/scene_object_updates.h for more details.
+enum UpdateType {
+  // Same as UPDATE_TYPE_EVERYTHING.
+  UPDATE_TYPE_UNSPECIFIED = 0;
+  // All updates are permitted using the default setting.
+  UPDATE_TYPE_EVERYTHING = 1;
+  // All updates are permitted using kObjectType, it is equivalent to default.
+  UPDATE_TYPE_OBJECT_TYPE = 2;
+  // Structural changes are not permitted, but configuration changes are ok.
+  UPDATE_TYPE_OBJECT_INSTANCE = 3;
+}
+
+// See //intrinsic/scene/util/scene_object_updates.h for more details.
+enum UpdatePolicy {
+  // Same as UPDATE_POLICY_APPLY_ALL_OR_FAIL.
+  UPDATE_POLICY_UNSPECIFIED = 0;
+  // Returns fatal errors on any update that cannot be applied.
+  UPDATE_POLICY_APPLY_ALL_OR_FAIL = 1;
+  // Skips any updates (atomic updates get skipped together) that fail to
+  // apply, and continues to apply the rest of the updates as best as it can.
+  // Returning all the error statuses that were received along the way.
+  UPDATE_POLICY_SKIP_FAILED = 2;
+}
+
+// General information about a scene object managed by the scene objects
+// service.
+message SceneObjectMetadata {
+  // Unique id of the scene object within the service, this is distinct from the
+  // id_version that might be associated with an asset or resource within the
+  // catalog.
+  string scene_object_id = 1;
+
+  // The timestamp of the most recent update to this scene object.
+  google.protobuf.Timestamp last_update = 2;
+
+  // The update type being enforced for this scene object.
+  UpdateType update_type = 3;
+
+  // An equality-comparable revision token that is used for optimistic
+  // concurrency control.
+  string revision_token = 4;
+}
+
+message SceneObjectWithMetadata {
+  // Scene object level metadata.
+  SceneObjectMetadata scene_object_metadata = 1;
+
+  // The scene object data itself.
+  SceneObject scene_object = 2;
+}
+
+message CreateSceneObjectRequest {
+  // The scene object to add to the service.
+  SceneObject scene_object = 1;
+
+  // The update type to enforce for this new scene object.
+  UpdateType update_type = 2;
+}
+
+message GetSceneObjectRequest {
+  // Id of the scene object to be queried.
+  string scene_object_id = 1;
+}
+
+message GetSceneObjectJournalRequest {
+  // Id of the scene object to be queried.
+  string scene_object_id = 1;
+}
+
+message GetSceneObjectJournalResponse {
+  // Scene object level metadata.
+  SceneObjectMetadata scene_object_metadata = 1;
+
+  // The original scene object that was added to the service.
+  SceneObject original_scene_object = 2;
+
+  // A sequence of scene object updates which were applied since creating the
+  // scene object with the service.
+  SceneObjectUpdates scene_object_updates = 3;
+
+  // The current scene object that is equivalent to applying
+  // scene_object_updates to original_scene_object.
+  SceneObject current_scene_object = 4;
+}
+
+message CloneSceneObjectRequest {
+  // The id of the scene object to be cloned.
+  string scene_object_id = 1;
+
+  // If set, we will keep the in progress updates from the original scene object
+  // when constructing the new one. Otherwise we will use the current state as
+  // the starting point for the new scene object.
+  bool keep_updates_journal = 2;
+
+  // The update type to enforce for this new scene object.
+  UpdateType update_type = 3;
+
+  // If set we will return the cloned scene object data with the result,
+  // otherwise we will exclude this data in the result.
+  bool keep_scene_object_in_result = 4;
+
+  // An equality-comparable revision token that is used for optimistic
+  // concurrency control. If specified, the revision token must match the
+  // revision token of the original scene object in the service. If the revision
+  // token does not match, the request will fail with an error.
+  string revision_token = 5;
+}
+
+message DeleteSceneObjectRequest {
+  // The id of the scene object to remove
+  string scene_object_id = 1;
+
+  // An equality-comparable revision token that is used for optimistic
+  // concurrency control. If specified, the revision token must match the
+  // revision token of the original scene object in the service. If the revision
+  // token does not match, the request will fail with an error.
+  string revision_token = 2;
+}
+
+message UpdateSceneObjectRequest {
+  // Id of the scene object to be updated.
+  string scene_object_id = 1;
+
+  // A sequence of scene object updates which will be applied to the given
+  // scene object.
+  SceneObjectUpdates scene_object_updates = 2;
+
+  // The update policy to enforce for this new scene object.
+  UpdatePolicy update_policy = 3;
+
+  // An equality-comparable revision token that is used for optimistic
+  // concurrency control. If specified, the revision token must match the
+  // revision token of the original scene object in the service. If the revision
+  // token does not match, the request will fail with an error.
+  string revision_token = 4;
+}

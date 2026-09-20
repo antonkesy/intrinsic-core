@@ -1,0 +1,69 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.scene_object.v1;
+
+import "intrinsic/scene/proto/v1/imported_scene_updates.proto";
+import "intrinsic/scene/proto/v1/scene_object.proto";
+
+option go_package = "intrinsic/scene/proto/v1/imported_scene_go_proto";
+
+// Data imported from an external scene representation that can be used to
+// reconstruct an Intrinsic scene for further edit.
+message ImportedScene {
+  // Scene objects that are uniquely identifable in the scene
+  ImportedSceneObjects scene_objects = 1;
+  // Instances of objects
+  ImportedSceneObjectInstances scene_object_instances = 2;
+  // Updates to be applied to scene_object_instances to restore scene structure.
+  ImportedSceneUpdates instance_updates = 3;
+}
+
+// SceneObjects unique to a scene.
+message ImportedSceneObjects {
+  // Map from object id to objects.
+  map<string, SceneObject> objects = 1;
+}
+
+// Instances of SceneObjects in a imported scene.
+message ImportedSceneObjectInstances {
+  // Map from instance id to instances.
+  map<string, ImportedSceneObjectInstance> instances = 1;
+}
+
+// Represents the data neede to instantiate a SceneObject in a scene.
+message ImportedSceneObjectInstance {
+  // Id of the SceneObject in ImportedSceneObjects. Note this is an application
+  // specific id that is not guaranteed to be persistent across different
+  // imports.
+  string scene_object_id = 1;
+}
+
+// Specifies how an imported scene should be structured for scenes that could
+// contain multiple SceneObject.
+enum ImportStructure {
+  // Defaults to IMPORT_STRUCTURE_SINGLE
+  IMPORT_STRUCTURE_UNSPECIFIED = 0;
+  // Imported scene will contain a single SceneObject and a single
+  // ImportedSceneObjectInstance. The original scene graph hierarchy will be
+  // preserved in the entities of the single SceneObject.
+  IMPORT_STRUCTURE_SINGLE = 1;
+  // Imported scene will contain multiple SceneObjects, an arbitrary number of
+  // ImportedSceneObjectInstance. Hierarchy internal to each part will be
+  // preserved in the entities of each Scenebject. Assembly level structure will
+  // be converted to equivalent instance parenting.
+  IMPORT_STRUCTURE_MULTIPLE = 2;
+}

@@ -1,0 +1,61 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world.internal;
+
+import "intrinsic/world/collision/collision_context.proto";
+import "intrinsic/world/proto/world_entity.proto";
+
+option go_package = "intrinsic/world/go_proto";
+
+// Top-level message of our world representation.
+// Next tag: 19
+message World {
+  // ---------------------------------------------------------------------------
+  // World V2 fields
+  //
+  // These fields are the replacements for the World V1 fields above. Note that
+  // some of these fields are temporary aids to bridge between the two versions.
+  // They will be removed once the migration is complete.
+
+  // List of entities in this world key'd by their world unique identifier.
+  map<uint32, WorldEntity> entities = 10;
+
+  // Temporary mapping from world-unique DofIds (not to be confused with
+  // DofLabels, which are robot-unique) to EntityIds.
+  map<string, uint32> dof_id_to_entity_id = 14;
+
+  // Temporary mapping from GroupIds to order lists of robot EntityIds that
+  // constitute the group.
+  message RobotIds {
+    repeated uint32 robot_id = 1;
+  }
+  map<string, RobotIds> group_id_to_robot_ids = 15;
+
+  // Temporary list of valid GroupIds (which form a subset of the LabelIds found
+  // across all Entities). Both GroupIds and LabelIds are human-readable
+  // strings. In the V2 World, GroupIds were merged into LabelIds, but some
+  // systems rely on a precise set of GroupIds.
+  repeated string group_ids = 16;
+  // ---------------------------------------------------------------------------
+
+  // The rule set used for collision checking associated with this world.
+  intrinsic_proto.RuleSet rule_set = 18;
+
+  reserved 1 to 9, 11 to 13, 17;
+  reserved "aspects", "collision_leaf_size", "data_version", "display_name",
+      "collision_workspace_bounding_box", "kinematic_object_id_to_entity_id";
+}

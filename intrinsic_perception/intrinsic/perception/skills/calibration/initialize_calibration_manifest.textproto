@@ -1,0 +1,83 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: SkillManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "initialize_calibration"
+}
+display_name: "Initialize a calibration session"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+  "The `initialize_calibration` skill is used to start a new calibration session in the `CalibrationService`.\n"
+  "It takes as input the list of cameras to be calibrated (one to four), the robot involved in the process, and the\n"
+  "configuration for the calibration pattern detector. The skill communicates with the `CalibrationService` to\n"
+  "register these entities and set up the session. This step is crucial as it prepares the service for subsequent\n"
+  "data collection steps. It decouples the initialization from data collection, allowing users to verify the setup\n"
+  "before moving the robot. The skill succeeds if the service successfully initializes the session.\n"
+  "\n"
+  "Note that all four camera config inputs must be specified even if this means repeatedly selecting\n"
+  "the same camera config(s). In case the selected robot has multiple arms, `arm_part` specifies which arm to use."
+}
+options {
+  supports_cancellation: false
+  cc_config {
+    create_skill: "::intrinsic::skills::InitializeCalibration::CreateSkill"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "camera_1"
+    value {
+      capability_names: "CameraConfig"
+    }
+  }
+  required_equipment {
+    key: "camera_2"
+    value {
+      capability_names: "CameraConfig"
+    }
+  }
+  required_equipment {
+    key: "camera_3"
+    value {
+      capability_names: "CameraConfig"
+    }
+  }
+  required_equipment {
+    key: "camera_4"
+    value {
+      capability_names: "CameraConfig"
+    }
+  }
+  required_equipment {
+    key: "robot"
+    value {
+      capability_names: "intrinsic_proto.icon.v1.IconApi"
+      capability_names: "Icon2PositionPart"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.InitializeCalibrationParams"
+}
+return_type {
+  message_full_name: "intrinsic_proto.skills.InitializeCalibrationResult"
+}

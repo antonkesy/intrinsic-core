@@ -1,0 +1,66 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.catalog.v1;
+
+import "intrinsic/assets/catalog/proto/v1/asset_catalog.proto";
+import "intrinsic/assets/proto/id.proto";
+import "intrinsic/assets/proto/view.proto";
+
+option go_package = "intrinsic/assets/catalog/proto/v1/asset_catalog_internal_go_proto";
+
+// Provides internal access to assets in the asset catalog.
+service AssetCatalogInternal {
+  // Gets (a view of) the specified asset.
+  //
+  // This RPC is identical to AssetCatalog.GetAsset, except that it allows
+  // the ASSET_VIEW_ALL view.
+  rpc GetAssetInternal(GetAssetRequest) returns (Asset);
+
+  // Gets (views of) the specified assets.
+  rpc BatchGetAssetsInternal(BatchGetAssetsRequest)
+      returns (BatchGetAssetsResponse);
+}
+
+message BatchGetAssetsRequest {
+  // The asset IDs and versions.
+  repeated intrinsic_proto.assets.IdVersion id_versions = 1;
+
+  // The type of view to return. Defaults to ASSET_VIEW_TYPE_BASIC.
+  AssetViewType view = 3;
+
+  // If true, skip unavailable assets instead of returning an error.
+  bool skip_unavailable = 4;
+
+  reserved 2;
+  reserved "asset_types";
+}
+
+message BatchGetAssetsResponse {
+  message UnavailableAsset {
+    intrinsic_proto.assets.IdVersion id_version = 1;
+    string reason = 2;
+  }
+
+  // The deployment data for the requested, available assets.
+  repeated Asset assets = 1;
+
+  // The unavailable assets (if skip_unavailable is true).
+  repeated UnavailableAsset unavailable_assets = 3;
+
+  reserved 2;
+  reserved "unavailable_id_versions";
+}

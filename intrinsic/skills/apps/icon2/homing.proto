@@ -1,0 +1,75 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "google/protobuf/duration.proto";
+import "intrinsic/skills/proto/skill_parameter_metadata.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/skills/apps/icon2/homing_go_proto";
+
+message HomingParams {
+  string drive_name = 1;
+  // Duration after which the skill will create a timeout error if homing could
+  // not be attained.
+  google.protobuf.Duration timeout = 2;
+
+  intrinsic_proto.world.ObjectReference icon_part = 3
+      [(intrinsic_proto.skills.skill_parameter_metadata) = {
+        is_icon2_position_part: true
+      }];
+
+  // LINT.IfChange
+  // The homing method (0x6098) to use.
+  // There are a few standard methods, but the drive manufacturer can
+  // define custom methods as well (then often using negative values).
+  // Thus, we'll use an int8_t here and not a fixed enum.
+  // Defaults to 37 (USE_CURRENT_POSITION).
+  optional int32 homing_method = 4;
+  // The search speed to use for homing (0x6099.1). This is the speed at which
+  // the drive will search a switch point. For the unit please see the
+  // manufacturer's documentation.
+  // Defaults to 10.
+  optional float search_speed = 5;
+  // The creep speed to use for homing (0x6099.2). This is the speed at which
+  // the drive will approach the zero point. For the unit please see the
+  // manufacturer's documentation.
+  // Defaults to 10.
+  optional float creep_speed = 6;
+  // The acceleration to use for homing (0x609A). This is the acceleration
+  // at which the drive will approach the zero point. For the unit please see
+  // the manufacturer's documentation.
+  // Defaults to 100.
+  optional float acceleration = 7;
+  // The offset to use for homing (0x607C). This is the offset that'll be
+  // applied to the new home position after homing. For the unit please see
+  // the manufacturer's documentation.
+  // Defaults to 0.
+  optional float offset = 8;
+  // Specify whether or not to ignore the is_settled criterion before homing
+  // execution. The settling criterion is a dynamic measure that estimates if
+  // a drive has settled, or in other words if the joint velocity is close
+  // to zero such that the drive will not move further. Settling requires time,
+  // it depends on the robot and drive, its tracking abilities and noise
+  // characteristics. Typically it takes between 250 to 750 milliseconds.
+  // Defaults to false, i.e. the homing only starts after the robot has
+  // settled. If your skills exceeds its default timeout of 10 seconds or you
+  // see the drives moving/oscillating in standstill, you might want to set this
+  // to true.
+  optional bool ignore_is_settled_condition = 9;
+  // LINT.ThenChange(//intrinsic_control/intrinsic/icon/actions/homing_action.proto)
+}

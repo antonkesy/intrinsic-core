@@ -1,0 +1,36 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.config;
+
+option go_package = "intrinsic/config/proto/config_go_proto";
+
+// FileReference maps an external file (e.g. on GCS) to its in-cluster path.
+message FileReference {
+  // Path of the file when loaded within the cluster, eg "/world/world.gzf".
+  string path = 1;
+
+  // URI describing the source of the file, e.g. on GCS
+  // (gs://<bucket>/<file>#<generation>).
+  string uri = 2;
+
+  // Digest of the file. Optional.
+  string digest = 3;
+}
+
+message FileReferences {
+  repeated FileReference file_references = 1;
+}

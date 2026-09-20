@@ -1,0 +1,42 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Packages for bazel/debian_snapshot.
+# Based on https://github.com/GoogleContainerTools/rules_distroless/blob/main/examples/debian_snapshot/bullseye.yaml
+#
+#  Anytime this file is changed, the lockfile needs to be regenerated.
+#
+#  To generate the boockworm.lock.json run the following command
+#
+#     bazel run @bookworm//:lock
+#
+version: 1
+
+sources:
+  - channel: bookworm main contrib
+    url: https://snapshot.debian.org/archive/debian/20241115T143746Z/
+  - channel: bookworm-security main
+    url: https://snapshot.debian.org/archive/debian-security/20241115T143746Z/
+  - channel: bookworm-updates main
+    url: https://snapshot.debian.org/archive/debian/20241115T143746Z/
+
+archs:
+  - "amd64"
+# READ BEFORE ADDING PACKAGES
+# Please talk to go/intrinsic-engprod before adding packages here.
+# In most cases, you should build from source:
+# go/intrinsic-engprod-decisions-faq#q-why-should-i-prefer-source-dependencies-over-binary-dependencies
+# Only add top level dependencies here, because apt resolves transitive dependencies.
+packages:
+  - "libgdiplus"

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<sdf version="1.6">
+  <model name='air_vise'>
+    <link name ="base_link">
+      <visual name ="base">
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic/models/assets/imts/air_vise/base.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name ="collider_box.007">
+        <pose>0.0 -0.0 0.0378 1.5708 -0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.15189 0.07559 0.15189</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name ="collider_box.008">
+        <pose>0.0 0.0 0.07463 1.5708 -0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.1016 0.03056 0.04445</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name ="collider_box.009">
+        <pose>0.08443 0.00522 0.01712 1.5708 -0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.0543 0.01119 0.01694</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <link name ="finger1_link">
+      <visual name ="finger1">
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic/models/assets/imts/air_vise/finger1.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name ="collider_box.001">
+        <pose>-0.04898 0.00019 0.10182 1.5708 -0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.1016 0.02374 0.04884</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name ="collider_box.002">
+        <pose>-0.03689 0.00019 0.08512 1.5708 -0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.1016 0.01905 0.07302</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name ="collider_box.003">
+        <pose>-0.04197 0.00019 0.07304 1.5708 -0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.05055 0.02031 0.06286</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <link name ="finger2_link">
+      <visual name ="finger2">
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic/models/assets/imts/air_vise/finger2.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name ="collider_box.004">
+        <pose>0.04898 0.00019 0.10182 1.5708 -0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.1016 0.02374 0.04884</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name ="collider_box.005">
+        <pose>0.03689 0.00019 0.08512 1.5708 -0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.1016 0.01905 0.07302</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name ="collider_box.006">
+        <pose>0.04197 0.00019 0.07218 1.5708 -0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.05055 0.01858 0.06286</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="finger1_joint_prismatic" type="prismatic">
+      <pose>0.0 0.0 0.0 0 0 0</pose>
+      <parent>base_link</parent>
+      <child>finger1_link</child>
+      <axis>
+        <xyz>-1.0 -0.0 0.0</xyz>
+      </axis>
+      <limit>
+        <lower>0.0</lower>
+        <upper>0.003</upper>
+      </limit>
+    </joint>
+    <joint name="finger2_joint_prismatic" type="prismatic">
+      <pose>0.0 0.0 0.0 0 0 0</pose>
+      <parent>base_link</parent>
+      <child>finger2_link</child>
+      <axis>
+        <xyz>1.0 0.0 0.0</xyz>
+      </axis>
+      <limit>
+        <lower>0.0</lower>
+        <upper>0.003</upper>
+      </limit>
+    </joint>
+
+    <frame name='align' attached_to='base_link' intrinsic:create_entity='true'>
+      <pose relative_to="base_link">0.0 0.0 0.150040 3.141592653589793 0.0 0.0</pose>
+    </frame>
+
+  </model>
+</sdf>

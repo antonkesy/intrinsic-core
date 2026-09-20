@@ -1,0 +1,54 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.simulation;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "intrinsic/simulation/gazebo/proto/introspection_go_proto";
+
+message CycleProfile {
+  optional double percent_simulator = 1;
+  optional double percent_controller = 2;
+}
+
+message InnerCycleProfile {
+  optional double percent_physics = 1;
+  optional double percent_rendering = 2;
+  optional double percent_equipment = 3;
+}
+
+message PhysicsCycleProfile {
+  optional double percent_collision_detection = 1;
+  optional double percent_collision_resolution = 2;
+  optional double percent_contact_resolution = 3;
+}
+
+message SimulatorPerformanceMeasures {
+  optional double real_time_factor = 10;
+  optional uint64 cycles_since_last_reset = 2;
+  optional google.protobuf.Duration real_time_elapsed_since_last_reset = 8;
+  optional google.protobuf.Duration sim_time_elapsed_since_last_reset = 9;
+  optional google.protobuf.Duration cycle_timestep = 11;
+
+  // Experimental fields, might not be populated
+  optional CycleProfile profile = 4;
+  optional InnerCycleProfile inner_cycle_profile = 5;
+  optional PhysicsCycleProfile physics_cycle_profile = 6;
+  optional uint64 cycles_profiled = 7;
+
+  reserved 1, 3;
+}

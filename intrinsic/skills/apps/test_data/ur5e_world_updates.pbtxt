@@ -1,0 +1,84 @@
+# proto-file: intrinsic/world/proto/world_updates.proto
+# proto-message: intrinsic_proto.world.WorldUpdates
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+updates {
+  add_label {
+    entities {
+      by_labels {
+        label_ids: "my_robot::ur5e"
+        entity_name: "wrist_3_link"
+      }
+    }
+    labels_to_add: "tip"
+    labels_to_add: "gripper"
+  }
+}
+
+updates {
+  set_robot_tip {
+    robot_name: "my_robot::ur5e"
+    tip_entity {
+      by_labels {
+        label_ids: "my_robot::ur5e"
+        entity_name: "wrist_3_link"
+      }
+    }
+  }
+}
+
+updates {
+  self_exclusions {
+    robot_id: "my_robot::ur5e"
+  }
+}
+
+updates {
+  set_object_names {
+    models_to_objects {
+      sdf_model_name: "my_robot::ur5e"
+      object_name: "my_robot"
+    }
+  }
+}
+
+updates {
+  set_robot_ik_solver_key {
+    entities {
+      # Collections entity of robot.
+      by_labels: {
+        label_ids: "my_robot::ur5e"
+        entity_name: "base_link"
+      }
+    }
+    solver_key: "ur"
+    override_tip_entity: {
+      by_labels {
+        label_ids: "my_robot::ur5e"
+        entity_name: "wrist_3_link"
+      }
+    }
+  }
+}
+
+updates {
+  add_entity: {
+    parent: { by_labels { label_ids: "my_robot::ur5e" label_ids: "tip" } }
+    local_name: "flange"
+  }
+}
+

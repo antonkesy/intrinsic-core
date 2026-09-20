@@ -1,0 +1,602 @@
+# proto-file: intrinsic/assets/proto/status_spec.proto
+# proto-message: intrinsic_proto.assets.StatusSpecs
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+status_info: [
+  {
+    code: 11302
+    title: "Parameterization failed"
+  },
+  {
+    code: 12010
+    title: "Failed to delete operation"
+  },
+  {
+    code: 12020
+    title: "Failed to log error information"
+  },
+  {
+    code: 12800
+    title: "Unknown operation"
+    recovery_instructions: "Make sure the specified operation has been created"
+  },
+  {
+    code: 12901
+    title: "Specified node does not exist"
+    recovery_instructions: "Make sure that the given node exists in the current operation"
+  },
+  {
+    code: 12902
+    title: "Invalid node execution settings"
+  },
+  {
+    code: 12903
+    title: "Breakpoint already exists"
+  },
+  {
+    code: 13000
+    title: "Operation failed"
+  },
+  {
+    code: 13001
+    title: "Behavior tree execution failed"
+  },
+  {
+    code: 13002
+    title: "Process parameterization failed"
+    recovery_instructions: "Check the context for additional details"
+  },
+  {
+    code: 13003
+    title: "Process return value generation failed"
+    recovery_instructions: "Check the context for additional details"
+  },
+  {
+    code: 13020
+    title: "Additional error information"
+  },
+  {
+    code: 13302
+    title: "Reusable process parameterization failed"
+    recovery_instructions: "Check the context for additional details"
+  },
+  {
+    code: 13303
+    title: "Reusable process return value generation failed"
+    recovery_instructions: "Check the context for additional details"
+  },
+  {
+    code: 13402
+    title: "Skill parameterization failed"
+    recovery_instructions: "Check the context for additional details"
+  },
+  {
+    code: 13403
+    title: "Skill return value generation failed"
+    recovery_instructions: "Check the context for additional details"
+  },
+  # Generic errors with regard to handling/converting protos from the manager
+  {
+    code: 13699
+    title: "Protobuf handling error"
+  },
+  {
+    code: 13700
+    title: "Cannot create descriptor pool as no file descriptor set was given"
+  },
+  {
+    code: 13701
+    title: "Failed to create descriptor pool"
+  },
+  {
+    code: 13702
+    title: "Cannot cast from any proto as the any proto was not set"
+    recovery_instructions: "Make sure that the proto is set"
+  },
+  {
+    code: 13703
+    title: "Failed to cast from Any proto"
+  },
+  {
+    code: 13704
+    title: "Casted proto has unexpected type"
+    recovery_instructions: "Set the correct type for the proto or determine why the input proto has the wrong type"
+  },
+  {
+    code: 13705
+    title: "Missing file descriptors when trying to cast from Any proto"
+    recovery_instructions: "Make sure the file descriptor set contains all descriptors for this message"
+  },
+  {
+    code: 13720
+    title: "Failed add proto message to manager"
+  },
+  {
+    code: 13734
+    title: "Loading behavior tree caused issues"
+  },
+  # Use 14000 for generic failures reported from the code execution service, not
+  # failures from handling or calling the code execution service in the
+  # executive.
+  {
+    code: 14000
+    title: "External code execution failed"
+  },
+  {
+    code: 14001
+    title: "External code execution service not available"
+  },
+  {
+    code: 14002
+    title: "Failed to schedule code execution"
+  },
+  {
+    code: 14007
+    title: "External code execution could not retrieve request inputs"
+  },
+  {
+    code: 14080
+    title: "Failed to clone world for external code execution"
+  },
+  # Generic errors with regard to CEL expressions. Usually internal errors that
+  # shouldn't happen.
+  {
+    code: 15000
+    title: "CEL expression handling error"
+  },
+  {
+    code: 15001
+    title: "Expression data not found"
+    recovery_instructions: "This is an internal error. Please report this issue"
+  },
+  {
+    code: 15002
+    title: "Expression proto not found"
+    recovery_instructions: "This is an internal error. Please report this issue"
+  },
+  {
+    code: 15003
+    title: "Failed to determine expression variables"
+  },
+  {
+    code: 15004
+    title: "Descriptor pool information for expression not found"
+  },
+  {
+    code: 15005
+    title: "Failed to store expression result as proto"
+  },
+  {
+    code: 15006
+    title: "Descriptor database for expression not found"
+  },
+  {
+    code: 15007
+    title: "Failed to create expression"
+  },
+  {
+    code: 15008
+    title: "Failed to store expression result"
+  },
+  {
+    code: 15014
+    title: "Descriptor pool information for assignment not found"
+  },
+  # User errors for CEL expressions (e.g., bad/non-CEL expression, values not on
+  # blackboard)
+  {
+    code: 15100
+    title: "Failed to evaluate expression"
+  },
+  {
+    code: 15101
+    title: "Expression variable(s) not available"
+    recovery_instructions: "Make sure the variables are written before the expression is evaluted"
+  },
+  {
+    code: 15102
+    title: "Missing file descriptors for expression creating proto"
+    recovery_instructions: "Make sure the file descriptor set contains all descriptors for this message"
+  },
+  {
+    code: 15103
+    title: "Failed to parse expression result into proto"
+    recovery_instructions: "Make sure the descriptors of the destination are binary compatible with the source descriptors"
+  },
+  {
+    code: 15104
+    title: "Failed to convert expression list value"
+  },
+  {
+    code: 15105
+    title: "Unexpected expression result type"
+    recovery_instructions: "Make sure the expression results in a type that can be converted to a proto, e.g., a message or a plain value like int or string."
+  },
+  {
+    code: 15106
+    title: "Error handling map expression"
+    recovery_instructions: "Maps are currently not supported for data flow."
+  },
+  {
+    code: 15150
+    title: "Failed to parse expression"
+    recovery_instructions: "Make sure the expression is a valid CEL expression"
+  },
+  # Errors specific to what the expression contains. Usally when the evaluation
+  # succeeded, but had unexpected results.
+  {
+    code: 15700
+    title: "Condition expression did not return bool value"
+    recovery_instructions: "Adapt the condition expression to make sure it evaluates to bool"
+  },
+  {
+    code: 15750
+    title: "Proto expression did not return expected type"
+    recovery_instructions: "Make sure the expression always results in the specified type or adapt the type specification"
+  },
+  {
+    code: 15751
+    title: "Proto list expression did not return expected type"
+    recovery_instructions: "Make sure the expression either returns a list of protos or an AnyList proto"
+  },
+  {
+    code: 15800
+    title: "Invalid field path"
+    recovery_instructions: "Make sure the field path has a valid syntax. Field paths must be a dot-separated path into the (sub-)fields of a message. Items of a repeated field must use square brackets to address a specific item. Map items cannot be addressed. Example: message_field.sub_message_field[2].sub_sub_message_field"
+  },
+  {
+    code: 15801
+    title: "Field path to non-existing field"
+    recovery_instructions: "Make sure the addressed field actually exists in the message type"
+  },
+  {
+    code: 15802
+    title: "Field path out of bounds"
+  },
+  {
+    code: 15803
+    title: "Field path into invalid type"
+    recovery_instructions: "Make sure that inner elements of a field path refer to a message"
+  },
+  {
+    code: 15804
+    title: "Field in path not set"
+  },
+  {
+    code: 15805
+    title: "Field path to intermediate repeated field"
+    recovery_instructions: "Accessing an element in a repeated field must specify the index of which element to access"
+  },
+  {
+    code: 15806
+    title: "Field path to singular field with index"
+    recovery_instructions: "Index expressions only work for repeated fields"
+  },
+  {
+    code: 15807
+    title: "Field path to repeated field not allowed"
+  },
+  {
+    code: 15808
+    title: "Field path with map access"
+    recovery_instructions: "Addressing maps is not supported"
+  },
+  {
+    code: 15809
+    title: "Unexpected error in field path evaluation"
+  },
+  {
+    code: 15900
+    title: "Assignment error"
+  },
+  {
+    code: 15901
+    title: "Type mismatch in assignment"
+    recovery_instructions: "Make sure the assigned target type is assignable to the source type of the assignment"
+  },
+  {
+    code: 15902
+    title: "Deserialization failure during assignment"
+  },
+  {
+    code: 15903
+    title: "Assigned value out of range"
+  },
+  {
+    code: 15904
+    title: "Assignment out of repeated field bounds"
+  },
+  {
+    code: 15905
+    title: "Assignment of repeated field from singular value"
+    recovery_instructions: "Make sure that the assigned value is a list of values or select a specified index in the repeated field to assign"
+  },
+  {
+    code: 15906
+    title: "Missing file descriptors while assigning from repeated field"
+    recovery_instructions: "Make sure the target's file descriptor set contains all descriptors for this message"
+  },
+  {
+    code: 15950
+    title: "Proto to assign not set"
+  },
+  {
+    code: 15951
+    title: "Serialization failure after assignment"
+  },
+  {
+    code: 15952
+    title: "Assignment for unassignable proto"
+  },
+  {
+    code: 15960
+    title: "Missing skill information for assignment"
+  },
+  {
+    code: 18000
+    title: "Skill execution error"
+  },
+  {
+    code: 18001
+    title: "Unknown skill error"
+  },
+  {
+    code: 18002
+    title: "Canceled due to timeout"
+  },
+  {
+    code: 18003
+    title: "Abandoned skill call"
+  },
+  {
+    code: 18100
+    title: "Preparing skill call failure"
+  },
+  {
+    code: 18101
+    title: "Footprint volume handling error"
+  },
+  {
+    code: 18102
+    title: "Skill scheduling error"
+  },
+  {
+    code: 18103
+    title: "Preview execution error"
+  },
+  {
+    code: 18104
+    title: "Prediction error"
+  },
+  {
+    code: 18200
+    title: "Footprint checking error"
+    recovery_instructions: "Also check for further errors in the world service"
+  },
+  {
+    code: 18201
+    title: "Footprint conflict"
+    recovery_instructions: "Make sure that the skill does not run in parallel with conflicting skills"
+  },
+  {
+    code: 20000
+    title: "gRPC call failed"
+  },
+  {
+    code: 21001
+    title: "World Updater call to Pause/Resume failed"
+  },
+  {
+    code: 21101
+    title: "Conductor failed to prepare for process start"
+  },
+  {
+    code: 21110
+    title: "Conductor failed to prepare for process resume"
+  },
+  {
+    code: 31000
+    title: "Disabled node failed"
+  },
+  {
+    code: 31001
+    title: "Node decorator condition unsatisfied"
+  },
+  {
+    code: 31010
+    title: "Unreported node failure"
+  },
+  {
+    code: 31100
+    title: "Fallback node failed"
+  },
+  {
+    code: 31200
+    title: "Parallel node failed"
+  },
+  {
+    code: 31300
+    title: "Retry node failed"
+  },
+  {
+    code: 31400
+    title: "Selector node failed"
+  },
+  {
+    code: 31500
+    title: "Task node failed"
+  },
+  {
+    code: 31600
+    title: "Fail node failed"
+  },
+  {
+    code: 31700
+    title: "Debug node failed"
+  },
+  {
+    code: 31800
+    title: "Sequence node failed"
+  },
+  {
+    code: 31900
+    title: "Subtree node failed"
+  },
+  {
+    code: 32001
+    title: "Loop node failed to generate loop protos"
+  },
+  {
+    code: 32100
+    title: "Data node failed"
+  },
+  {
+    code: 70001
+    title: "Tree ids invalid"
+  },
+  {
+    code: 70002
+    title: "Node ids invalid"
+  },
+  {
+    code: 70003
+    title: "Tree ids conflict with loaded trees"
+    recovery_instructions: "Make sure the tree ids are globally unique, e.g., by generating a UUID"
+  },
+  {
+    code: 70099
+    title: "Id handling error"
+  },
+  {
+    code: 70100
+    title: "Recovery error"
+  },
+  {
+    code: 70101
+    title: "Duplicate recovery nodes found"
+    recovery_instructions: "Make sure the recovery nodes are unique"
+  },
+  {
+    code: 70102
+    title: "Recovery node not found"
+    recovery_instructions: "Make sure all recovery nodes are contained in the currently loaded tree. Recovery nodes must not be children of other recovery nodes. Recovery does not work into conditions."
+  },
+  {
+    code: 70103
+    title: "Ambiguous recovery"
+    recovery_instructions: "When giving multiple recovery nodes each must be in a different parallel branch of execution. For example, recovery can not select two children of the same sequence."
+  },
+  {
+    code: 70150
+    title: "Recovery failed to parameterize reusable process"
+    recovery_instructions: "Make sure the parameters of the reusable process are loaded or all input values are available to parameterize the reusable process. Also make sure any resource assignments are passed with the StartRequest"
+  },
+  {
+    code: 70151
+    title: "Recovery failed to apply to current operation"
+  },
+  {
+    code: 70199
+    title: "Failed to apply recovery state"
+  },
+  {
+    code: 80001
+    title: "Failed to update blackboard value"
+    recovery_instructions: "Make sure the blackboard value to update exists and is of the same type as the updating value"
+  },
+  {
+    code: 80002
+    title: "Blackboard value does not exist"
+  },
+  {
+    code: 80100
+    title: "Failed to save blackboard snapshot"
+  },
+  {
+    code: 80110
+    title: "Failed to restore blackboard snapshot"
+  },
+  {
+    code: 80111
+    title: "Successfully restored proto message"
+  },
+  {
+    code: 80112
+    title: "Failed to restore proto message"
+  },
+  {
+    code: 80113
+    title: "Skill descriptors for pool to restore not available in current operation"
+  },
+  {
+    code: 80114
+    title: "Restored blackboard snapshot"
+  },
+  {
+    code: 80120
+    title: "Blackboard snapshot does not exist"
+  },
+  {
+    code: 99000
+    title: "Computing process validation failed"
+  },
+  {
+    code: 99002
+    title: "Skill or Process not available in solution"
+    recovery_instructions: "Make sure to install the referenced skill or process"
+  },
+  {
+    code: 99003
+    title: "Process contains cyclic dependencies"
+    recovery_instructions: "Modify one of the processes in the given dependency chain to break the cyclic dependency"
+  },
+  {
+    code: 99004
+    title: "Multiple validation issues found"
+    recovery_instructions: "Check the attached contexts to resolve individual issues"
+  },
+  {
+    code: 99010
+    title: "Invalid skill or process parameters"
+    recovery_instructions: "Calls to a skill or a reusable process must have a valid parameter message"
+  },
+  {
+    code: 99011
+    title: "Required child missing"
+    recovery_instructions: "Create a child node"
+  },
+  {
+    code: 99012
+    title: "Node without type"
+    recovery_instructions: "Fill the node_type oneof in the Node to create a specific node"
+  },
+  {
+    code: 99100
+    title: "Skill or process parameters with invalid binary representation"
+    recovery_instructions: "Check the parameterization for the skill or process"
+  },
+  {
+    code: 99101
+    title: "Value passed to skill or process for an unknown parameter"
+    recovery_instructions: "Check the parameterization for the skill or process and update it"
+  },
+  {
+    code: 99102
+    title: "Value passed to skill or process for a parameter with an incompatible type"
+    recovery_instructions: "Check the parameterization for the skill or process and update it"
+  }
+]

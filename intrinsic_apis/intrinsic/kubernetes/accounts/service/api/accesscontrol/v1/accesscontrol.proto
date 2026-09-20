@@ -1,0 +1,355 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.accounts.accesscontrol.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/empty.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "intrinsic/kubernetes/accounts/service/api/accesscontrol/v1/accesscontrol_go_proto";
+
+message PingResponse {}
+
+message Role {
+  // The resource name of the role.
+  // Format: /roles/{role}
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The display name of the role.
+  string display_name = 2;
+
+  // The description of the role.
+  string description = 3;
+}
+
+message ListRolesRequest {
+  // The maximum number of roles to return.
+  int32 page_size = 1;
+
+  // The page token, received from a previous `ListRoles` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 2;
+}
+
+message ListRolesResponse {
+  // The list of roles.
+  repeated Role roles = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message RoleBinding {
+  // The resource name of the role binding.
+  // Format: /rolebindings/{role_binding}
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The subject of the role binding.
+  // Format: /{subject_type}/{subject_id}
+  // Example: /users/exampleuser
+  string subject = 2;
+  // The role to bind to the subject.
+  // Format: /roles/{role}
+  // Example: /roles/owner
+  string role = 3;
+  // The resource to bind the role to.
+  // Format: /{resource_type}/{resource_id}
+  // Example: /organizations/exampleorg
+  string resource = 4;
+}
+
+message CreateRoleBindingRequest {
+  // The role binding to create.
+  RoleBinding role_binding = 1;
+}
+
+// CreateRoleBindingMetadata is the metadata of a running create role binding
+// job.
+message CreateRoleBindingMetadata {}
+
+message DeleteRoleBindingRequest {
+  // The resource name of the role binding to delete.
+  // Format: /rolebindings/{role_binding}
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListOrganizationRoleBindingsRequest {
+  // The organization parent resource to list role bindings for.
+  // Format: /organizations/{organization}
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListOrganizationRoleBindingsResponse {
+  // The list of role bindings.
+  repeated RoleBinding role_bindings = 1;
+}
+
+message DeleteOrganizationMembershipByEmailRequest {
+  // The organization to remove the user from.
+  // Format: /organizations/{organization}
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  // The email of the user to remove from the organization.
+  string email = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message GetOrganizationPermissionsGrantedRequest {
+  // The organization and permission to get permissions granted for.
+  // Format: /organizations/{organization}/permissions/{permission}
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message OrganizationPermissionGranted {
+  // The organization and permission to get permissions granted for.
+  // Format: /organizations/{organization}/permissions/{permission}
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Whether the permission is granted to the calling user.
+  bool granted = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message OrganizationInvitation {
+  // The resource name of the invitation.
+  // Format: /organizations/{organization}/invitations/{invitation}
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // The organization the user is to be invited to.
+  // Format: /organizations/{organization}
+  string organization = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // The email of the user to be invited.
+  // The invitation is bound to this email.
+  string email = 3;
+  // The roles to be granted to the user upon accepting the invitation.
+  repeated string roles = 4;
+  // The state of the invitation.
+  string state = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message CreateOrganizationInvitationRequest {
+  // The organization parent resource to create the invitation for.
+  // Format: /organizations/{organization}
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  // The invitation to create.
+  OrganizationInvitation invitation = 2;
+}
+
+message CancelOrganizationInvitationRequest {
+  // The resource name of the invitation to cancel.
+  // Format: /organizations/{organization}/invitations/{invitation}
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ResendOrganizationInvitationRequest {
+  // The resource name of the invitation.
+  // Format: /organizations/{organization}/invitations/{invitation}
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListOrganizationInvitationsRequest {
+  // The organization parent resource to list invitations for.
+  // Format: /organizations/{organization}
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListOrganizationInvitationsResponse {
+  // The list of invitations.
+  repeated OrganizationInvitation invitations = 1;
+}
+
+// OrganizationMembership represents a membership of a user in an organization.
+message OrganizationMembership {
+  // 1 reserved for unique name later.
+  reserved 1;
+  // The email of the member.
+  // Later replaced by a full user model.
+  string email = 2;
+  // The organization the member belongs to.
+  // Format: /organizations/{organization}
+  string organization = 3;
+}
+
+message ListOrganizationMembershipsRequest {
+  // The organization parent resource to list members for.
+  // Format: /organizations/{organization}
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListOrganizationMembershipsResponse {
+  // The list of memberships
+  repeated OrganizationMembership memberships = 1;
+}
+
+// AccessControlService is the service for managing access to accounts
+// resources.
+service AccessControlService {
+  // GetOrganizationPermissionsGranted returns whether the permission is granted
+  // to the calling user for the given organization.
+  rpc GetOrganizationPermissionsGranted(
+      GetOrganizationPermissionsGrantedRequest)
+      returns (OrganizationPermissionGranted) {
+    option (google.api.http) = {
+      get: "/accesscontrol/v1/{name=organizations/*/permissions/*}/granted"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetOrganizationPermissionsGranted"
+    };
+  }
+
+  // CreateInvitation creates a new invitation.
+  rpc CreateOrganizationInvitation(CreateOrganizationInvitationRequest)
+      returns (OrganizationInvitation) {
+    option (google.api.http) = {
+      post: "/accesscontrol/v1/{parent=organizations/*}/invitations"
+      body: "invitation"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "CreateOrganizationInvitation"
+    };
+  }
+
+  // CancelInvitation cancels an invitation.
+  rpc CancelOrganizationInvitation(CancelOrganizationInvitationRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/accesscontrol/v1/{name=organizations/*/invitations/*}:cancel"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "CancelOrganizationInvitation"
+    };
+  }
+
+  // ResendInvitation resends an invitation.
+  rpc ResendOrganizationInvitation(ResendOrganizationInvitationRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/accesscontrol/v1/{name=organizations/*/invitations/*}:resend"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "ResendOrganizationInvitation"
+    };
+  }
+
+  // ListOrganizationInvitations lists all the invitations for an organization.
+  rpc ListOrganizationInvitations(ListOrganizationInvitationsRequest)
+      returns (ListOrganizationInvitationsResponse) {
+    option (google.api.http) = {
+      get: "/accesscontrol/v1/{parent=organizations/*}/invitations"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "ListOrganizationInvitations"
+    };
+  }
+
+  // ListOrganizationMemberships lists all the memberships for an organization.
+  rpc ListOrganizationMemberships(ListOrganizationMembershipsRequest)
+      returns (ListOrganizationMembershipsResponse) {
+    option (google.api.http) = {
+      get: "/accesscontrol/v1/{parent=organizations/*}/memberships"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "ListOrganizationMemberships"
+    };
+  }
+
+  // DeleteOrganizationMembershipByEmail removes a user's membership from an
+  // organization by email address. We currently only support removing a user
+  // by email address because there is no exposed membership identifier.
+  rpc DeleteOrganizationMembershipByEmail(
+      DeleteOrganizationMembershipByEmailRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/accesscontrol/v1/{parent=organizations/*}/memberships:deleteByEmail"
+      body: "*"
+    };
+    option (google.longrunning.operation_info) = {
+      response_type: "google.protobuf.Empty"
+      metadata_type: "google.protobuf.Empty"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "DeleteOrganizationMembershipByEmail"
+    };
+  }
+
+  // CreateRoleBinding creates a new role binding.
+  rpc CreateRoleBinding(CreateRoleBindingRequest)
+      returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      response_type: "RoleBinding"
+      metadata_type: "CreateRoleBindingMetadata"
+    };
+    option (google.api.http) = {
+      post: "/accesscontrol/v1/rolebindings"
+      body: "role_binding"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "CreateRoleBinding"
+    };
+  }
+
+  // DeleteRoleBinding deletes a role binding.
+  rpc DeleteRoleBinding(DeleteRoleBindingRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/accesscontrol/v1/{name=rolebindings/*}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "DeleteRoleBinding"
+    };
+  }
+
+  // ListOrganizationRoleBindings lists all the role bindings for an
+  // organization.
+  rpc ListOrganizationRoleBindings(ListOrganizationRoleBindingsRequest)
+      returns (ListOrganizationRoleBindingsResponse) {
+    option (google.api.http) = {
+      get: "/accesscontrol/v1/{parent=organizations/*}/rolebindings"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "ListOrganizationRoleBindings"
+    };
+  }
+
+  // ListRoles returns all the available roles in the system.
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse) {
+    option (google.api.http) = {
+      get: "/accesscontrol/v1/roles"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "ListRoles"
+    };
+  }
+
+  // Ping can be used for latency and health checks.
+  rpc Ping(google.protobuf.Empty) returns (PingResponse) {
+    option (google.api.http) = {
+      get: "/accesscontrol/v1:ping"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "Ping"
+    };
+  }
+
+  // Gets the latest state of a long-running operation.
+  // For more details see google/longrunning/operations.proto
+  rpc GetOperation(google.longrunning.GetOperationRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      get: "/accesscontrol/v1/operations/{name=*}"
+    };
+  }
+}

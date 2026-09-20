@@ -1,0 +1,233 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.accounts.resourcemanager.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "intrinsic/kubernetes/accounts/service/api/resourcemanager/v1/resourcemanager_go_proto";
+
+message PingResponse {}
+
+// An organization is the top-level container for all resources.
+message Organization {
+  enum State {
+    // Unspecified state indicates system is not aware of current state
+    STATE_UNSPECIFIED = 0;
+    // Creating indicates that organization is being created or updated and is
+    // not ready to be used.
+    CREATING = 1;
+    // Active state indicates that organization is fully materialized and all
+    // conditions are satisfied.
+    ACTIVE = 2;
+    // Deleted indicates that organization is deleted and should not be used
+    // any more.
+    DELETED = 3;
+  }
+
+  // The resource name of the organization.
+  // Format: /organizations/{organization}
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The display name of the organization.
+  string display_name = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The state of the organization.
+  State state = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The projects associated with the organization.
+  repeated string projects = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The parent organization of the organization.
+  // If empty, the organization is a top-level organization.
+  // Format: /organizations/{organization}
+  string parent_organization = 5 [(google.api.field_behavior) = IMMUTABLE];
+
+  // The time at which the organization was created.
+  google.protobuf.Timestamp create_time = 1000
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // reserved 1001 for future update_time (if needed and has defined semantics)
+
+  // The time at which the organization was soft-deleted.
+  google.protobuf.Timestamp delete_time = 1002
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Request for retrieving an organization.
+message GetOrganizationRequest {
+  // The resource name of the organization to retrieve.
+  // Format: /organizations/{organization}
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Metadata for the CreateOrganization operation.
+message CreateOrganizationOperationMetadata {}
+
+// Request for creating a new organization.
+message CreateOrganizationRequest {
+  // The identifier of the organization to create.
+  // If empty, a random globally unique identifier will be generated.
+  string organization_id = 1;
+
+  // The organization to create.
+  Organization organization = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request for listing organizations the user has access to.
+// page_size and page_token are not supported yet.
+message ListOrganizationsRequest {
+  // The maximum number of organizations to return.
+  int32 page_size = 1;
+
+  // The page token, received from a previous `ListOrganizations` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 2;
+
+  // If true, also return deleted organizations.
+  bool show_deleted = 3;
+
+  // If set, only return organizations matching the filter.
+  // Follows https://cel.dev/.
+  // At the moment only filtering by membership is supported.
+  // Format: is_member()
+  string filter = 4;
+}
+
+message ListOrganizationsResponse {
+  // The list of organizations.
+  repeated Organization organizations = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+message CreateOrganizationPaymentPlanRequest {
+  // The resource name of the organization to create the payment plan for.
+  // Format: /organizations/{organization}
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The payment plan to create.
+  PaymentPlan payment_plan = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message PaymentPlan {
+  // The resource name of the payment plan.
+  // Format: /organizations/{organization}/paymentplans/{payment_plan}
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message DeleteOrganizationRequest {
+  // The resource name of the organization to delete.
+  // Format: /organizations/{organization}
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message CreateOrganizationPaymentPlanOperationMetadata {}
+
+// ResourceManagerService manages the user-facing accounts resources like
+// organizations.
+service ResourceManagerService {
+  // Retrieves an organization.
+  rpc GetOrganization(GetOrganizationRequest) returns (Organization) {
+    option (google.api.http) = {
+      get: "/resourcemanager/v1/{name=organizations/*}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetOrganization"
+    };
+  }
+
+  // Creates a new organization.
+  rpc CreateOrganization(CreateOrganizationRequest)
+      returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      response_type: "Organization"
+      metadata_type: "CreateOrganizationOperationMetadata"
+    };
+    option (google.api.http) = {
+      post: "/resourcemanager/v1/organizations"
+      body: "organization"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "CreateOrganization"
+    };
+  }
+
+  // Lists organizations.
+  rpc ListOrganizations(ListOrganizationsRequest)
+      returns (ListOrganizationsResponse) {
+    option (google.api.http) = {
+      get: "/resourcemanager/v1/organizations"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "ListOrganizations"
+    };
+  }
+
+  // Creates a new payment plan for an organization.
+  rpc CreateOrganizationPaymentPlan(CreateOrganizationPaymentPlanRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/resourcemanager/v1/{parent=organizations/*}/paymentplans"
+      body: "payment_plan"
+    };
+    option (google.longrunning.operation_info) = {
+      response_type: "PaymentPlan"
+      metadata_type: "CreateOrganizationPaymentPlanOperationMetadata"
+    };
+  }
+
+  // Deletes an organization.
+  rpc DeleteOrganization(DeleteOrganizationRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/resourcemanager/v1/{name=organizations/*}"
+    };
+    option (google.longrunning.operation_info) = {
+      response_type: "google.protobuf.Empty"
+      metadata_type: "DeleteOrganizationOperationMetadata"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "DeleteOrganization"
+    };
+  }
+
+  // Ping can be used for latency and health checks.
+  rpc Ping(google.protobuf.Empty) returns (PingResponse) {
+    option (google.api.http) = {
+      get: "/resourcemanager/v1:ping"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "Ping"
+    };
+  }
+
+  // Gets the latest state of a long-running operation.
+  // For more details see google/longrunning/operations.proto
+  rpc GetOperation(google.longrunning.GetOperationRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      get: "/resourcemanager/v1/operations/{name=*}"
+    };
+  }
+}

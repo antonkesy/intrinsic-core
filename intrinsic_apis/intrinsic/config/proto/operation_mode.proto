@@ -1,0 +1,35 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.config;
+
+option go_package = "intrinsic/config/proto/operation_mode_go_proto";
+
+// Runtime switch indicating in which mode the app will be started (e.g.,
+// in simulation or on real hardware).
+enum OperationMode {
+  OPERATION_MODE_UNSPECIFIED = 0;
+
+  // Cluster will start apps in sim. A cluster can start an application in sim
+  // only if it is powerful enough to run simulation, i.e., can_do_sim is
+  // True. Otherwise, the start request will fail.
+  SIMULATION = 1;
+
+  // Cluster starts apps on physical hardware. A cluster can start an
+  // application on a cluster only if the cluster is referenced from
+  // application.workcell.hw_clusters. Otherwise, the start request will fail.
+  REAL_HARDWARE = 2;
+}

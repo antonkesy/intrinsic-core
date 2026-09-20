@@ -1,0 +1,45 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto;
+
+import "google/protobuf/descriptor.proto";
+import "google/rpc/code.proto";
+
+option go_package = "intrinsic/icon/hardware_modules/fake/hardware_module_dummy_service_go_proto";
+
+message HardwareModuleDummyRequest {}
+
+message HardwareModuleDummyResponse {}
+
+message HardwareModuleInjectErrorRequest {
+  google.rpc.Code error_code = 1;
+  string error_message = 2;
+}
+
+message HardwareModuleInjectErrorResponse {}
+
+// A dummy service for testing hardware modules.
+service HardwareModuleDummyService {
+  // Performs a noop request.
+  rpc DoRequest(HardwareModuleDummyRequest)
+      returns (HardwareModuleDummyResponse) {}
+
+  // Injects an error into the hardware module. The error will be returned by
+  // the next call to ReadStatus().
+  rpc InjectError(HardwareModuleInjectErrorRequest)
+      returns (HardwareModuleInjectErrorResponse) {}
+}

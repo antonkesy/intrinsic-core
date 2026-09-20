@@ -1,0 +1,204 @@
+&ACCESS RVP
+&REL 8
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+DEF RSI_MC( )
+; =============================================
+; 
+; RSI EXAMPLE: ETHERNET communication
+; Realtime UDP data exchange with server application
+;
+; =============================================
+
+;; Declaration of KRL variables
+DECL INT ret	; Return value for RSI commands
+DECL INT CONTID	; ContainerID
+
+;FOLD INI
+  ;FOLD BASISTECH INI
+  BAS (#INITMOV,0 )
+  ;ENDFOLD (BASISTECH INI)
+  ;FOLD USER INI
+    ;Make your modifications here
+  ;ENDFOLD (USER INI)
+;ENDFOLD (INI)
+
+ptp $AXIS_ACT
+; Create RSI Context 
+ret = RSI_CREATE("RSIContext",CONTID,TRUE)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+
+; Set upper and lower limits for the AxisCorr object
+SetAxisCorrLimits(CONTID)
+SetAxisCorrMonLimits(CONTID)
+
+
+
+; Start RSI execution
+ret = RSI_ON(#ABSOLUTE)
+; ret = RSI_ON(#RELATIVE)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+
+$advance = 0
+
+;FOLD COLLDETECT UseDataSet DataSet[1];%{PE}%R 8.5.19,%MKUKATPBASIS,%CTQ_MON,%VTQ_CDSET,%P 2:TQ_CDSET, 4:1
+USE_CD_PARAMS( 1)
+;ENDFOLD
+; Sensor guided movement
+RSI_MOVECORR()
+
+; Turn off RSI 
+ret = RSI_OFF()
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+
+ret = RSI_DELETE(CONTID)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+
+;home()
+
+END
+
+DEF SetAxisCorrLimits(CONTID: IN)
+DECL INT CONTID
+
+; Sets the upper and lower limits of the AxisCorr object based on the current position
+; and the upper and lower software limits from the machine data.
+
+DECL INT ret	; Return value for RSI commands
+
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","LowerLimA1", $SOFTN_END[1] - $AXIS_ACT.A1)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","LowerLimA2", $SOFTN_END[2] - $AXIS_ACT.A2)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","LowerLimA3", $SOFTN_END[3] - $AXIS_ACT.A3)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","LowerLimA4", $SOFTN_END[4] - $AXIS_ACT.A4)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","LowerLimA5", $SOFTN_END[5] - $AXIS_ACT.A5)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","LowerLimA6", $SOFTN_END[6] - $AXIS_ACT.A6)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","UpperLimA1", $SOFTP_END[1] - $AXIS_ACT.A1)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","UpperLimA2", $SOFTP_END[2] - $AXIS_ACT.A2)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","UpperLimA3", $SOFTP_END[3] - $AXIS_ACT.A3)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","UpperLimA4", $SOFTP_END[4] - $AXIS_ACT.A4)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","UpperLimA5", $SOFTP_END[5] - $AXIS_ACT.A5)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+ret = RSI_SETPUBLICPAR(CONTID,"AxisCorr_1","UpperLimA6", $SOFTP_END[6] - $AXIS_ACT.A6)
+IF (ret <> RSIOK) THEN
+  HALT
+ENDIF
+
+END
+
+DEF SetAxisCorrMonLimits(CONTID: IN)
+DECL INT CONTID
+; Sets the maximum offset permitted by the AxisCorrMon object based on the current position
+; and the upper and lower software limits from the machine data.
+; NOTE: there is only one value per axis, so we have to choose the larger of the difference between
+; the current position and the upper and lower limits.
+
+DECL INT ret	; Return value for RSI commands
+
+IF (ABS($SOFTN_END[1] - $AXIS_ACT.A1) > ABS($SOFTP_END[1] - $AXIS_ACT.A1)) THEN
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA1", ABS($SOFTN_END[1] - $AXIS_ACT.A1))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ELSE
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA1", ABS($SOFTP_END[1] - $AXIS_ACT.A1))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ENDIF
+IF (ABS($SOFTN_END[2] - $AXIS_ACT.A2) > ABS($SOFTP_END[2] - $AXIS_ACT.A2)) THEN
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA2", ABS($SOFTN_END[2] - $AXIS_ACT.A2))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ELSE
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA2", ABS($SOFTP_END[2] - $AXIS_ACT.A2))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ENDIF
+IF (ABS($SOFTN_END[3] - $AXIS_ACT.A3) > ABS($SOFTP_END[3] - $AXIS_ACT.A3)) THEN
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA3", ABS($SOFTN_END[3] - $AXIS_ACT.A3))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ELSE
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA3", ABS($SOFTP_END[3] - $AXIS_ACT.A3))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ENDIF
+IF (ABS($SOFTN_END[4] - $AXIS_ACT.A4) > ABS($SOFTP_END[4] - $AXIS_ACT.A4)) THEN
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA4", ABS($SOFTN_END[4] - $AXIS_ACT.A4))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ELSE
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA4", ABS($SOFTP_END[4] - $AXIS_ACT.A4))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ENDIF
+IF (ABS($SOFTN_END[5] - $AXIS_ACT.A5) > ABS($SOFTP_END[5] - $AXIS_ACT.A5)) THEN
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA5", ABS($SOFTN_END[5] - $AXIS_ACT.A5))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ELSE
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA5", ABS($SOFTP_END[5] - $AXIS_ACT.A5))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ENDIF
+IF (ABS($SOFTN_END[6] - $AXIS_ACT.A6) > ABS($SOFTP_END[6] - $AXIS_ACT.A6)) THEN
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA6", ABS($SOFTN_END[6] - $AXIS_ACT.A6))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ELSE
+   ret = RSI_SETPUBLICPAR(CONTID,"AxisCorrMon_1","MaxA6", ABS($SOFTP_END[6] - $AXIS_ACT.A6))
+   IF (ret <> RSIOK) THEN
+      HALT
+   ENDIF
+ENDIF
+
+END

@@ -1,0 +1,48 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+import "intrinsic/world/collision/collision_context.proto";
+import "intrinsic/world/proto/world_entity.proto";
+
+option go_package = "intrinsic/world/proto/world_fragment_go_proto";
+
+// Next tag: 12
+message WorldFragment {
+  // Map of WorldEntity protos that make up this library entity. For example if
+  // this was a robot, there would be multiple WorldEntity protos for all the
+  // links and joints. The root of this tree of entities should always be
+  // kRootEntityId [1], but the root entity itself should not be included. Ids
+  // used within the map will be replaced once instantiated in the world and
+  // should start at kRootEntityId+1. E.g., with kRootEntityId == 1:
+  // {
+  //   2: WorldEntity().collection(link_members={3,4}),
+  //   3: WorldEntity().collection_membership(link_member_of={2})
+  //                   .attachment(parent=1).geo(...),
+  //   4: WorldEntity().collection_membership(link_member_of={2})
+  //                   .attachment(parent=3),
+  // }
+  //
+  // [1] http://intrinsic/world/entity_id.h?l=213&rcl=383653568
+  map<uint32, intrinsic_proto.world.internal.WorldEntity> entities = 9;
+
+  // The rule set used for collision checking associated with this fragment.
+  intrinsic_proto.RuleSet rule_set = 11;
+
+  reserved 8, 10;
+  reserved "world_entities", "data_version";
+}

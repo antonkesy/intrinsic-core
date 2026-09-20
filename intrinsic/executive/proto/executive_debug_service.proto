@@ -1,0 +1,138 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file defines a gRPC interface that adds calls for debugging that are not
+// exposed by default in the public interface in executive_service.proto.
+// Never expose this publicly via the ingress.
+// Never use this as part of a production setting.
+// Never assume the stability of any of these APIs.
+
+syntax = "proto3";
+
+package intrinsic_proto.executive;
+
+import "opentelemetry/proto/trace/v1/trace.proto";
+
+option go_package = "intrinsic/executive/proto/executive_debug_service_go_proto";
+
+message SetClipsTracingRequest {
+  enum ClipsTracing {
+    UNSPECIFIED = 0;
+    ENABLED = 1;
+    DISABLED = 2;
+  }
+  // Note that requesting ENABLED while a trace is already running succeeds by
+  // keeping the current trace running, i.e., the trace is not restarted.
+  ClipsTracing clips_tracing = 1;
+}
+
+message SetClipsTracingResponse {}
+
+message GetClipsTracingRequest {}
+
+message GetClipsTracingResponse {
+  enum ClipsTracing {
+    UNSPECIFIED = 0;
+    ENABLED = 1;
+    DISABLED = 2;
+  }
+  ClipsTracing clips_tracing = 1;
+  // The current offset of the trace log file, if ENABLED. Note that as tracing
+  // happens continuously even at the time that the response is received the
+  // actual trace_log_offset could already be slightly higher.
+  uint64 trace_log_offset = 2;
+}
+
+message SetSpanFileWritingRequest {
+  bool enabled = 1;
+}
+
+message SetSpanFileWritingResponse {}
+
+message GetSpanFileWritingRequest {}
+
+message GetSpanFileWritingResponse {
+  bool enabled = 1;
+}
+
+message GetSpanTraceRequest {
+  string trace_id = 1;
+  // The batch index to start streaming from (1-based).
+  // If unset or <= 0, defaults to 1.
+  uint32 start_batch_index = 2;
+}
+
+message GetSpanTraceResponse {
+  opentelemetry.proto.trace.v1.Span span = 1;
+  // The batch index (file number) this span was read from.
+  uint32 batch_index = 2;
+}
+
+message GetClipsDataRequest {}
+
+message GetClipsDataResponse {
+  repeated string facts = 1;
+  repeated string facts_with_identifiers = 2;
+  // Protos available to CLIPS in the protobuf manager.
+  // Maps from the id (the same id that facts use to refer to protos) to a text
+  // description of a proto.
+  map<int64, string> protos = 3;
+}
+
+message GetClipsTraceRequest {
+  // Do not retrieve the full log, but start at this offset into the trace file.
+  uint64 trace_log_start_offset = 1;
+}
+
+message GetClipsTraceResponse {
+  // This is potentially large data (many MB) as it contains every single CLIPS
+  // change since the trace log was started.
+  string trace_log = 1;
+}
+
+// Executive service with functionality that is available for live debugging
+// requests. This enables Intrinsic developers to retrieve detailed information
+// about the current state of the executive that executive developers can use
+// for debugging reported issues.
+service ExecutiveDebug {
+  // Request CLIPS tracing to be enabled or disabled. Returns success, if the
+  // desired mode was achieved.
+  rpc SetClipsTracing(SetClipsTracingRequest)
+      returns (SetClipsTracingResponse) {}
+
+  // Returns the current status of CLIPS tracing.
+  rpc GetClipsTracing(GetClipsTracingRequest)
+      returns (GetClipsTracingResponse) {}
+
+  // Request Span file writing to be enabled or disabled. Returns success, if
+  // the desired mode was achieved.
+  rpc SetSpanFileWriting(SetSpanFileWritingRequest)
+      returns (SetSpanFileWritingResponse) {}
+
+  // Returns the current status of Span file writing.
+  rpc GetSpanFileWriting(GetSpanFileWritingRequest)
+      returns (GetSpanFileWritingResponse) {}
+
+  // Retrieve all spans for a specific trace ID.
+  // Streams spans back to the client.
+  rpc GetSpanTrace(GetSpanTraceRequest) returns (stream GetSpanTraceResponse) {}
+
+  // Returns the contents of the currents CLIPS trace file, if CLIPS tracing is
+  // enabled and an error otherwise. Use SetClipsTracing to ensure that CLIPS
+  // tracing is enabled.
+  rpc GetClipsTrace(GetClipsTraceRequest) returns (GetClipsTraceResponse) {}
+
+  // Returns data of the current state of the CLIPS system in the executive.
+  rpc GetClipsData(GetClipsDataRequest) returns (GetClipsDataResponse) {}
+}

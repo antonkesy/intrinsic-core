@@ -1,0 +1,137 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.simulation;
+
+option go_package = "intrinsic/simulation/gazebo/plugins/aggregated_resource_health_go_proto";
+
+message AggregatedResourceHealthStatusRequest {
+  string resource_name = 1;
+}
+
+message AggregatedResourceHealthStatusResponse {
+  ResourceHealthStatusResponse response = 1;
+}
+
+message AggregatedResourceEnableRequest {
+  string resource_name = 1;
+}
+message AggregatedResourceEnableResponse {
+  ResourceEnableResponse response = 1;
+}
+
+message AggregatedResourceDisableRequest {
+  string resource_name = 1;
+}
+message AggregatedResourceDisableResponse {
+  ResourceDisableResponse response = 1;
+}
+
+message AggregatedResourceClearFaultsRequest {
+  string resource_name = 1;
+}
+message AggregatedResourceClearFaultsResponse {
+  ResourceClearFaultsResponse response = 1;
+}
+
+// Manages the health of all simulated hardware modules, addressed by their
+// corresponding resource names.
+//
+// This solves the problem of making resource health data available when using
+// GazeboHwm:
+// Normally, each hardware module has its own pod, and other components of the
+// stack expect a ResourceHealth service to be available on that pod (they reach
+// that service either via cluster DNS with the HWM's resource name, or via the
+// ingress with a header that contains the resource name).
+//
+// But GazeboHwm runs a full hardware module within the Gazebo process, so the
+// health information is now "stuck" in a different pod.
+// Worse, there are often multiple GazeboHwm instances within the same Gazebo
+// server, so we cannot use the regular ResourceHealth service – the hardware
+// modules would compete over ports, for one, and even if there were a system to
+// assign a port to each hardware module, and tell the rest of the stack to
+// look for the health service on a different host, that would mean opening an
+// indeterminate number of ports on the Gazebo pod.
+//
+// Instead, the AggregatedResourceHealth service aggregates health information
+// from *all* simulated hardware modules, and makes that information available
+// at a single gRPC endpoint on the gzserver pod.
+// From there, each hardware module pod can access the health data (and send
+// Enable/Disable/ClearFauls requests) for its GazeboHwm counterpart, and
+// forward it to ResourceHealth clients.
+service AggregatedResourceHealth {
+  // Reports the current health of the resource instance.
+  rpc CheckHealth(AggregatedResourceHealthStatusRequest)
+      returns (AggregatedResourceHealthStatusResponse) {}
+
+  // Attempts to enable the resource instance and, if successful, sets the
+  // internal operational state to `ENABLED` and returns grpc::Status::OK.
+  // The resource instance should only be enabled if it is not in `UNSPECIFIED`
+  // or `FAULTED` state. Otherwise, grpc::StatusCode::FAILED_PRECONDITION should
+  // be returned.
+  rpc Enable(AggregatedResourceEnableRequest)
+      returns (AggregatedResourceEnableResponse) {}
+
+  // Attempts to disable the resource instance and, if successful, sets the
+  // internal operational state to `DISABLED` and returns grpc::Status::OK.
+  // The resource instance should only be disabled if it is not in `UNSPECIFIED`
+  // or `FAULTED` state. Otherwise, grpc::StatusCode::FAILED_PRECONDITION should
+  // be returned.
+  rpc Disable(AggregatedResourceDisableRequest)
+      returns (AggregatedResourceDisableResponse) {}
+
+  // Attempts to clear the faults (if any) and disables the resource instance.
+  // If successful, sets the internal operational state to `DISABLED` and
+  // returns grpc::Status::OK.
+  rpc ClearFaults(AggregatedResourceClearFaultsRequest)
+      returns (AggregatedResourceClearFaultsResponse) {}
+}
+
+// Below fields are copied from the deprecated ResourceHealth so that the health
+// forwarder can still forward the data but the ResourceHealth proto can be
+// fully removed b/388324748.
+message ResourceHealthStatusResponse {
+  // Current operational status of the resource instance.
+  OperationalStatus status = 1;
+}
+message ResourceEnableResponse {}
+message ResourceDisableResponse {}
+message ResourceClearFaultsResponse {}
+
+message OperationalStatus {
+  enum State {
+    // Indicates that the resource instance is in an unspecified state. It may
+    // be possible to get back to a known state by calling `ClearFaults` rpc.
+    UNSPECIFIED = 0;
+    // Indicates that the resource instance is disabled and not ready for use
+    // (e.g. it won't serve resource-specific rpc calls).
+    DISABLED = 1;
+    // Indicates that the resource instance is in an errorenous state. It may be
+    // possible to clear the faults by calling `ClearFaults` rpc.
+    FAULTED = 2;
+    // Indicates that the resource instance is enabled and ready for use.
+    ENABLED = 3;
+  }
+
+  // Current operational state of the resource instance.
+  State state = 1;
+
+  // [Optional] A human-readable explanation for the current operational state.
+  // For example, this can be used to provide details for why the operational
+  // state is `FAULTED` or `UNSPECIFIED`. It can be left empty for `DISABLED`
+  // and `ENABLED` states.
+  string explanation = 2;
+}

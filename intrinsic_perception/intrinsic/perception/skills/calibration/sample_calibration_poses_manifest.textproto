@@ -1,0 +1,73 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: SkillManifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "sample_calibration_poses"
+}
+display_name: "Sample calibration poses"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description: 
+  "This skill samples waypoints which are to be used for camera\n"
+  "calibration, given a specific sampling strategy.\n"
+  "\n"
+  "The waypoints are sampled as CartesianMotionTarget objects, specifying the\n"
+  "3D pose between the frame and the tool object in the world, or as robot\n"
+  "joint configurations.\n"
+  "\n"
+  "The following two cases are supported:\n"
+  "  - `STATIONARY_CAMERA`: The camera has a fixed position in the workcell\n"
+  "  and the calibration object is mounted on the robot\'s flange.\n"
+  "  - `MOVING_CAMERA`: The camera is mounted on the robot\'s flange and the\n"
+  "  calibration object is placed in the workcell.\n"
+  "\n"
+  "This skill returns a `SampleCalibrationPosesResult` which is a repeated\n"
+  "`Waypoint` protobuf."
+}
+options {
+  cancellation_ready_timeout {
+    seconds: 30
+  }
+  cc_config {
+    create_skill: "::intrinsic::skills::SampleCalibrationPoses::CreateSkill"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "camera"
+    value {
+      capability_names: "CameraConfig"
+    }
+  }
+  required_equipment {
+    key: "robot"
+    value {
+      capability_names: "intrinsic_proto.icon.v1.IconApi"
+      capability_names: "Icon2PositionPart"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.SampleCalibrationPosesParams"
+}
+return_type {
+  message_full_name: "intrinsic_proto.skills.SampleCalibrationPosesResult"
+}

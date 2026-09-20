@@ -1,0 +1,72 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.motion_planning;
+
+import "intrinsic/icon/proto/cart_space.proto";
+import "intrinsic/icon/proto/joint_space.proto";
+import "intrinsic/kinematics/types/joint_limits.proto";
+import "intrinsic/math/proto/pose.proto";
+import "intrinsic/world/collision/collision_context.proto";
+
+option go_package = "intrinsic/motion_planning/path_planning/path_segment_go_proto";
+message PathSegment {
+  // Defines the type of the path segment.
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+
+    // Segment/sub-segment originating from MotionSegment::ANY.
+    TYPE_ANY = 1;
+
+    // Segment/sub-segment originating from MotionSegment::LINEAR.
+    TYPE_LINEAR = 2;
+
+    // Segment/sub-segment originating from MotionSegment::JOINT.
+    TYPE_JOINT = 3;
+    // For a single point path segment (e.g., two identical joint
+    // configurations).
+    TYPE_SINGLE_POINT = 6;
+  }
+
+  // A unique id for the identification of the segment.
+  string unique_id = 1;
+
+  // Ordered list of joint configurations (a joint path).
+  repeated intrinsic_proto.icon.JointVec joint_configurations = 2;
+
+  // Joint blending parameters to apply to every point in
+  // `joint_configurations`. Must be the same size as `joint_configurations`.
+  // This implies that even the boundaries of the PathSegment have a blending
+  // parameter, which is required for blending between PathSegments.
+  repeated double joint_blending_parameter_rad = 3;
+
+  // Joint limits to apply to the segment.
+  intrinsic_proto.JointLimits joint_limits = 4;
+
+  // Cartesian limits to apply to the Cartesian target frame to the segment.
+  intrinsic_proto.icon.CartesianLimits cartesian_limits = 5;
+
+  // Offset between robot tip and target frame, to which above Cartesian Limits
+  // are applied.
+  intrinsic_proto.Pose tip_t_target = 6;
+  // Collision rule set to apply to the segment.
+  // If not defined, `disable_collision_checking` will be set to true when
+  // creating the KinematicsSystemProxy.
+  optional intrinsic_proto.RuleSet collision_rule_set = 8;
+
+  // The type of this specific path segment.
+  Type type = 9;
+}

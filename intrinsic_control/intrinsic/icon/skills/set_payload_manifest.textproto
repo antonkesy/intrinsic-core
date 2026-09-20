@@ -1,0 +1,70 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: Manifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "set_payload"
+}
+display_name: "Set payload"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+    "Set the mounted payload of the robot. The mounted payload is the payload "
+    "that is mounted on the robot's flange, including for example a gripper "
+    "and grasped parts. Setting the payload correctly is a precondition for "
+    "accurate robot motion. A misconfigured payload can lead to errors when "
+    "executing motions. If the hardware module of the robot does not support "
+    "setting the payload, the skill fails."
+}
+options {
+  supports_cancellation: false
+  cc_config {
+    create_skill: "::intrinsic::skills::SetPayload::CreateSkill"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "robot"
+    value {
+      capability_names: "intrinsic_proto.icon.v1.IconApi"
+      capability_names: "Icon2PositionPart"
+      sharing_type: WRITE
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.SetPayloadParams"
+  default_value {
+    [type.googleapis.com/intrinsic_proto.skills.SetPayloadParams] {
+      mounted_payload: {
+        mass_kg: 0.0
+        tip_t_cog: {
+          position: { x: 0.0 y: 0.0 z: 0.0 }
+          orientation: { x: 0.0 y: 0.0 z: 0.0 w: 1.0 }
+        }
+        inertia: {
+          rows: 3
+          cols: 3
+          values: [0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001]
+        }
+      }
+    }
+  }
+}

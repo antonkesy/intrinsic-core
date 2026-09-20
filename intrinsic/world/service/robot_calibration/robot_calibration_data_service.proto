@@ -1,0 +1,43 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+import "intrinsic/scene/proto/v1/scene_object_updates.proto";
+
+option go_package = "intrinsic/world/service/robot_calibration/robot_calibration_data_service_go_proto";
+
+message CalibratedKinematicsRequest {}
+
+message SceneObjectKinematicsUpdate {
+  repeated intrinsic_proto.scene_object.v1.EntityPoseUpdate
+      entity_pose_updates = 1;
+  intrinsic_proto.scene_object.v1.UpdateJointsRequest update_joints_request = 2;
+  intrinsic_proto.scene_object.v1.SetIKSolversUpdate set_ik_solvers_update = 3;
+}
+
+message CalibratedKinematicsResponse {
+  SceneObjectKinematicsUpdate scene_object_kinematics_update = 2;
+  reserved 1;
+}
+
+// This service may be implemented by a robot hardware module resource and
+// provides calibrated data information for the resource.
+service RobotCalibrationDataService {
+  // Gets the calibrated robot kinematics data.
+  rpc GetCalibratedKinematics(CalibratedKinematicsRequest)
+      returns (CalibratedKinematicsResponse);
+}

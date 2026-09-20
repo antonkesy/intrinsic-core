@@ -1,0 +1,213 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.geometry;
+
+import "google/api/annotations.proto";
+import "google/longrunning/operations.proto"; 
+import "google/protobuf/any.proto";           
+import "google/protobuf/timestamp.proto";     
+import "intrinsic/geometry/processing/pipeline_config.proto"; 
+import "intrinsic/geometry/proto/geometry_service_types.proto";
+import "intrinsic/geometry/proto/geometry_storage_refs.proto";
+import "intrinsic/geometry/proto/v1/geometry.proto";
+import "intrinsic/geometry/proto/v1/geometry_storage_refs.proto";
+import "intrinsic/kubernetes/generator/proto/auth_options.proto";
+
+option go_package = "intrinsic/geometry/proto/geometry_service_go_proto";
+
+// Geometry service is a mechanism for storing and retrieving geometry like
+// meshes or primitives used within a world instance.
+service GeometryService {
+  // Gets the requested Geometry data. Includes computational geometry data as
+  // well as the optional Renderable data if available. The Renderable data will
+  // be at original quality.
+  rpc GetGeometry(GetGeometryRequest) returns (GeometryWithMetadata) {
+    // Auth annotations for consumption by the following helm_chart:
+    //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+    option (intrinsic_proto.auth.method_options).auth_methods =
+        AUTH_METHOD_API_KEY;
+    option (google.api.http) = {
+      // The required ref becomes the path parameter.
+      // The optional renderable_ref will automatically map to a query parameter
+      get: "/geometry/v0/geometries/{geometry_storage_refs.exact_geometry_ref}"
+    };
+  }
+
+  // Gets the requested Renderable data at the requested LOD(Level of Detail).
+  rpc GetRenderable(GetRenderableRequest) returns (RenderableWithMetadata) {
+    // Auth annotations for consumption by the following helm_chart:
+    //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+    option (intrinsic_proto.auth.method_options).auth_methods =
+        AUTH_METHOD_API_KEY;
+    option (google.api.http) = {
+      get: "/geometry/v0/renderables/{geometry_storage_refs.exact_geometry_ref}"
+    };
+  }
+
+  // Adds new geometry data to the service that can be fetched later.
+  rpc CreateGeometry(CreateGeometryRequest) returns (GeometryWithMetadata) {
+    // Auth annotations for consumption by the following helm_chart:
+    //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+    option (intrinsic_proto.auth.method_options).auth_methods =
+        AUTH_METHOD_API_KEY;
+    option (google.api.http) = {
+      post: "/geometry/v0/geometries"
+      body: "*"
+    };
+  }
+
+
+  // Process some geometry given the requested configuration
+  // Returns a longrunning.Operation with:
+  //   metadata of type GeometryProcessingStatus (progress information, etc.)
+  //   response of type GeometryProcessingResult (resulting geometry ids)
+  // Processing errors are reported through the longrunning.Operation.error
+  // field.
+  rpc ProcessGeometry(ProcessGeometryRequest)
+      returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      response_type: "GeometryProcessingResult"
+      metadata_type: "GeometryProcessingStatus"
+    };
+    option (google.api.http) = {
+      post: "/geometry/v0/geometries:process"
+      body: "*"
+    };
+  }
+
+}
+
+// Request message for getting geometry from the geometry service.
+message GetGeometryRequest {
+
+  // TODO(b/442842547): Remove this field once all users are migrated to v1
+  // geometry protos.
+
+  // The references to the stored geometry being requested.
+  // Deprecated, will be removed soon. Use geometry_storage_refs instead.
+  GeometryStorageRefs geometry_storage_refs_v0 = 2 [deprecated = true];
+
+  // The references to the stored geometry being requested.
+  intrinsic_proto.geometry.v1.GeometryStorageRefs geometry_storage_refs = 3;
+
+  reserved 1;
+  reserved "geometry_id";
+}
+
+// Request message for getting renderable data from the geometry service.
+message GetRenderableRequest {
+
+  // TODO(b/442842547): Remove this field once all users are migrated to v1
+  // geometry protos.
+
+  // The references to the stored geometry being requested.
+  // Deprecated, will be removed soon. Use geometry_storage_refs instead.
+  GeometryStorageRefs geometry_storage_refs_v0 = 3 [deprecated = true];
+
+  // The references to the stored geometry being requested.
+  intrinsic_proto.geometry.v1.GeometryStorageRefs geometry_storage_refs = 4;
+
+  // The LOD to use when fetching the renderable data. 0 means the original
+  // quality and any number above that will simplify the geometry. The higher
+  // the number the more simplified it will be.
+  uint32 lod_level = 2;
+
+  reserved 1;
+  reserved "geometry_id";
+}
+
+// Request message for adding new geometry to the geometry service
+message CreateGeometryRequest {
+  // The geometry data to store.
+  GeometryData data = 1;
+}
+
+
+// Request message for processing geometry through a given pipeline.
+message ProcessGeometryRequest {
+  // TODO(b/442842547): Remove this field once all users are migrated to v1
+  // geometry protos.
+  // The references to the stored geometry being processed.
+  // Deprecated, will be removed soon. Use geometry_storage_refs instead.
+  GeometryStorageRefs geometry_storage_refs_v0 = 4 [deprecated = true];
+
+  // The geometry to process.
+  intrinsic_proto.geometry.v1.Geometry geometry = 5;
+
+  // Pipeline configuration to use for processing the given geometry.
+  PipelineConfiguration pipeline = 2;
+
+  // An optional generic proto with user-specific custom data attached to the
+  // geometry processing operation. The proto will be returned to the caller in
+  // the GeometryProcessingStatus message.
+  google.protobuf.Any custom_data = 3;
+
+  reserved 1;
+  reserved "geometry_id";
+}
+
+// Metadata field (returned in google.longrunning.Operation):
+// Next tag: 7
+message GeometryProcessingStatus {
+  // TODO(b/442842547): Remove this field once all users are migrated to v1
+  // geometry protos.
+  // The storage refs for the original geometry used when starting the pipeline.
+  GeometryStorageRefs geometry_storage_refs_v0 = 5 [deprecated = true];
+
+  // The geometry being processed.
+  intrinsic_proto.geometry.v1.Geometry geometry = 6;
+
+  // Progress indicator of the processing between [0, 1]. Not all processing
+  // pipelines provide this information.
+  optional double progress = 2;
+
+  // Optional custom data attached by the caller during the pipeline creation.
+  google.protobuf.Any custom_data = 3;
+
+  // Timestamp when this job was submitted for processing.
+  google.protobuf.Timestamp create_time = 4;
+
+  reserved 1;
+  reserved "geometry_id";
+}
+
+// Response field (returned in google.longrunning.Operation):
+message GeometryProcessingResult {
+  // TODO(b/442842547): Remove this field once all users are migrated to v1
+  // geometry protos.
+  // The storage references to the resulting processed geometry.
+  // Deprecated. We are no longer writing processed_geometry_storage_refs_v0
+  // protos in responses (use processed_geometry / processed_geometries
+  // instead).
+  GeometryStorageRefs processed_geometry_storage_refs_v0 = 4
+      [deprecated = true];
+
+  // A processed geometry.
+  intrinsic_proto.geometry.v1.Geometry processed_geometry = 5
+      [deprecated = true];
+
+  // Flat array of processed geometries. For most operations, this will have
+  // length 1 and only contain the processed_geometry but for convex
+  // decompositions this may return the disjoint geometries resulting from
+  // the decomposition.
+  repeated intrinsic_proto.geometry.v1.Geometry processed_geometries = 6;
+
+  reserved 1;
+  reserved "processed_geometry_id";
+}
+
+

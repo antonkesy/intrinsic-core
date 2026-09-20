@@ -1,0 +1,44 @@
+# proto-file: google/protobuf/any.proto
+# proto-message: Any
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# LINT.IfChange(mps_asset_prod_feature_flags)
+[type.googleapis.com/intrinsic_proto.motion_planning.v1.MotionPlannerServiceConfig] {
+  flags {
+    enable_path_refinement_validation_step: true
+    path_refinement_validation_margin_relative_factor: 0.9
+    path_refinement_validation_margin_absolute_factor: 0.005
+    enable_distance_check_statistics: false
+    enable_concurrent_collision_checking: true
+    concurrent_collision_checking_thread_count: 4
+    parameterization_service_address: "localhost:8081"
+    enable_fallback_trajectory: true
+    enable_fallback_trajectory_local_adjust: true
+    default_collision_check_spacing: 0.01
+  }
+  enable_motion_planner_service_caching: true
+  enable_motion_planner_service_caching_fuzzy_check: true
+  cache_size: 200
+  joint_tolerance_in_rad: 0.001
+  pose_linear_tolerance_in_m: 0.001
+  pose_angular_tolerance_in_rad: 0.001
+  enable_motion_planner_service_nonvolatile_cache: true
+  geometry_service_cache_size: 1000
+}
+# LINT.ThenChange(
+#     //intrinsic_motion_planning/intrinsic/motion_planning/service/motion_planner_service_prod_hil_testing_config.textproto:mps_asset_prod_hil_testing_feature_flags,
+#     //intrinsic/features/features_files/generic_features/prod.pbtxt:mps_intrinsic_app_chart_prod_feature_flags
+# )

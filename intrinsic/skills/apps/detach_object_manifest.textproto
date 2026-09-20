@@ -1,0 +1,47 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: Manifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "detach_object"
+}
+display_name: "Detach object"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+    "Detaches, or disconnects, an object from the gripper "
+    "in the object world.\n\n"
+    "Executing this skill will detach the object rigidly attached to the gripper "
+    "in the object world. The object will no longer move with the robot and "
+    "will be taken into account during collision checks unless explicitly disabled.\n\n"
+    "This skill will not physically release the object in full physics "
+    "simulation or when running on hardware."
+}
+options {
+  cancellation_ready_timeout {
+    seconds: 30
+  }
+  cc_config {
+    create_skill: "::intrinsic::skills::DetachObjectSkill::CreateSkill"
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.DetachObjectParams"
+}

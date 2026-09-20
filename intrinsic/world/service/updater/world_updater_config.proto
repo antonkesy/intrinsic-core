@@ -1,0 +1,33 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+option go_package = "intrinsic/world/service/updater/world_updater_config_go_proto";
+
+// Subscription information about an icon robot we intend to observe. Using this
+// configuration means that we will listen to a topic of the style:
+// /icon/{robot_id}/robot_status
+message IconRobotSubscriptionConfig {
+  // The robot id used by icon to publish its status messages
+  string robot_id = 1;
+  // The equipment name used in the world for this icon instance.
+  string equipment_name = 2 [deprecated = true];
+  // The relevant part name on the robot.
+  string part_name = 3;
+  // The object name providing the world fragment and kinematics model.
+  string object_name = 4;
+}

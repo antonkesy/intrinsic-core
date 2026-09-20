@@ -1,0 +1,94 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.workcell_spec.v1;
+
+option go_package = "intrinsic/kubernetes/workcell_spec/proto/transfer_go_proto";
+
+// The workcell spec is a series of items.
+message WorkcellSpec {
+  Metadata metadata = 2;
+
+  repeated WorkcellSpecItem items = 1;
+}
+
+// Each item can be a ChartAssignment or a file needed by the ChartAssignment.
+message WorkcellSpecItem {
+  oneof item {
+    ChartAssignment chart_assignment = 2;
+  }
+  reserved 1;
+  reserved "file_reference";
+  reserved 3;
+  reserved "notebook";
+}
+
+// A subset of Kubernetes' ObjectMeta. This is unused by the Transfer service,
+// but is useful for round-tripping between Kubernetes-style YAML and this
+// proto. https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta
+message Metadata {
+  // name should be unique within an application.
+  string name = 1;
+}
+
+// Points to a file that will be transferred with this service or fetched from
+// the cloud. Files are identified by URI and checksum.
+message FileReference {
+  Metadata metadata = 2;
+
+  // The spec defines the file reference. Despite not adding much here, it
+  // exists to align with the Kubernetes-style YAML format used for the workcell
+  // spec. In future, we may add metadata/status fields. This would be necessary
+  // if we start storing file references on the Kubernetes apiserver, for
+  // example.
+  message Spec {
+    // Path of the file when loaded within the cluster, eg "/world/world.gzf".
+    string path = 1;
+    // URI describing the source of the file.
+    //
+    // During the app start or release, this URI can be one of those possible
+    // schemes:
+    //
+    // - build-out:// files were created by Bazel or by the workcell spec
+    //   assembler, and are located adjacent to the workcell spec YAML.
+    // - data: files are inline files according to RFC 2397
+    // - intcas:// file is stored in the Primordial CAS, see
+    //   go/intrinsic-cas-primordial.
+    //
+    // After the document containing this file reference has been released to
+    // the catalog(s), this URI MUST be an Intrinsic CAS reference
+    // (go/intrinsic-content-addressable-storage); all other schemes are
+    // invalid.
+    string uri = 2;
+    // HighwayHash128 digest of the complete file.
+    string digest = 3;
+  }
+  Spec spec = 1;
+}
+
+// A wrapper for the ChartAssignment YAML. Translating the ChartAssignment
+// schema to protobuf is not easy because the Helm values can contain nested
+// objects. It is simpler to use YAML as the interchange format and convert
+// directly to the Golang struct where necessary:
+//
+// go/intrinsic-chartassignment-types
+//
+// Note: the server will fill in the spec.clusterName field, so this can be
+// omitted by the client. The spec.chart.values field must be empty, as it is
+// overwritten by the values provided to ApplyWorkcellSpec.
+message ChartAssignment {
+  bytes yaml = 1;
+}

@@ -1,0 +1,43 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic.conductor.internal;
+
+import "intrinsic/world/proto/object_world_updates.proto";
+import "intrinsic/util/status/status.proto";
+import "intrinsic/resources/proto/geometric_resource_data.proto";
+
+option go_package = "intrinsic/conductor/proto/wrapper_bridge_go_proto";
+
+message SkippedWorldUpdateWithError {
+  intrinsic_proto.world.ObjectWorldUpdate update = 1;
+  intrinsic_proto.StatusProto error = 2;
+}
+
+message SkippedSceneObjectWithError {
+  string scene_object_name = 1;
+  intrinsic_proto.StatusProto error = 2;
+}
+
+message UpdateWorldFromResourceSetResult {
+  repeated SkippedWorldUpdateWithError skipped_updates = 1;
+  repeated SkippedSceneObjectWithError skipped_scene_objects = 2;
+}
+
+message GeometricResourceSetData {
+  repeated intrinsic_proto.resources.GeometricResourceInstanceData data = 1;
+  intrinsic_proto.world.ObjectWorldUpdates owu = 2;
+}

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<sdf version="1.6" xmlns:intrinsic="https://intrinsic.ai/">
+  <model name="charuco_holder">
+    <link name="body">
+      <visual name="visual">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic/models/assets/bluebird/calibration_fixture/charuco_holder.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="collision1">
+        <pose>0 0 -0.005 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.19 0.16 0.018</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="collision2">
+        <pose>0 -0.075 -0.005 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.19 0.01 0.05</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="collision3">
+        <pose>0 0.07 -0.03 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.02 0.025</size>
+          </box>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass>0.1</mass>
+        <pose>0 -0.03 0 0 0 0</pose>
+        <inertia>
+          <ixx>0.00001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00001</iyy>
+          <iyz>0</iyz>
+          <izz>0.000015</izz>
+        </inertia>
+      </inertial>
+    </link>
+    <frame name="pattern_attachment" attached_to="body" intrinsic:create_attachment_entity="true">
+      <pose relative_to="body">0 0 0 0 0 0</pose>
+    </frame>
+    <frame name="grasp" attached_to="body" intrinsic:create_attachment_entity="true">
+      <pose relative_to="body" rotation_format="quat_xyzw">0 0.09 -0.0286 0 0.70710678 -0.70710678 0</pose>
+    </frame>
+  </model>
+</sdf>

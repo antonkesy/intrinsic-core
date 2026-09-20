@@ -1,0 +1,43 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# dev_tools is not using bazel
+external/dev_tools/
+
+# separate modules
+intrinsic_apis/intrinsic/
+sdk-examples/
+developer_resources/docs/generators/grpc/
+
+# do not run bazel for Portal external dependencies
+incode/portal/frontend/node_modules/
+incode/portal/frontend/dist/
+developer_resources/docs/node_modules/
+node_modules/
+
+# os not using bazel
+os/
+
+# BUG: when switching --output_base subsequent builds might fail as this symlink is pointing to the old build.
+# See https://github.com/bazelbuild/bazel/issues/10653#issuecomment-694230015.
+# This might be fixed in Bazel 7.1.0.
+bazel-insrc
+
+# BUG: The .pnpm-store directory contains circular symlinks which cause the Bazel loader to hang or crash during package loading.
+.cache
+# BUG: The .cache directory often contains tool-generated metadata that Bazel misinterprets as "phantom" packages or invalid labels, triggering "Exit Status 7" crashes.
+.pnpm-store
+
+# Relocated intrinsic APIs Bzlmod module
+intrinsic_apis/node_modules

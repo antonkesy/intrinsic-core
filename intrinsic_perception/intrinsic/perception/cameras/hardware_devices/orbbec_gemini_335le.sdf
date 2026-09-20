@@ -1,0 +1,201 @@
+<?xml version="1.0" ?>
+
+<!--
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<sdf version="1.11" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <model name="orbbec_gemini_335le">
+    <static>true</static>
+    <frame name="color_t_mesh">
+      <pose degrees="true">0.02375 0.0145 -0.035 0.0 -90.0 90.0</pose>
+    </frame>
+    <frame name="mesh_t_mesh_centroid">
+      <pose relative_to="color_t_mesh" degrees="true">0.013 0 0.0145 0 0 0</pose>
+    </frame>
+
+    <link name="body">
+      <inertial auto="true">
+        <pose relative_to="mesh_t_mesh_centroid"/>
+        <mass>0.22</mass>
+      </inertial>
+
+      <visual name='visual'>
+        <pose relative_to="color_t_mesh"/>
+        <geometry>
+          <mesh>
+            <uri>model://third_party/orbbec/gemini_335le/visual.glb</uri>
+          </mesh>
+        </geometry>
+        <cast_shadows>true</cast_shadows>
+      </visual>
+
+      <collision name='collision'>
+        <pose relative_to="mesh_t_mesh_centroid"/>
+        <geometry>
+          <box>
+            <size>0.05 0.124 0.029</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <link name="sensor_link">
+      <inertial>
+        <mass>0.001</mass>
+        <inertia>
+          <ixx>0.000001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000001</iyy>
+          <iyz>0</iyz>
+          <izz>0.000001</izz>
+        </inertia>
+      </inertial>
+
+      <!--
+      Rotate each sensor so that the sensor frame conforms to the Intrinsic convention
+      (z forward, x right, y down).
+      -->
+
+      <sensor name="rgb" type="camera">
+        <pose degrees="true">0.0 0.0 0.0 90.0 -90.0 0.0</pose>
+        <update_rate>2.0</update_rate>
+        <camera>
+          <horizontal_fov>1.6406</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>800</height>
+          </image>
+          <lens>
+            <intrinsics>
+              <fx>597</fx>
+              <fy>593</fy>
+              <cx>640</cx>
+              <cy>400</cy>
+            </intrinsics>
+          </lens>
+          <clip>
+            <near>0.05</near>
+            <far>6</far>
+          </clip>
+          <visibility_mask>0x0000FFFF</visibility_mask>
+        </camera>
+      </sensor>
+
+      <sensor name="ir_left" type="camera">
+        <pose degrees="true">-0.02375 0.0 0.0 90.0 -90.0 0.0</pose>
+        <update_rate>2.0</update_rate>
+        <camera>
+          <horizontal_fov>1.58825</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>800</height>
+            <format>L8</format>
+          </image>
+          <lens>
+            <intrinsics>
+              <fx>629</fx>
+              <fy>628</fy>
+              <cx>640</cx>
+              <cy>400</cy>
+            </intrinsics>
+          </lens>
+          <clip>
+            <near>0.1</near>
+            <far>6</far>
+          </clip>
+          <visibility_mask>0x0001FFFF</visibility_mask>
+        </camera>
+      </sensor>
+
+      <sensor name="ir_right" type="camera">
+        <pose degrees="true">0.07125 0.0 0.0 90.0 -90.0 0.0</pose>
+        <update_rate>2.0</update_rate>
+        <camera>
+          <horizontal_fov>1.58825</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>800</height>
+            <format>L8</format>
+          </image>
+          <lens>
+            <intrinsics>
+              <fx>629</fx>
+              <fy>628</fy>
+              <cx>640</cx>
+              <cy>400</cy>
+            </intrinsics>
+          </lens>
+          <clip>
+            <near>0.1</near>
+            <far>6</far>
+          </clip>
+          <visibility_mask>0x0001FFFF</visibility_mask>
+        </camera>
+      </sensor>
+
+      <sensor name="depth" type="depth_camera">
+        <pose degrees="true">0.0 0.0 0.0 90.0 -90.0 0.0</pose>
+        <update_rate>2.0</update_rate>
+        <camera>
+          <horizontal_fov>1.570796</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>800</height>
+          </image>
+          <lens>
+            <intrinsics>
+              <fx>640</fx>
+              <fy>628</fy>
+              <cx>640</cx>
+              <cy>400</cy>
+            </intrinsics>
+          </lens>
+          <clip>
+            <near>0.25</near>
+            <far>20</far>
+          </clip>
+          <visibility_mask>0x0000FFFF</visibility_mask>
+        </camera>
+      </sensor>
+    </link>
+
+    <joint name="camera_joint" type="fixed">
+      <parent>body</parent>
+      <child>sensor_link</child>
+    </joint>
+
+    <plugin
+        filename="static://intrinsic::simulation::MultiCameraPlugin"
+        name="intrinsic::simulation::MultiCameraPlugin">
+      <sensor>
+        <id>1</id>
+        <name>rgb</name>
+      </sensor>
+      <sensor>
+        <id>2</id>
+        <name>ir_left</name>
+      </sensor>
+      <sensor>
+        <id>3</id>
+        <name>ir_right</name>
+      </sensor>
+      <sensor>
+        <id>4</id>
+        <name>depth</name>
+        <image_type>depth</image_type>
+      </sensor>
+    </plugin>
+  </model>
+</sdf>

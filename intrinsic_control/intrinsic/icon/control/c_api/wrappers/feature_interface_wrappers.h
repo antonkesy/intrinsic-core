@@ -1,0 +1,31 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef INTRINSIC_ICON_CONTROL_C_API_WRAPPERS_FEATURE_INTERFACE_WRAPPERS_H_
+#define INTRINSIC_ICON_CONTROL_C_API_WRAPPERS_FEATURE_INTERFACE_WRAPPERS_H_
+
+#include "intrinsic/icon/control/c_api/c_feature_interfaces.h"
+namespace intrinsic::icon {
+
+// Returns an IntrinsicIconFeatureInterfaceVtable struct, filled in with the
+// vtable structs for all feature interfaces.
+//
+// This is a encapsulated in a function because we need to populate this struct
+// in multiple places and need to make sure that all those places receive the
+// same vtables.
+IntrinsicIconFeatureInterfaceVtable GetFeatureInterfaceVtable();
+
+}  // namespace intrinsic::icon
+
+#endif  // INTRINSIC_ICON_CONTROL_C_API_WRAPPERS_FEATURE_INTERFACE_WRAPPERS_H_

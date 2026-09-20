@@ -1,0 +1,128 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+import "intrinsic/icon/proto/cart_space.proto";
+import "intrinsic/world/proto/generic_action.proto";
+import "intrinsic/world/proto/robot_payload.proto";
+
+option go_package = "intrinsic/world/proto/robot_component_go_proto";
+
+// Component indicating the owning Entity is a robot.
+// Next tag: 14
+message RobotComponent {
+  // Describes an IK solver that can be used for a kinematic sub-chain of this
+  // robot.
+  //
+  // Note: The ik_solvers field can operate in a backward compatibility mode,
+  // which is indicated by exactly one IkSolver whose base_uid is
+  // kInvalidEntityId. This mode is used replicate the behaviors of the original
+  // Robots aspect, such as allowing an arbitrary descendent of robot group to
+  // be specified as a its tip.
+  //
+  // Note: Data on IK solvers is currently part of the world representation so
+  // that migrating from the aspect-first world is easier. Eventually, this sort
+  // of data should be migrated into the Skill Equipment system and accessed
+  // through the Skills API.
+  message IkSolver {
+    // String identifier of the kinematic solver.
+    string kinematic_solver_key = 1;
+
+    // UID of the Entity that this solver uses as its base.
+    uint32 base_uid = 2;
+
+    // UID of the Entity that this solver uses as its tip (i.e. the frame we
+    // want to run IK for).
+    uint32 tip_uid = 3;
+  }
+  repeated IkSolver ik_solvers = 4;
+
+  // A named configuration saved with this robot
+  message NamedDofConfiguration {
+    string name = 1;
+    // The size of this repeated double field is only valid if it matches the
+    // number of dofs represented by this robot component.
+    repeated double dof_values = 2;
+  }
+
+  // Named configurations for this robot
+  repeated NamedDofConfiguration named_dof_configurations = 5;
+
+  // TODO(b/210476814): Move detailed data on simulation plugins stored here to
+  // the equipment registry.
+  message IconSimDevice {
+    string name = 1;
+    string type = 2;
+    // TODO(b/241293084) remove this field once existing worlds no longer use
+    // it.
+    optional string output_topic = 3 [deprecated = true];
+    // TODO(b/241293084) remove this field once existing worlds no longer use
+    // it.
+    optional string input_topic = 4 [deprecated = true];
+    optional string joint = 5;
+    optional double initial = 6;
+    optional double kp = 7;
+    optional double ki = 8;
+    optional double kd = 9;
+    optional string link = 10;
+  }
+
+  repeated IconSimDevice icon_sim_devices = 6;
+
+  message IconSimPluginSpec {
+    reserved 1;
+  }
+
+  IconSimPluginSpec icon_sim_plugin = 7 [deprecated = true];
+
+  // The cartesian limits associated with this robot.
+  intrinsic_proto.icon.CartesianLimits cartesian_limits = 8;
+
+  message MultiCameraPluginSpec {
+    message Sensor {
+      int64 id = 1;
+      string name = 2;
+
+      // Optional pixel image type for the sensor (e.g., "intensity", "depth",
+      // "point", "normal"). If not set, standard camera sensors default to
+      // "intensity".
+      optional string image_type = 3;
+    }
+    repeated Sensor sensors = 1;
+    string device_id = 2 [deprecated = true];
+    string camera_identifier_proto = 4;
+
+    reserved 3;
+    reserved "camera_identifier";
+  }
+
+  MultiCameraPluginSpec multi_camera_plugin = 10;
+
+  generic_action.GenericActionPluginSpec generic_action_plugin = 11;
+
+  // The payload mounted to the robot flange.
+  RobotPayload mounted_payload = 12;
+
+  // TODO(b/336756834): remove this field and also from object world service
+  // once no longer necessary to read if kinematics have been updated from
+  // world. Have the robot kinematics been updated.
+  bool are_kinematics_updated = 13;
+
+  reserved 1 to 3, 9;
+  reserved "link_uids", "joint_uids", "coordinate_frame_uids",
+      "control_frequency_hz";
+}

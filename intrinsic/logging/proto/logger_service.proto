@@ -1,0 +1,491 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.data_logger;
+
+import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "intrinsic/kubernetes/generator/proto/auth_options.proto";
+import "intrinsic/logging/proto/bag_metadata.proto";
+import "intrinsic/logging/proto/downsampler.proto";
+import "intrinsic/logging/proto/log_item.proto";
+
+option go_package = "intrinsic/logging/proto/logger_service_go_proto";
+
+message LogRequest {
+  intrinsic_proto.data_logger.LogItem item = 1;
+}
+
+// `TokenBucketOptions` are the options for rate limiting for the logger. See
+// go/intrinsic-logging-budgets for more details. To understand the settings
+// better see https://en.wikipedia.org/wiki/Token_bucket
+message TokenBucketOptions {
+  // In bytes per second, this represents the refill rate for the token bucket.
+  int32 refresh = 1;
+  // In bytes, this represents the maximum capacity of the token bucket.
+  int32 burst = 2;
+}
+
+message LogOptions {
+  // The event source to set the log options for.
+  // This must be a valid RE2 regex string, and will be used as such.
+  // Note there is an edge case where "." will match anything, so handle it
+  // accordingly.
+  //
+  // For example:
+  //   - "foo" will match "foo".
+  //   - ".*" will match all event sources.
+  //   - "foo|bar" will match "foo" and "bar".
+  //   - "foo.*" will match "foo" and "foobar".
+  //   - "foo|bar|baz" will match "foo", "bar", and "baz".
+  string event_source = 1;
+
+  // The precedence value of this instance of log options to apply.
+  //
+  // This is different from the `priority` field below, which is used to
+  // determine the order in which log items are uploaded.
+  //
+  // If there are multiple log options that match a given event source, the
+  // log options with the highest precedence value is used by the logging
+  // service. If there are multiple log options with the same precedence value,
+  // then a random one amongst the equals is used.
+  //
+  // It is generally recommended to have higher precedence value for more
+  // specific regexes, and lower precedence value for more general regexes.
+  //
+  // The larger the value, higher in the precedence order.
+  int32 log_options_precedence_value = 8;
+
+  // If set to 'true', logs are synced to the cloud.
+  optional bool sync_active = 2;
+
+  // The maximum byte size of the on-prem buffer for LogItems.
+  optional int32 max_buffer_byte_size = 3;
+
+  // The token bucket options for rate limiting on the Log() rpc of the data
+  // logger.
+  optional TokenBucketOptions logging_budget = 4;
+
+  // Priority denotes value of items in the `event_source`.
+  //
+  // Higher priority event sources are prioritized for upload. For upload, this
+  // can potentially lead to starvation as we don't upload lower priority items
+  // until all higher priority items are uploaded.
+  //
+  // The larger the value, higher the priority.
+  optional int32 priority = 5;
+
+  // If set to `true`, logs are retained on disk via timescaledb.
+  optional bool retain_on_disk = 6;
+
+  // The retention time for logs retained on disk.
+  // Only used up to second precision, ignores nanoseconds.
+  //
+  // This is only used if `retain_on_disk` is set to `true`.
+  // If this is not set, will apply the server's default retention time the
+  // first time the server encounters a matching event source.
+  optional google.protobuf.Duration retain_on_disk_retention_duration = 9;
+
+  // If set to `true`, the mem buffer is written to and restored from disk.
+  //
+  // This is useful for cases when the data needs to be persisted across logger
+  // pod restarts.
+  //
+  // This also means that performance will be impacted as log items
+  // are written and read from disk, so only use this for event_sources that are
+  // not high throughput.
+  optional bool retain_buffer_on_disk = 7;
+}
+
+message ListLogSourcesResponse {
+  repeated string event_sources = 1;
+}
+
+message GetLogItemsRequest {
+  message Query {
+    string event_source = 1;                            // Exact match only.
+    optional google.protobuf.Timestamp start_time = 2;  // if unset: now - 5min
+    optional google.protobuf.Timestamp end_time = 3;    // if unset: now
+
+    // If set, will downsample the LogItems.
+    optional intrinsic_proto.data_logger.DownsamplerOptions
+        downsampler_options = 4;
+
+    // Additional key-value metadata labels to filter the returned LogItems by.
+    //
+    // If empty, all LogItems in the query are returned.
+    // If populated, only LogItems with exact matches on all specified labels
+    // are returned.
+    map<string, string> filter_labels = 5;
+  }
+
+  oneof query {
+    // Returned in GetLogItemsResponse to continue where the previous call left
+    // off. Opaque to the client.
+    //
+    // Best effort. If the data being requested has already been garbage
+    // collected, returns items starting at the beginning of the available data.
+    bytes cursor = 2;
+
+    Query get_query = 9;
+  }
+
+  // Maximum number of items to return for this response.
+  // If unset, defaults to 10000.
+  //
+  // The server may return fewer than this number of items even if there are
+  // more matching items available due to global throttles.
+  optional int32 max_num_items = 7;
+
+  // If true, the payload and blob_payload fields of the returned LogItems
+  // will be empty. Use this to efficiently fetch metadata (including context).
+  //
+  // This will still include other non-payload fields.
+  optional bool only_metadata = 10;
+
+  reserved 1, 3, 4, 5, 6, 8;
+}
+
+message GetLogItemsResponse {
+  // The LogItems that matched the criteria.
+  // This can sometimes be empty.
+  repeated intrinsic_proto.data_logger.LogItem log_items = 1;
+
+  // Opaque cursor to the next page of results.
+  // If empty, no next page exists at time of query.
+  //
+  // This could be because, at time of query, either:
+  //   - The next log item that could have been returned had a timestamp that
+  //     was past the requested end time.
+  //   - No log items were found.
+  //
+  // After receiving a response with no next page cursor, if the client wants to
+  // continue reading (e.g., to fetch LogItems that were logged after the
+  // response was received), they must start a new GetLogItemsRequest.
+  optional bytes next_page_cursor = 2;
+
+  // If set, the response was truncated. There usually will be a next page
+  // cursor to continue reading.
+  optional string truncation_cause = 4;
+
+  reserved 3;
+}
+
+message GetMostRecentItemRequest {
+  // The event_source to return the most recent LogItem for.
+  string event_source = 1;
+
+  // If true, the payload and blob_payload fields of the returned LogItem
+  // will be empty.
+  optional bool only_metadata = 2;
+}
+
+message GetMostRecentItemResponse {
+  // The most recently logged LogItem for the event_source.
+  intrinsic_proto.data_logger.LogItem item = 1;
+}
+
+message SetLogOptionsRequest {
+  // A map of log options keys to the actual log options which are being set.
+  //
+  // This RPC will upsert the map of log options to be applied to all current
+  // and future event sources matching the regex string in the values.
+  //
+  // Log Options Matching:
+  // - The key of the map here is just used to identify the log options for
+  //   setting/overwriting and fetching, and is not used for matching against
+  //   event sources.
+  // - Instead, the LogOptions message in the value contains an event source
+  //   field which should be a regex string that is used to determine which
+  //   event sources the options should be applied to.
+  //
+  // Log Option Precedence:
+  // - There might be multiple matching log options for a single event source.
+  //   In that case, use the options with the highest precedence, see the
+  //   `log_options_precedence_value` field in the LogOptions message.
+  //
+  // Default Log Options:
+  // - Finally, if no log options are found for a given event source, then the
+  //   log options for the `default_event_source` key if it exists are used.
+  //
+  // - You can use this to set default log options for all event sources that
+  //   don't have any specific log options set.
+  map<string, LogOptions> log_options = 1;
+}
+
+message SetLogOptionsResponse {}
+
+message GetLogOptionsRequest {
+  oneof query {
+    // Look up the log options for the given event source.
+    // Will return the first matching log options in the precedence order.
+    string event_source = 1;
+
+    // Look up the log options for the given key.
+    //
+    // The key is just used to identify the log options for setting/overwriting
+    // and fetching, and is not used for matching against event sources.
+    string key = 2;
+  }
+}
+
+message GetLogOptionsResponse {
+  LogOptions log_options = 1;
+}
+
+message SyncRequest {
+  // The event_sources to sync and rotate LogItems for, as regex patterns.
+  // Used only if `sync_all` is false.
+  repeated string event_sources = 1;
+
+  // If true, requests to sync and rotate logs of all event sources
+  bool sync_all = 2;
+
+  // If true, the RPC will wait for the background flushes to complete
+  // before returning the response.
+  //
+  // By default, this is false, meaning the RPC will return immediately
+  // while flushes happen in the background.
+  bool wait_for_flush = 3;
+}
+
+message SyncResponse {
+  // The event_sources successfully synced and rotated LogItems for.
+  repeated string event_sources = 1;
+
+  // The event_sources that exist but were not synced and rotated due to
+  // throttling.
+  repeated string throttled_event_sources = 2;
+}
+
+message RecordingsSupportedResponse {
+  bool recordings_supported = 1;
+}
+
+message CreateLocalRecordingRequest {
+  // A time range used to select from the LogItems available in the TimescaleDB
+  // rolling buffer.
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp end_time = 2;
+
+  // A human-readable description of the recording, to make it easier to
+  // identify in the frontend.
+  string description = 3;
+
+  // The event sources to include in the recording, as regex patterns.
+  repeated string event_sources_to_record = 4;
+}
+
+message CreateLocalRecordingResponse {
+  // The metadata of the newly-created recording.
+  intrinsic_proto.data_logger.BagMetadata bag = 1;
+}
+
+message ListLocalRecordingsRequest {
+  // Optionally allow users to specify a starting bound for the recording list.
+  optional google.protobuf.Timestamp start_time = 1;
+
+  // Optionally allow users to specify an ending bound for the recording list.
+  optional google.protobuf.Timestamp end_time = 2;
+
+  // Allow users to specify whether to return a summary of the recordings or the
+  // full metadata, which includes statistics for each event source.
+  bool only_summary_metadata = 3;
+
+  // Optionally allow users to retrieve specific Bag IDs
+  // If no Bag ID's are provided, all bags will be returned that are in
+  // the optional time window.
+  repeated string bag_ids = 4;
+}
+
+message ListLocalRecordingsResponse {
+  repeated intrinsic_proto.data_logger.BagMetadata bags = 1;
+}
+
+message GetLocalRecordingRequest {
+  // The unique ID of the recording to retrieve.
+  string bag_id = 1;
+
+  // Allow users to specify whether to return a summary of the recording or the
+  // full metadata, which includes statistics for each event source.
+  bool only_summary_metadata = 2;
+}
+
+message GetLocalRecordingResponse {
+  intrinsic_proto.data_logger.BagMetadata bag = 1;
+}
+
+// Request message for querying the logger's contextual configuration.
+message GetLoggerContextRequest {}
+
+// Response message containing the logger's contextual configuration.
+message GetLoggerContextResponse {
+  // The organization ID associated with the on-premise cluster.
+  string organization_id = 1;
+
+  // The cluster (workcell) name where the data logger is running.
+  string workcell_name = 2;
+}
+
+// Service to:
+// - Persistently store structured logging data on-prem
+// - Retrieve stored structued logging data on-prem
+// - Upload stored to the cloud
+// - Create on-prem recordings to await (potentially slow) upload to the cloud
+//
+// Data is buffered locally on disk and uploaded to the cloud in the background
+// on a per-event-source basis when any of the following conditions are met:
+//   - The buffer for the event source reaches a configured bytesize
+//   - The time since last upload reaches a configured time threshold
+//   - A manual flush is triggered via SyncAndRotateLogs
+service DataLogger {
+  // Auth annotations for consumption by the following helm_chart:
+  //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+  option (intrinsic_proto.auth.service_options).auth_methods =
+      AUTH_METHOD_API_KEY;
+
+  // Sends one structured log to be stored on-prem.
+  rpc Log(LogRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/logger/v0/logs"
+      body: "*"
+    };
+  }
+
+  // Returns a list of event sources that can be accessed using `GetLogItems`.
+  rpc ListLogSources(google.protobuf.Empty) returns (ListLogSourcesResponse) {
+    option (google.api.http) = {
+      get: "/logger/v0/logSources"
+    };
+  }
+
+  // Returns the current logger's context, which contains common metadata that
+  // can be used to reason about where logs are sent to the cloud.
+  rpc GetLoggerContext(GetLoggerContextRequest)
+      returns (GetLoggerContextResponse) {
+    option (google.api.http) = {
+      get: "/logger/v0/context"
+    };
+  }
+
+  // Reads the on-prem logs seqentially, performing basic filtering and
+  // sampling.
+  //
+  // The response contains a field 'cursor', which can be passed to a subsequent
+  // `GetLogItems` call to continue reading log items from where call that
+  // generated it left off.
+  //
+  // The response will contain log items starting from the requested start time
+  // or cursor until any of the following conditions are met:
+  //   - The next log item has acquisition time > min(request.end_time, now)
+  //   - The end of the logged data has been reached
+  //   - The response size has reached 1GB
+  rpc GetLogItems(GetLogItemsRequest) returns (GetLogItemsResponse) {
+    option (google.api.http) = {
+      post: "/logger/v0/logs:fetch"
+      body: "*"
+    };
+  }
+
+  // Returns the most recent LogItem that has been logged for the given event
+  // source, from an in-memory cache.
+  //
+  // If no `LogItem` with a matching event_source has been logged since
+  // --file_ttl, then NOT_FOUND will be returned instead.
+  rpc GetMostRecentItem(GetMostRecentItemRequest)
+      returns (GetMostRecentItemResponse) {
+    option (google.api.http) = {
+      get: "/logger/v0/logSources/{event_source}:mostRecentItem"
+    };
+  }
+
+  // Sets the LogOptions for matching event sources in the request.
+  //
+  // This RPC supports matching event sources via regex, and will apply the log
+  // options to all current and future event sources that match the request
+  // (with caveat, see request proto).
+  rpc SetLogOptions(SetLogOptionsRequest) returns (SetLogOptionsResponse) {
+    option (google.api.http) = {
+      post: "/logger/v0/logOptions"
+      body: "*"
+    };
+  }
+
+  // Returns the LogOptions for a specific `event_source`. If no user defined
+  // options have been specified, the call returns NOT_FOUND status.
+  rpc GetLogOptions(GetLogOptionsRequest) returns (GetLogOptionsResponse) {
+    option (google.api.http) = {
+      get: "/logger/v0/logOptions/{key}"
+      additional_bindings: {
+        get: "/logger/v0/logSources/{event_source}:logOptions"
+      }
+    };
+  }
+
+  // Manually trigger a flush of all buffered LogItems to the cloud.
+  //
+  // This is an expensive operation and should NOT be called after every
+  // `Log` call. Each event source will have a global throttle on user-requested
+  // flushes.
+  rpc SyncAndRotateLogs(SyncRequest) returns (SyncResponse) {
+    option (google.api.http) = {
+      post: "/logger/v0/logs:sync"
+      body: "*"
+    };
+  }
+
+  // Returns true if recordings are supported by the logger.
+  rpc RecordingsSupported(google.protobuf.Empty)
+      returns (RecordingsSupportedResponse) {
+    option (google.api.http) = {
+      get: "/logger/v0/recordings:supported"
+    };
+  }
+
+  // Creates a local recording from structured logging data.
+  //
+  // The data will be copied to its own table for safekeeping, to ensure
+  // that it does not get deleted from the rolling-buffer TimescaleDB tables if
+  // the upload process is very slow due to limited internet connectivity.
+  rpc CreateLocalRecording(CreateLocalRecordingRequest)
+      returns (CreateLocalRecordingResponse) {
+    option (google.api.http) = {
+      post: "/logger/v0/recordings"
+      body: "*"
+    };
+  }
+
+  // List recordings stored locally.
+  //
+  // This RPC is intended to be used by the frontend to display a list of
+  // local recordings and their upload progress.
+  rpc ListLocalRecordings(ListLocalRecordingsRequest)
+      returns (ListLocalRecordingsResponse) {
+    option (google.api.http) = {
+      get: "/logger/v0/recordings"
+    };
+  }
+
+  // Gets a specific local recording.
+  rpc GetLocalRecording(GetLocalRecordingRequest)
+      returns (GetLocalRecordingResponse) {
+    option (google.api.http) = {
+      get: "/logger/v0/recordings/{bag_id}"
+    };
+  }
+}

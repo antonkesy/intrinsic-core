@@ -1,0 +1,43 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.icon.actions.proto;
+
+import "intrinsic/icon/proto/joint_space.proto";
+import "intrinsic/kinematics/types/joint_limits.proto";
+
+message JointImpedanceParams {
+  // The target position of the robot in rad.
+  intrinsic_proto.icon.JointVec target_position = 1;
+
+  // The target velocity of the robot in rad/sec.
+  intrinsic_proto.icon.JointVec target_velocity = 2;
+
+  // The feedforward torque of the robot in Nm. Please note that these are *not*
+  // intended to be used to provide torques deriving from the inverse dynamics
+  // or gravity compensation of the robot. Those are already accounted for in
+  // the impedance controller. These are additional torques that may optionally
+  // be applied on top of the impedance controller.
+  intrinsic_proto.icon.JointVec feedforward_torque = 6;
+
+  // The joint stiffness for the impedance control law in Nm/rad.
+  intrinsic_proto.icon.JointVec joint_stiffness = 3;
+
+  // The joint damping for the impedance control law in Nm sec/rad.
+  intrinsic_proto.icon.JointVec joint_damping = 4;
+
+  intrinsic_proto.JointLimits joint_limits = 5;
+}

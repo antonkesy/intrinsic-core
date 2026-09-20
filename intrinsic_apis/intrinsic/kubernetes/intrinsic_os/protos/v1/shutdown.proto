@@ -1,0 +1,52 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.cluster.v1;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "intrinsic/kubernetes/intrinsic_os/protos/v1/shutdown_go_proto";
+
+message ShutdownRequest {}
+
+message ShutdownResponse {}
+
+message RebootRequest {}
+
+message RebootResponse {}
+
+message GetUptimeRequest {}
+
+message Uptime {
+  // The uptime of the IPC since its last boot or restart.
+  google.protobuf.Duration duration = 1;
+}
+
+message ResetRequest {
+  // The reset type to perform.
+  enum ResetType {
+    // Default to solution reset.
+    RESET_TYPE_DEFAULT = 0;
+    // Factory reset the IPC.
+    RESET_TYPE_FACTORY = 1;
+    // Reset the solution on the IPC but keep the IPC identity and
+    // configuration.
+    RESET_TYPE_SOLUTION = 2;
+  }
+  ResetType reset_type = 1;
+}
+
+message ResetResponse {}

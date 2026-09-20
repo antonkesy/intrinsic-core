@@ -1,0 +1,51 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "intrinsic/kinematics/types/check_joint_limits.h"
+
+#include <cstddef>
+
+#include "absl/strings/string_view.h"
+#include "intrinsic/icon/utils/fixed_string.h"
+
+namespace intrinsic {
+
+icon::FixedString<16> ToFixedString(
+    const LimitCheckResult& limit_check_result) {
+  // We hand-craft our output buffer to avoid a bunch of complicated format
+  // string mechanics.
+  // TODO(b/191192688): Replace this mess with a format string.
+  char message[16] = "violated=[";
+  size_t it = 9;
+  if (!limit_check_result.p_ok) {
+    message[++it] = 'p';
+  }
+  if (!limit_check_result.v_ok) {
+    message[++it] = 'v';
+  }
+  if (!limit_check_result.a_ok) {
+    message[++it] = 'a';
+  }
+  if (!limit_check_result.j_ok) {
+    message[++it] = 'j';
+  }
+  if (!limit_check_result.t_ok) {
+    message[++it] = 't';
+  }
+  message[++it] = ']';
+
+  return {absl::string_view(message, it + 1)};
+}
+
+}  // namespace intrinsic

@@ -1,0 +1,102 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{ .PartialManifest -}}
+service_def {
+  service_state_config {
+    service_versions: INTRINSIC_PROTO_SERVICES_V1_SERVICE_STATE
+  }
+  {{- if .ProvidesServiceInspection }}
+  service_inspection_config {
+    data_proto_message_full_name: "intrinsic_proto.icon.v1.HardwareModuleInspectionData"
+  }
+  {{- end }}
+  {{- range .ServiceProtoPrefixes }}
+  service_proto_prefixes: "{{ . }}"
+  {{- end }}
+  {{- if .Image }}
+  real_spec {
+    image {
+      archive_filename: "{{ .Image }}"
+      settings {
+        {{- if .RunningEthercatOss }}
+        volume_mounts {
+          name: "etherlab"
+          mount_path: "/dev/EtherCAT0"
+        }
+        {{- end }}
+        volume_mounts {
+          name: "intrinsic-icon"
+          mount_path: "{{ .IntrinsicIconPath }}"
+        }
+        security_context {
+          {{- if .RunningEthercatOss }}
+          privileged: true # Required to access Etherlab device file /dev/EtherCAT0.
+          {{- end }}
+          posix_capabilities {
+            add: POSIX_CAPABILITY_SYS_NICE # Required for realtime execution.
+            add: POSIX_CAPABILITY_IPC_LOCK # Lock memory (mlock(2), mlockall(2), mmap(2), shmctl(2)).
+          }
+        }
+        requires_rtpc_node: {{ .RequiresRTPC }}
+      }
+    }
+    settings {
+      host_network: true
+      {{- if .RunningEthercatOss }}
+      volumes {
+        name: "etherlab"
+        host_path {
+          path: "/dev/EtherCAT0"
+          type: HOST_PATH_VOLUME_SOURCE_TYPE_CHAR_DEVICE # Required so that no directory is created by k8s if the device is not available.
+        }
+      }
+      {{- end }}
+      volumes {
+        name: "intrinsic-icon"
+        host_path {
+          path: "{{ .IntrinsicIconPath }}"
+        }
+      }
+    }
+  }
+  {{- end }}
+  {{- if .ImageSim }}
+  sim_spec {
+    image {
+      archive_filename: "{{ .ImageSim }}"
+      settings {
+        volume_mounts {
+          name: "intrinsic-icon"
+          mount_path: "{{ .IntrinsicIconPath }}"
+        }
+        security_context {
+          # Required to use shared memory mount shared memory segments.
+          posix_capabilities {
+            add: POSIX_CAPABILITY_IPC_LOCK # Lock memory (mlock(2), mlockall(2), mmap(2), shmctl(2)).
+          }
+        }
+      }
+    }
+    settings {
+      volumes {
+        name: "intrinsic-icon"
+        host_path {
+          path: "{{ .IntrinsicIconPath }}"
+        }
+      }
+    }
+  }
+  {{- end }}
+}

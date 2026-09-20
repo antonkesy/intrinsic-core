@@ -1,0 +1,62 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+**.PNG filter=lfs diff=lfs merge=lfs -text
+**.STL filter=lfs diff=lfs merge=lfs -text
+**.array_record-00000-of-00001 filter=lfs diff=lfs merge=lfs -text
+**.bin filter=lfs diff=lfs merge=lfs -text
+**.blend filter=lfs diff=lfs merge=lfs -text
+**.csv filter=lfs diff=lfs merge=lfs -text
+**.dae filter=lfs diff=lfs merge=lfs -text
+**.exr filter=lfs diff=lfs merge=lfs -text
+**.gif filter=lfs diff=lfs merge=lfs -text
+**.glb filter=lfs diff=lfs merge=lfs -text
+**.gz filter=lfs diff=lfs merge=lfs -text
+**.gzf filter=lfs diff=lfs merge=lfs -text
+**.gzip filter=lfs diff=lfs merge=lfs -text
+**.hdr filter=lfs diff=lfs merge=lfs -text
+**.img filter=lfs diff=lfs merge=lfs -text
+**.jar filter=lfs diff=lfs merge=lfs -text
+**.jpg filter=lfs diff=lfs merge=lfs -text
+**.kop filter=lfs diff=lfs merge=lfs -text
+**.mp4 filter=lfs diff=lfs merge=lfs -text
+**.mtl filter=lfs diff=lfs merge=lfs -text
+**.npy filter=lfs diff=lfs merge=lfs -text
+**.obj filter=lfs diff=lfs merge=lfs -text
+**.off filter=lfs diff=lfs merge=lfs -text
+**.pb filter=lfs diff=lfs merge=lfs -text
+**.pdf filter=lfs diff=lfs merge=lfs -text
+**.ply filter=lfs diff=lfs merge=lfs -text
+**.png filter=lfs diff=lfs merge=lfs -text
+**.pts filter=lfs diff=lfs merge=lfs -text
+**.recordio filter=lfs diff=lfs merge=lfs -text
+**.riegeli filter=lfs diff=lfs merge=lfs -text
+**.safetensors filter=lfs diff=lfs merge=lfs -text
+**.so filter=lfs diff=lfs merge=lfs -text
+**.step filter=lfs diff=lfs merge=lfs -text
+**.stl filter=lfs diff=lfs merge=lfs -text
+**.stp filter=lfs diff=lfs merge=lfs -text
+**.svg filter=lfs diff=lfs merge=lfs -text
+**.tar filter=lfs diff=lfs merge=lfs -text
+**.tfevents filter=lfs diff=lfs merge=lfs -text
+**.tfrecord filter=lfs diff=lfs merge=lfs -text
+**.tfrecord-00000-of-00001 filter=lfs diff=lfs merge=lfs -text
+**.tfrecords filter=lfs diff=lfs merge=lfs -text
+**.webm filter=lfs diff=lfs merge=lfs -text
+**.xz filter=lfs diff=lfs merge=lfs -text
+**.zip filter=lfs diff=lfs merge=lfs -text
+**.chm filter=lfs diff=lfs merge=lfs -text
+**.usdz filter=lfs diff=lfs merge=lfs -text
+**.usdc filter=lfs diff=lfs merge=lfs -text
+**.usd filter=lfs diff=lfs merge=lfs -text

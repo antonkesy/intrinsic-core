@@ -1,0 +1,87 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: Manifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "dio_read_input"
+}
+display_name: "DIO read input"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+    "The `dio_read_input` skill is used to read digital values from "
+    "a Digital Input/Output device. The skill user specifies "
+    "one or more digital inputs to read when the skill is executed. "
+    "The list of requested digital inputs will be returned as a list "
+    "of booleans in the output parameter of the skill."
+    "\n\n"
+    ":::note\n"
+    "It is possible that the values have changed by the time the "
+    "skill output is available if asynchronous calls are made from "
+    "other parts of the system.\n"
+    ":::\n"
+}
+extended_documentation {
+  prerequisites:
+    "* A real-time control service that controls the digital inputs."
+    "\n\n"
+    "* The skill user must know the `Block name` of the relevant "
+    "digital inputs to read. The `Block name` can be found in "
+    "the *I/O Mapping Panel* of the `realtime_control_service`."
+
+  usage_example:
+    "1. Choose the desired `Adio` device from the list of available "
+    "hardware devices. When the digital input is provided by a robot "
+    "control box or EtherCAT, this is usually named `robot_controller`."
+    "\n\n"
+    "2. Specify the `Block name`, which is the name of the Digital "
+    "Input/Output block from which values will be read."
+    "\n\n"
+    "3. (Optional) Specify the duration to wait to read the digital "
+    "input. After this time has elapsed a timeout error will be created."
+}
+options {
+  supports_cancellation: false
+  cc_config {
+    create_skill: "::intrinsic::skills::DioReadInput::CreateSkill"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "adio"
+    value {
+      capability_names: "Icon2AdioPart"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.DioReadInputParams"
+  default_value {
+    [type.googleapis.com/intrinsic_proto.skills.DioReadInputParams] {
+      timeout: {
+        seconds: 1
+        nanos: 0
+      }
+    }
+  }
+}
+return_type {
+  message_full_name: "intrinsic_proto.skills.DioReadInputReturnValue"
+}

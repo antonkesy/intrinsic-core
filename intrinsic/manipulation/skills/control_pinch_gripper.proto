@@ -1,0 +1,51 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.skills;
+
+import "intrinsic/assets/proto/field_metadata.proto";
+import "intrinsic/assets/proto/v1/resolved_dependency.proto";
+import "intrinsic/hardware/gripper/eoat/eoat_service.proto";
+import "intrinsic/world/proto/object_world_refs.proto";
+
+option go_package = "intrinsic/manipulation/skills/control_pinch_gripper_go_proto";
+
+message PinchGripperCommand {
+  intrinsic_proto.assets.v1.ResolvedDependency pinch_gripper = 4
+      [(intrinsic_proto.assets.field_metadata).dependency = {
+        requires: "grpc://intrinsic_proto.eoat.PinchGripper"
+        requires_object: {}
+        skill_annotations: {
+          always_provide_connection_info: true
+          fallback_manifest_dependency_key: "pinch_gripper"
+        }
+      }];
+
+  // Skill class for ai.intrinsic.control_pinch_gripper skill. This skill allows
+  // to control a pinch gripper to either its open or close position.
+  oneof command {
+    // Close the pinch gripper. When a grasp is commanded, the real or simulated
+    // gripper is actuated. The belief world is updated to reflect the state of
+    // the gripper.
+    intrinsic_proto.eoat.GraspRequest grasp = 1;
+    // Open the pinch gripper. When a release is commanded, the real or
+    // simulated gripper is actuated. The belief world is updated to reflect the
+    // state of the gripper.
+    intrinsic_proto.eoat.ReleaseRequest release = 2;
+  }
+  // Deprecated.
+  optional intrinsic_proto.world.ObjectReference object = 3 [deprecated = true];
+}

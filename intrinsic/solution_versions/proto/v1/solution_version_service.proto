@@ -1,0 +1,879 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.solution_versions.v1;
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/field_mask.proto";
+import "google/rpc/status.proto";
+
+
+import "intrinsic/assets/proto/v1/solution.proto";
+import "intrinsic/modified_solution/proto/v1/modified_solution.proto";
+import "intrinsic/solution_versions/proto/v1/solution_diff.proto";
+
+
+
+import "intrinsic/solution_versions/proto/v1/branch.proto";
+import "intrinsic/solution_versions/proto/v1/conflict.proto";
+import "intrinsic/solution_versions/proto/v1/conflict_resolution.proto";
+import "intrinsic/solution_versions/proto/v1/snapshot.proto";
+import "intrinsic/solution_versions/proto/v1/snapshot_source.proto";
+import "intrinsic/solution_versions/proto/v1/warning.proto";
+
+option go_package = "intrinsic/solution_versions/proto/v1/solution_version_service_go_proto";
+
+service SolutionVersionService {
+  // Create a new tree from a deployment data or a snapshot.
+  //
+  // The new tree will have a single main branch that will be populated with
+  // either a snapshot from the deployment data or an existing snapshot in a
+  // different tree.
+  rpc CreateTree(CreateTreeRequest) returns (Tree) {}
+
+  // Create a branch.
+  //
+  // Either creates a version branch or a deployment branch.
+  //
+  // A version branch needs to be created before creating a
+  // deployment branch.
+  //
+  // When creating a deployment branch, a version branch ID needs to be
+  // specified as upstreamBranchID.
+  //
+  // A version branch creation will not implicitly create a deployment branch.
+  rpc CreateBranch(CreateBranchRequest) returns (Branch) {}
+
+  // Get a specific branch.
+  rpc GetBranch(GetBranchRequest) returns (Branch) {}
+
+  // Delete a specific branch. Deleting a non-main branch will also
+  // delete its main branch. Deleting a main branch will only delete itself.
+  rpc DeleteBranch(DeleteBranchRequest) returns (DeleteBranchResponse) {}
+
+
+  // List branches.
+  //
+  // This will return all branches the user has access to in descending order
+  // of `update_time` field.
+  // It will return version and deployment branches.
+  rpc ListBranches(ListBranchesRequest) returns (ListBranchesResponse) {}
+
+  // TODO(b/406166187): Update the comment once non-main branch history is
+  // stored.
+
+  // Updates the tip of a branch to a specific snapshot.
+  //
+  // The snapshot must be part of the history of the given branch (temporarily
+  // must be part of the history of the main branch of the given branch).
+  rpc UpdateBranchTip(UpdateBranchTipRequest)
+      returns (UpdateBranchTipResponse) {}
+
+  // Updates a branch.
+  //
+  // Fields that can be updated:
+  // - display_name (only for version branches)
+  // - upstream_branch_id (only for version branches)
+  // - tip_snapshot_id (only for deployment branches)
+  rpc UpdateBranch(UpdateBranchRequest) returns (Branch) {}
+
+
+  // Commits a snapshot / deployment data to a branch.
+  //
+  // This RPC currently handles two versions of the commit flow.
+  // - The old flow is deprecated, but still supported. In the old flow, the
+  //   given deployment data is committed to an already existing deployment
+  //   branch.
+  // - The new flow is the default. In the new flow, the given snapshot is
+  //   committed to an already existing version branch. After the commit is
+  //   successful, the history of the deployment branch will be set to the
+  //   version branch history.
+  rpc Commit(CommitRequest) returns (CommitResponse) {}
+
+  // Saves a snapshot to a branch.
+  //
+  // Snapshots can be saved only to already existing deployment branches.
+  rpc Save(SaveRequest) returns (SaveResponse) {}
+
+
+  // Renames a branch.
+  rpc RenameBranch(RenameBranchRequest) returns (RenameBranchResponse) {}
+
+  // Lists all trees that the user has access to.
+  //
+  // The trees are sorted by default in descending order of `update_time` field
+  // of the main branch.
+  //
+  // Each tree is populated with up to `branch_limit` non-main branches per main
+  // branch.
+  rpc ListTrees(ListTreesRequest) returns (ListTreesResponse) {}
+
+
+  // Publishes the tip of the branch to the main branch, and syncs itself with
+  // main. The main branch and the requested branch will share the same branch
+  // history and the tip snapshot.
+  //
+  // The snapshot at the tip of the branches at the end of the operation will be
+  // returned in the response.
+  rpc PublishToMain(PublishToMainRequest) returns (PublishToMainResponse) {}
+
+
+  // Returns the ancestor snapshots of a given branch tip.
+  //
+  // The list is chronologically ordered, and the ordering can be used to infer
+  // the parenting relationship between the snapshots.
+  // For example, a list of snapshots [snapshot_1, snapshot_2, snapshot_3] would
+  // mean that snapshot_1 is the parent of snapshot_2, and snapshot_2 is the
+  // parent of snapshot_3. Since snapshot_1 does not have any parents, it can
+  // be assumed to be the root snapshot.
+  rpc ListBranchAncestors(ListBranchAncestorsRequest)
+      returns (ListBranchAncestorsResponse) {}
+
+  // Get a specific snapshot in a given branch.
+  rpc GetSnapshot(GetSnapshotRequest) returns (Snapshot) {}
+
+  // Returns the base snapshot on the main branch of a given branch.
+  //
+  // The base snapshot is the latest snapshot in the history of the given branch
+  // that is part of the history of the upstream main branch. If the given
+  // branch does not have an upstream branch, the snapshot at the tip of the
+  // branch is returned. If there is no snapshot in the history of the given
+  // branch that is part of the history of the upstream branch, a "not found"
+  // error is returned.
+  rpc GetBaseSnapshot(GetBaseSnapshotRequest) returns (Snapshot) {}
+
+
+  // Returns the deployment data of a specific snapshot in a given branch.
+  rpc GetDeploymentData(GetDeploymentDataRequest) returns (DeploymentData) {}
+
+  // Returns a list of trees with the main branch, and the list of non-main
+  // branches that was requested.
+  //
+  // The trees will contain only the branches that the user requested and has
+  // access to, along with their main branches.
+  //
+  // The length of the response may be less than the length of the request if
+  // the user does not have access to some of the requested branches. There is
+  // no guarantee on the order of the returned trees.
+  rpc BatchGetTrees(BatchGetTreesRequest) returns (BatchGetTreesResponse) {}
+
+
+  // Returns the owner of the branch specified in the request.
+  //
+  // This RPC will gracefully handle all types of branches.
+  rpc GetBranchOwner(GetBranchOwnerRequest) returns (GetBranchOwnerResponse) {}
+
+  // Returns descendant branches of the branch given in the request.
+  rpc ListBranchDescendants(ListBranchDescendantsRequest)
+      returns (ListBranchDescendantsResponse) {}
+
+  // Shares the branch specified in the request with the organization.
+  //
+  // This RPC will gracefully handle all types of branches.
+  rpc ShareBranch(ShareBranchRequest) returns (ShareBranchResponse) {}
+
+
+  // Returns the Solution for the given branch and snapshot id.
+  // A Solution represents the Assets, Asset instances, and other information
+  // that define an automation solution in the Intrinsic platform.
+  rpc GetSolution(GetSolutionRequest)
+      returns (intrinsic_proto.assets.v1.Solution) {}
+
+  // Performs a directional, two-way comparison (diff) between two solution
+  // versions.
+  rpc Diff(DiffRequest) returns (SolutionDiff) {}
+
+  // Performs a diff between two solution versions, returns an overlaid solution
+  // and diff mask with all the changes. During the overlay, only additions and
+  // modifications are applied to the reference solution. Removals are ignored,
+  // however are also present in the diff mask .
+  rpc DiffAndOverlay(DiffAndOverlayRequest) returns (OverlaidSolutionDiff) {}
+
+  // Resolves and returns FileDescriptorSets for a requested list of asset
+  // version IDs.
+  rpc BatchGetFileDescriptorSets(BatchGetFileDescriptorSetsRequest)
+      returns (BatchGetFileDescriptorSetsResponse) {}
+
+  // Performs a directional, three-way comparison to generate a pre-merge
+  // analysis (preview) of merging a source snapshot into a destination branch.
+  //
+  // By comparing both against their latest common ancestor (CA) — resolved
+  // topologically or by selecting the one with the latest creation time if
+  // multiple non-redundant candidates exist — it identifies where independent
+  // changes overlap (merge-blocking conflicts) or introduce logical
+  // inconsistencies (non-blocking warnings) before any state is committed.
+  // If the two versions don't have a common ancestor, the empty solution state
+  // is used as the common ancestor.
+  rpc PreviewMerge(PreviewMergeRequest) returns (PreviewMergeResponse) {}
+
+  // Performs a directional, three-way comparison to generate a pre-merge
+  // analysis (preview) of merging a source snapshot into a destination branch.
+  //
+  // By comparing both against their latest common ancestor (CA) — resolved
+  // topologically or by selecting the one with the latest creation time if
+  // multiple non-redundant candidates exist — it identifies where independent
+  // changes overlap (merge-blocking conflicts) or introduce logical
+  // inconsistencies (non-blocking warnings) before any state is committed.
+  // If the two versions don't have a common ancestor, the empty solution state
+  // is used as the common ancestor.
+  //
+  // In comparison to regular PreviewMerge, diffs generated by this RPC are
+  // overlaid on the respective reference solutions.
+  rpc PreviewMergeWithOverlaidDiffs(PreviewMergeWithOverlaidDiffsRequest)
+      returns (PreviewMergeWithOverlaidDiffsResponse) {}
+
+  // Applies a three-way merge of changes from a source snapshot to the tip
+  // of a destination deployment branch (both compared against their common
+  // ancestor), resolving conflicts using user-defined resolutions. Creates a
+  // new snapshot representing the merged changes and advances the destination
+  // branch tip to point to this snapshot, leaving the solution in a modified,
+  // uncommitted state.
+  //
+  // Preconditions & Allowed Merges:
+  // - Standard merge (source snapshot is from a different branch):
+  //   Allowed only when the destination deployment branch is based on the
+  //   latest version of its upstream version branch (`current_version ==
+  //   latest_version`).
+  //   Specifically, one of the following two conditions must hold:
+  //      - The deployment branch tip is equal to the upstream version branch
+  //        tip (no uncommitted changes).
+  //      - The primary parent of the uncommitted snapshot equals the upstream
+  //        version branch tip (uncommitted changes).
+  // - Syncing uncommitted changes (source snapshot is on the upstream version
+  //   branch):
+  //   Relevant when the destination deployment branch contains uncommitted
+  //   changes based on an older version (`current_version < latest_version`),
+  //   and merges from a newer snapshot in its own upstream version branch
+  //   history.
+  // - Redundant merges:
+  //   If the source snapshot is already an ancestor of the destination tip
+  //   (e.g., requesting to merge an older snapshot from the same branch), the
+  //   operation is redundant and fails with a FAILED_PRECONDITION error.
+  //
+  // Lineage:
+  // - Standard merge:
+  //   The merge snapshot is created on the destination branch and has two
+  //   parents: the destination upstream version branch tip and the incoming
+  //   source snapshot. Any existing uncommitted changes on the destination
+  //   branch are included in the merge, and the resulting merge snapshot
+  //   replaces the previous uncommitted snapshot as the new branch tip.
+  // - Syncing uncommitted changes:
+  //   Because the destination branch's latest committed snapshot is already an
+  //   ancestor of the incoming source snapshot, the merge snapshot has only one
+  //   parent: the source snapshot.
+  //
+  //   Example (Syncing uncommitted changes):
+  //   version branch (source)       ... S1 --- S2 --- S3 --- S4 (source)
+  //                                             \             \
+  //   deployment branch (dest)      ...          U1 - - - - - > U2 (merge
+  //                                                                snapshot)
+  //                                          (dest tip)
+  //
+  //   In this example, because S2 is an ancestor of S4, the merge snapshot U2
+  //   only has S4 as its parent.
+  // - Fast-forward:
+  //   If the destination tip has not diverged from the source (i.e., the
+  //   destination tip is the common ancestor), calling `ApplyMerge` creates a
+  //   dedicated merge snapshot identical to the source. Clients can
+  //   alternatively call `UpdateBranch` to fast-forward the tip directly
+  //   without a merge commit.
+  rpc ApplyMerge(ApplyMergeRequest) returns (ApplyMergeResponse) {}
+
+}
+
+// A tree is a collection of branches of a solution.
+message Tree {
+  // The main branch of the tree.
+  Branch main = 1;
+
+  // The non-main branches of the tree.
+  repeated Branch branches = 2;
+}
+
+
+message DeploymentData {
+  intrinsic_proto.modified_solution.v1.ModifiedSolution modified_solution = 1;
+}
+
+
+message CreateBranchRequest {
+  // The branch to create.
+  //
+  // The branch ID and timestamps are auto-generated and will be overwritten if
+  // provided.
+  //
+  // Creating a deployment branch requires the ID of a version branch to be
+  // provided in the upstream_branch_id field.
+  Branch branch = 1;
+
+  // Allows to create a version branch from the specified template ID.
+  // Can only be used without specifying an upstream branch ID and for version
+  // branches.
+  message TemplateSource {
+    // The ID of the template to create a version branch from.
+    string template_id = 1;
+  }
+
+  // The source to create the branch from.
+  //
+  // This can be unset if the branch specifies an upstream branch ID.
+  oneof from {
+
+    // The deployment data to create the branch from.
+    DeploymentData deployment_data = 2;
+
+    // The snapshot to create the branch from.
+    SnapshotSource snapshot_source = 3;
+    // The template to create the branch from.
+    // Can only be used without specifying an `upstream_branch_id` and for
+    // version branches.
+    TemplateSource template_source = 5;
+  }
+
+  // Optional commit message that can be provided during the creation of the
+  // branch.
+  CommitMessage commit_message = 4;
+}
+
+message CreateTreeRequest {
+  // The required tree to create.
+  //
+  // A valid request must contain a main branch and optionally non-main
+  // branches.
+  //
+  // Non-main branches, if provided, will point to the same tip snapshot as the
+  // main branch. The main branch will be set as the upstream branch of the
+  // non-main branches.
+  //
+  // All branch IDs and timestamps are auto-generated and will be overwritten if
+  // provided.
+  //
+  // An example request:
+  //
+  // tree {
+  //   main {
+  //     display_name: "main"
+  //   }
+  //   branches: [
+  //     {
+  //       display_name: "branch-1"
+  //     }
+  //   ]
+  // }
+  Tree tree = 1;
+
+  // The source to create the tree from.
+  oneof from {
+
+    // The deployment data to create the tree from.
+    DeploymentData deployment_data = 2;
+
+    // The snapshot to create the tree from.
+    SnapshotSource snapshot_source = 3;
+  }
+
+  // Optional commit message that can be provided during the creation of the
+  // tree.
+  CommitMessage commit_message = 4;
+}
+
+message GetBranchRequest {
+  // The ID of the branch to get.
+  string branch_id = 1;
+}
+
+message DeleteBranchRequest {
+  // The ID of the branch to delete.
+  string branch_id = 1;
+}
+
+message DeleteBranchResponse {}
+
+
+message ListBranchesRequest {
+  // The maximum number of branches to return.
+  int64 page_size = 1;
+
+  // The page token to fetch the next page of branches.
+  //
+  // If the page token is empty, up to `page_size` first elements of the
+  // will be returned. On subsequent requests, set the `next_page_token`
+  // obtained from the previous call to retrieve the next page.
+  string page_token = 2;
+
+  // A filter expression for the branches to return, as defined in AIP-160.
+  // Filter variables need to be specified in camelCase.
+  string filter = 3;
+}
+
+message ListBranchesResponse {
+  repeated Branch branches = 1;
+
+  // The page token to fetch the next page of branches.
+  //
+  // Pass this token to the subsequent list requests in to obtain the next page.
+  string next_page_token = 2;
+}
+
+message SaveRequest {
+  // The ID of the branch to save to.
+  string branch_id = 1;
+
+  // The deployment data to save.
+  DeploymentData deployment_data = 2;
+}
+
+message SaveResponse {
+  // The snapshot that was saved.
+  Snapshot snapshot = 1;
+
+  // The deployment branch that snapshot was saved to.
+  Branch deployment_branch = 2;
+}
+
+// The request for the `Commit` RPC.
+//
+// This message supports two versions of the commit flow:
+// - The old flow, which uses `deployment_data`, `branch_id` (as a
+//   deployment branch ID), and `commit_message`.
+// - The new flow, which uses `branch_id` (as a version branch ID),
+//   `origin_branch_id`, `snapshot_id`, and `commit_message`.
+// Either the `deployment_data` or the `origin_branch_id` needs to be provided.
+// If neither is provided, an error will be returned. If both are provided, an
+// error will be returned.
+message CommitRequest {
+  // The deployment data to commit as a snapshot.
+  DeploymentData deployment_data = 1;
+
+  // The version branch to add a commit to. For the old commit flow, this is the
+  // deployment branch.
+  string branch_id = 2;
+
+  // Commit title and description to be attached to the version.
+  CommitMessage commit_message = 3;
+
+  // The branch to get the specified snapshot from.
+  // Can be of any type (deployment or version).
+  string origin_branch_id = 4;
+
+  // The ID of the snapshot to commit.
+  // If not provided, the tip of the origin branch is used.
+  string snapshot_id = 5;
+}
+
+message CommitResponse {
+  // The snapshot that was committed.
+  Snapshot snapshot = 1;
+
+  // The version branch that the snapshot was committed to.
+  Branch version_branch = 2;
+
+  // The deployment branches of the version branch that were updated.
+  repeated Branch deployment_branches = 3;
+}
+
+
+message UpdateBranchRequest {
+  // The branch update.
+  //
+  // Needs to have an ID.
+  Branch branch = 1;
+
+  // The list of fields to update.
+  //
+  // If empty, all allowed fields are updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateBranchTipRequest {
+  // The ID of the branch to update.
+  string branch_id = 1;
+  // The ID of the snapshot to set as the tip of the branch.
+  string snapshot_id = 2;
+}
+
+message UpdateBranchTipResponse {
+  // The branch after the update.
+  Branch branch = 1;
+}
+
+message RenameBranchRequest {
+  // The ID of the branch to rename.
+  string branch_id = 1;
+
+  // The new display name of the branch.
+  string display_name = 2;
+}
+
+message RenameBranchResponse {
+  // The branch after the rename operation.
+  Branch branch = 1;
+}
+
+message ListTreesRequest {
+  // The maximum number of trees to return.
+  int64 page_size = 1;
+  // The page token to fetch the next page of trees.
+  //
+  // If the page token is empty, up to `page_size` first elements of the
+  // will be returned. On subsequent requests, set the `next_page_token`
+  // obtained from the previous call to retrieve the next page.
+  string page_token = 2;
+
+  // The maximum number of non-main branches to return per tree.
+  int64 branches_limit = 3;
+}
+
+message ListTreesResponse {
+  repeated Tree trees = 1;
+
+  // The page token to fetch the next page of trees.
+  //
+  // Pass this token to the subsequent list requests in to obtain the next page.
+  string next_page_token = 2;
+}
+
+message ListBranchAncestorsRequest {
+  // The ID of the branch to get the ancestor snapshots of.
+  string branch_id = 1;
+
+  // The maximum number of snapshots to get in one batch.
+  //
+  // If `page_size` is not provided, a default page size of 20 will be used.
+  // If `page_size` is provided, it must be a positive integer less than or
+  // equal to 200. If `page_size` < 0, an INVALID_ARGUMENT error will be
+  // returned. If `page_size` > 200, the page size will be reduced to 200.
+  int64 page_size = 2;
+
+  // The page token to fetch the next page of snapshots.
+  //
+  // If the page token is empty, up to `page_size` first elements of the
+  // will be returned. On subsequent requests, set the `next_page_token`
+  // obtained from the previous call to retrieve the next page.
+  string page_token = 3;
+}
+
+message ListBranchAncestorsResponse {
+  // A list of ancestor snapshots.
+  repeated Snapshot snapshots = 1;
+
+  // The page token to fetch the next page of snapshots.
+  //
+  // Pass this token to the subsequent list requests in to obtain the next page.
+  string next_page_token = 2;
+}
+
+message GetSnapshotRequest {
+  // The ID of the branch containing the snapshot.
+  string branch_id = 1;
+
+  // Optional ID of the snapshot to retrieve. If not provided, the snapshot at
+  // the tip of the branch is returned.
+  string snapshot_id = 2;
+}
+
+message GetBaseSnapshotRequest {
+  // The ID of the branch to get the base snapshot of.
+  string branch_id = 1;
+}
+
+
+message PublishToMainRequest {
+  // The ID of the branch to publish.
+  string branch_id = 1;
+
+  // Optional commit message that can be provided during the creation of the
+  // snapshot.
+  CommitMessage commit_message = 2;
+}
+
+message PublishToMainResponse {
+  // The snapshot at the tip of the branch at the end of the operation.
+  Snapshot snapshot = 1;
+}
+
+message GetDeploymentDataRequest {
+  // The ID of the branch to get the deployment data of.
+  string branch_id = 1;
+
+  // Optional ID of the snapshot to retrieve the deployment data of.
+  // If not provided, the deployment data at the tip of the branch
+  // is returned.
+  string snapshot_id = 2;
+}
+
+message BatchGetTreesRequest {
+  // The IDs of the branches to get.
+  repeated string branch_ids = 1;
+}
+
+message BatchGetTreesResponse {
+  // The trees that were requested.
+  repeated Tree trees = 1;
+}
+
+
+message GetBranchOwnerRequest {
+  string branch_id = 1;
+}
+
+message GetBranchOwnerResponse {
+  string owner = 1;
+}
+
+message ListBranchDescendantsRequest {
+  string branch_id = 1;
+}
+
+message ListBranchDescendantsResponse {
+  repeated Branch branches = 1;
+}
+
+message ShareBranchRequest {
+  string branch_id = 1;
+}
+
+message ShareBranchResponse {}
+
+
+message GetSolutionRequest {
+  // The snapshot to be retrieved and normalized.
+  SnapshotSource source = 1;
+
+  // Controls the detail level of the returned Solution.
+  enum View {
+    // Defaults to `VIEW_FULL_NO_FDS`.
+    VIEW_UNSPECIFIED = 0;
+
+    // Strips FileDescriptorSets from the returned Solution.
+    VIEW_FULL_NO_FDS = 1;
+
+    // Includes FileDescriptorSets in the returned Solution.
+    VIEW_FULL = 2;
+  }
+  View view = 2;
+}
+
+message DiffRequest {
+  // The baseline state of the comparison.
+  SnapshotSource reference = 1;
+
+  // The state that is compared against the reference. Applying the returned
+  // patch to the reference yields the target.
+  SnapshotSource target = 2;
+}
+
+message DiffAndOverlayRequest {
+  // The baseline state of the comparison.
+  SnapshotSource reference = 1;
+
+  // The state that is compared against the reference and overlaid on top of it.
+  SnapshotSource target = 2;
+}
+
+message BatchGetFileDescriptorSetsRequest {
+  // The asset version IDs to resolve, formatted as
+  // "<package>.<name>.<version>".
+  repeated string asset_version_ids = 1;
+}
+
+message BatchGetFileDescriptorSetsResponse {
+  message FileDescriptorSetResult {
+    oneof result {
+      // The resolved FileDescriptorSet, populated if the resolution was
+      // successful.
+      google.protobuf.FileDescriptorSet file_descriptor_set = 1;
+
+      // The error status, populated if the resolution failed.
+      google.rpc.Status error_status = 2;
+    }
+  }
+
+  // Map from the requested asset version ID to its resolution result.
+  map<string, FileDescriptorSetResult> results = 1;
+}
+
+message PreviewMergeRequest {
+  // The specific snapshot requested to be merged into the destination branch.
+  SnapshotSource source = 1;
+
+  // The destination branch ID that will receive the changes.
+  string destination_branch_id = 2;
+
+  // Controls the detail level of the created PreviewMergeResponse.
+  enum View {
+    // Defaults to `VIEW_BASIC`.
+    VIEW_UNSPECIFIED = 0;
+
+    // Contains metadata, diffs, conflicts, and warnings.
+    VIEW_BASIC = 1;
+
+    // Also contains the full merged solution.
+    VIEW_FULL = 2;
+  }
+  View view = 3;
+}
+
+// PreviewMergeResponse represents the pre-merge analysis, providing the 3-way
+// diffs, conflicts, and warnings needed to evaluate and prepare a source
+// snapshot for merging into a destination branch.
+message PreviewMergeResponse {
+  // The specific snapshot requested to be merged into the destination branch.
+  SnapshotSource source = 1;
+
+  // The destination branch ID that will receive the changes and the tip
+  // snapshot at the time the preview was generated.
+  SnapshotSource destination = 2;
+
+  // The ID of the common ancestor snapshot used for the 3-way diff.
+  // This may be empty if no common ancestor exists (e.g., disjoint histories),
+  // indicating that the diffs are relative to an empty solution state.
+  string common_ancestor_snapshot_id = 3;
+
+  // The diff of the destination branch (tip) relative to the common ancestor,
+  // or relative to an empty solution state if no common ancestor exists.
+  SolutionDiff destination_diff = 4;
+
+  // The diff of the incoming source snapshot relative to the common ancestor,
+  // or relative to an empty solution state if no common ancestor exists.
+  SolutionDiff source_diff = 5;
+
+  // The combined diff representing the final merged state relative to the
+  // destination branch tip.
+  // Populated only in the conflict-free case (i.e., when `conflicts` is empty).
+  SolutionDiff merged_diff = 6;
+
+  // List of merge-blocking conflicts (e.g., overlapping field updates,
+  // unresolved hard dependencies) that prevent a clean merge.
+  repeated Conflict conflicts = 7;
+
+  // List of non-blocking warnings (e.g. schema mismatches, dangling soft
+  // references) that the user should address post-merge.
+  repeated Warning warnings = 8;
+
+  // The full solution representing the final merged state.
+  // Only populated if the view in the request is set to VIEW_FULL
+  // and there are no blocking conflicts (`conflicts` is empty).
+  intrinsic_proto.assets.v1.Solution merged_result = 9;
+}
+
+message PreviewMergeWithOverlaidDiffsRequest {
+  // The specific snapshot requested to be merged into the destination branch.
+  SnapshotSource source = 1;
+
+  // The destination branch ID that will receive the changes.
+  string destination_branch_id = 2;
+
+  // Controls the detail level of the created PreviewMergeResponse.
+  enum View {
+    // Defaults to `VIEW_BASIC`.
+    VIEW_UNSPECIFIED = 0;
+
+    // Contains metadata, diffs, conflicts, and warnings.
+    VIEW_BASIC = 1;
+
+    // Also contains the full merged solution.
+    VIEW_FULL = 2;
+  }
+  View view = 3;
+}
+
+// PreviewMergeWithOverlaidDiffsResponse represents the pre-merge analysis,
+// providing the 3-way diffs, conflicts, and warnings needed to evaluate and
+// prepare a source snapshot for merging into a destination branch. Regular
+// diffs are replaced with overlaid diffs to provide a richer view of
+// changes between two solutions.
+message PreviewMergeWithOverlaidDiffsResponse {
+  // The specific snapshot requested to be merged into the destination branch.
+  SnapshotSource source = 1;
+
+  // The destination branch ID that will receive the changes and the tip
+  // snapshot at the time the preview was generated.
+  SnapshotSource destination = 2;
+
+  // The ID of the common ancestor snapshot used for the 3-way diff.
+  // This may be empty if no common ancestor exists (e.g., disjoint histories),
+  // indicating that the diffs are relative to an empty solution state.
+  string common_ancestor_snapshot_id = 3;
+
+  // The overlaid diff of the destination branch (tip) relative to the common
+  // ancestor, or relative to an empty solution state if no common ancestor
+  // exists.
+  OverlaidSolutionDiff overlaid_destination_diff = 4;
+
+  // The overlaid diff of the incoming source snapshot relative to the common
+  // ancestor, or relative to an empty solution state if no common ancestor
+  // exists.
+  OverlaidSolutionDiff overlaid_source_diff = 5;
+
+  // The combined overlaid diff representing the final merged state relative to
+  // the destination branch tip. Populated only in the conflict-free case (i.e.,
+  // when `conflicts` is empty).
+  OverlaidSolutionDiff overlaid_merged_diff = 6;
+
+  // List of merge-blocking conflicts (e.g., overlapping field updates,
+  // unresolved hard dependencies) that prevent a clean merge.
+  repeated Conflict conflicts = 7;
+
+  // List of non-blocking warnings (e.g. schema mismatches, dangling soft
+  // references) that the user should address post-merge.
+  repeated Warning warnings = 8;
+
+  // The full solution representing the final merged state.
+  // Only populated if the view in the request is set to VIEW_FULL
+  // and there are no blocking conflicts (`conflicts` is empty).
+  intrinsic_proto.assets.v1.Solution merged_result = 9;
+}
+
+// ApplyMergeRequest contains the parameters for merging a source snapshot
+// into the tip of a destination branch, including conflict
+// resolutions.
+message ApplyMergeRequest {
+  // The snapshot to be merged into the destination deployment branch.
+  // This snapshot must always be committed (part of a version branch history).
+  SnapshotSource source = 1;
+
+  // The tip snapshot of the deployment branch designated to receive the
+  // integrated changes.
+  //
+  // Both `branch_id` and `snapshot_id` must be provided. The `snapshot_id` is
+  // used to ensure that the destination tip is still where it was at preview
+  // time.
+  SnapshotSource destination = 2;
+
+  // User-defined resolutions for all identified conflicts. This list must
+  // contain a resolution for every conflict detected between the source and
+  // destination. It is recommended to call PreviewMerge beforehand to identify
+  // all conflicts and obtain their IDs.
+  //
+  // The `conflict_id` in each `ConflictResolution` must match the `id` of a
+  // `Conflict` from the `PreviewMergeResponse` for the same source snapshot and
+  // destination tip. If resolutions are missing for any of the detected
+  // conflicts, or if unknown conflict IDs are provided, the RPC fails with an
+  // INVALID_ARGUMENT error.
+  repeated ConflictResolution conflict_resolutions = 3;
+}
+
+// ApplyMergeResponse returns the newly created merge snapshot representing the
+// merged state and the updated destination deployment branch.
+message ApplyMergeResponse {
+  // The newly created merge snapshot.
+  Snapshot snapshot = 1;
+
+  // The deployment branch that received the merge snapshot.
+  Branch deployment_branch = 2;
+}
+

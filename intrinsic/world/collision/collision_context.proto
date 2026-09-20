@@ -1,0 +1,51 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+// A proto library to facilitate setting collision margins for different object
+// attributes in the World. A different RuleSet is provided as a config file by
+// the process for different contexts.
+
+package intrinsic_proto;
+
+import "intrinsic/world/proto/collision_action.proto";
+
+option go_package = "intrinsic/world/collision/collision_context_go_proto";
+
+// A rule specifies the action based on the two labels provided to it. It is one
+// cell of a lookup table and indicates whether a pair of objects should be
+// excluded from collision checking or whether they should be collision checked
+// with soft and hard margins.
+// Next ID: 6
+message Rule {
+  // The set of entities to use for the left side of the cross.
+  repeated uint32 id_1 = 4;
+
+  // The set of entities to use for the right side of the cross.
+  repeated uint32 id_2 = 5;
+
+  // This action will apply to every pairing of an id from id_1 to id_2. For
+  // example, if we have id_1 = [1,2] and id_2 = [3,4] the rule will apply to
+  // the pairs [1,3], [1,4], [2,3], [2,4]. If id_2 or id_1 is an empty set then
+  // we will treat this as applying to the given id and everything else.
+  intrinsic_proto.world.CollisionAction action = 3;
+
+  reserved 1, 2;
+  reserved "label_1", "label_2";
+}
+
+message RuleSet {
+  repeated Rule rules = 1;
+}

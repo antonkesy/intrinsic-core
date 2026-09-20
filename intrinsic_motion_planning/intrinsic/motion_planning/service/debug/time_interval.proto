@@ -1,0 +1,60 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.motion_planning;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "intrinsic_motion_planning/intrinsic/motion_planning/service/debug/time_interval_go_proto";
+
+// Represents a breakdown of a contiguous time interval into smaller component
+// intervals.
+//
+// This message is typically used for debugging - it allows us to represent the
+// time spent in various parts of a process, and to aggregate the results across
+// many sources.
+message TimeInterval {
+  // Name of this interval. This should always be filled out so the interval
+  // can be identified.
+  string name = 1;
+
+  // Arbitrary data to be logged with the interval. Opaque from the framework
+  // perspective.
+  google.protobuf.Struct data = 2;
+
+  // Either the interval is atomic in which case it just has a duration, or it
+  // is represented by a number of sub-intervals (and its duration is the sum
+  // of its descendant intervals' durations). The `intervals` should be ordered
+  // in the order of occurrence, and they are assumed to be disjoint (i.e.
+  // intervals do not overlap).
+  //
+  // Note, we do not use a oneof field here because you can't have a repeated
+  // field inside a oneof. Code should ignore `seconds` if one or more
+  // interval is present.
+  double seconds = 3;
+  repeated TimeInterval intervals = 4;
+}
+
+message TimeIntervalLog {
+  // Should be in ISO format (RFC3339_full) with a timezone.
+  //
+  // Note, we use this rather than a numeric representation since this is for
+  // debugging, and having the start time is easily readable (both by humans and
+  // by machines) helps with understanding what is going on.
+  string start_time = 1;
+
+  TimeInterval interval = 2;
+}

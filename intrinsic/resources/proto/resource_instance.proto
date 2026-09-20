@@ -1,0 +1,65 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.config;
+
+import "google/protobuf/any.proto";
+import "intrinsic/config/proto/data_files.proto";
+import "intrinsic/scene/proto/v1/scene_object_config.proto";
+
+option go_package = "intrinsic/resources/proto/resource_instance_go_proto";
+
+// A ResourceInstance instantiates a specific ResourceType within a ResourceSet.
+// The instance is uniquely defined within the ResourceSet by its resource name.
+// For equipment type of resources like robots, grippers, cameras a
+// type-specific configuration must be provided that binds concrete hardware to
+// this instance.
+message ResourceInstance {
+  // Resource name unique within the current resource set.
+  string name = 1;
+
+  // The resource type's id_version. This field is populated when the instance
+  // is to be loaded from the resource catalog. In the future we hope to remove
+  // the above type field. In the short term, at least one of the two should
+  // always be set and in some cases, both will be.
+  string type_id_version = 9;
+
+  // Service configuration, if the asset has a service component
+  google.protobuf.Any configuration = 3;
+
+  // SceneObject configuration, if the asset has an object component.
+  intrinsic_proto.scene_object.v1.SceneObjectConfig scene_object_config = 13;
+
+  // Contains file references that maps blobs on GCS to their target location
+  // on prem.
+  DataFiles data_files = 5;
+
+  message SchedulingConfig {
+    // If non-empty, the resource's workloads are constrained to run on a node
+    // with this hostname.
+    //
+    // For example, a resource instance representing an ICON controller must run
+    // on a particular node to physically connect to the robot hardware.
+    string required_node_hostname = 1;
+  }
+  // The resource's workloads are scheduled subject to this configuration when
+  // run outside of simulation.
+  SchedulingConfig scheduling_config = 8;
+
+  reserved 2, 4, 6, 7, 10, 11, 12;
+  reserved "dependency_resolutions", "init_behavior_tree", "resource_data",
+      "run_behavior_tree", "type", "scene_object", "world_fragment";
+}

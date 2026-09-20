@@ -1,0 +1,143 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic.proto;
+
+import "intrinsic/motion_planning/path_planning/data_structures/state_sampler_configs.proto";
+import "intrinsic/motion_planning/path_planning/validators_config.proto";
+
+option go_package = "intrinsic/motion_planning/path_planning/planners/rrt_configs_go_proto";
+
+// Used to configure the RrtConnect function that is used internally by the
+// Planner implementations.
+message RrtConnectConfig {
+  // If zero/unset, defaults to a reasonable value.
+  int32 max_iters = 1;
+  // If zero defaults to a reasonable value.
+  double timeout_seconds = 2;
+  // If zero defaults to a reasonable value.
+  double step_size = 3;
+  // If zero defaults to a reasonable value. If -1, no goal check between
+  // iterations will be performed. No value <-1 allowed.
+  int32 iters_between_goal_checks = 4;
+
+  // Configurations that affects the selection of the next point to grow to.
+
+  // Number of candidates to generate and score. Increasing this number can
+  // improve a heuristic but may also increase the run time.
+  //
+  // Values less than 2 is treated as 1.
+  int32 num_candidates = 5;
+
+  // Number of most recent extend failures to store. The stored failures are
+  // passed to the scoring function enabling it to avoid sampling the sample
+  // point repeatedly. The impact of increasing this value on run time highly
+  // depends on the scoring function used.
+  //
+  // Values less than 0 are treated as 0.
+  int32 max_num_failures_stored = 6;
+
+  // Special sampling mode that attempts to select from all directions equally,
+  // rather than be biased by the joint range. As an example, look at the simple
+  // diagram below. Usually we sample uniformly in each joints range and then
+  // connect this to an existing point. However, if 'x' is our existing point,
+  // note that we are more likely to pick a point to its right when we sample
+  // uniformly in the full range of the joint. This means we have a lot less
+  // chance of trying a point to the left of 'x', and may take a long time to
+  // find a path if finding a path requires moving to the left first.
+  //
+  //    +-----------------------------------+
+  //    |                                   |
+  //    |                                   |
+  //    |                                   |
+  // J1 |  x                                |
+  //    |                                   |
+  //    |                                   |
+  //    |                                   |
+  //    |                                   |
+  //    +-----------------------------------+
+  //                    J2
+  bool use_equidirectional_sampling_method = 7;
+  // Essentially controls how often you sample inside vs outside the
+  // axis-aligned bounding box that contains the current RRT tree.
+  double equidirectional_sampling_buffer = 8;
+
+  reserved 9;
+  reserved "enable_constraint_manifold_projection";
+}
+
+// Used to configure RrtPathPlanner.
+message RrtPathPlannerConfig {
+  RrtConnectConfig rrt_connect_config = 1;
+
+  // The following parameters configure the heuristic scoring used by this
+  // implementation.
+
+  // The ideal spacing between a point to try and the current growing tree.
+  double intratree_spacing = 2;
+  // Score weighting for intertree_distance. This weight is normalized against
+  // the intratree score.
+  double intertree_weight = 3;
+  // Score weighting for the score generated for from trying another point in a
+  // region that this tree previously failed to connect with. This weight is
+  // also normalized against the intratree score.
+  double failure_weight = 4;
+
+  // Specifies the edge validator that will be used by this planner.
+  EdgeValidatorSpecification edge_validator_spec = 5;
+  // Specifies the point validator that will be used by this planner.
+  PointValidatorSpecification point_validator_spec = 6;
+
+  // Defines the state sampler that will be used for this path planner. See
+  // intrinsic/path_planning/data_strucutes/state_sampler_configs.proto and
+  // state_sampler_utils.cc for more information.
+  StateSamplerSpecification state_sampler_spec = 7;
+}
+
+// Used to configure PathPlannerRrtVolumeConstrainted.
+message VolumeConstrainedRrtPathPlannerConfig {
+  RrtConnectConfig rrt_connect_config = 1;
+
+  // The amount grow the axis-aligned boxes that define the region in which the
+  // robot can move its tip. Small values result in tigher paths though planning
+  // may become infeasible at some point.
+  //
+  // If zero/unset, defaults to a reasonable value.
+  double volume_enlargement = 2;
+
+  // The following parameters configure the heuristic scoring used by this
+  // implementation.
+
+  // The ideal spacing between a point to try and the current growing tree.
+  double intratree_spacing = 3;
+  // Score weighting for intertree_distance. This weight is normalized against
+  // the intratree score.
+  double intertree_weight = 4;
+  // Score weighting for the score generated for from trying another point in a
+  // region that this tree previously failed to connect with. This weight is
+  // also normalized against the intratree score.
+  double failure_weight = 5;
+
+  // Specifies the edge validator that will be used by this planner.
+  EdgeValidatorSpecification edge_validator_spec = 12;
+  // Specifies the point validator that will be used by this planner.
+  PointValidatorSpecification point_validator_spec = 13;
+
+  // Defines the state sampler that will be used for this path planner. See
+  // intrinsic/path_planning/data_strucutes/state_sampler_configs.proto and
+  // state_sampler_utils.cc for more information.
+  StateSamplerSpecification state_sampler_spec = 14;
+}

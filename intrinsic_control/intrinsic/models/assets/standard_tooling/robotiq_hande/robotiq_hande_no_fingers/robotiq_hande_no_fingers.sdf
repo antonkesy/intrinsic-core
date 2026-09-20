@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<sdf version="1.9" xmlns:intrinsic="https://intrinsic.ai/">
+  <model name="robotiq_hande_no_fingers">
+    <!-- Base of the gripper -->
+    <link name="gripper_body">
+      <inertial>
+        <mass>1</mass>
+        <inertia>
+          <ixx>0.1</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.1</iyy>
+          <iyz>0</iyz>
+          <izz>0.1</izz>
+        </inertia>
+      </inertial>
+      <!-- In the legacy robotiq_hande_body.dae mesh, the 13.9 mm IO coupler (Z in [0, 0.0139])
+           and Hand-E body were combined into a single mesh with jaw attachment frames at Z = 0.1115 m.
+           In the separate CAD exports:
+           - IO Adapter (io_coupler_visual.glb, 13.9 mm tall) has its raw origin 7.0 mm above its
+             bottom mounting face (mount_frame at Z = +0.0069 m), so it is shifted by +0.0070 m in Z
+             to place its bottom face at Z = 0 and its top mount at Z = 0.0139 m.
+           - Hand-E (base_visual.glb, jaw_*_visual.glb) has raw jaw attachment frames at
+             (+-0.026514, -+0.01425, 0.0976), so it is shifted by +0.0139 m in Z to stack on top
+             of the IO coupler and align the jaw frames at Z = 0.0976 + 0.0139 = 0.1115 m. -->
+      <visual name="visual_io_coupler">
+        <pose>0 0 0.0070 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/assets/standard_tooling/robotiq_hande/io_coupler_visual.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <visual name="visual_body">
+        <pose>0 0 0.0139 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/assets/standard_tooling/robotiq_hande/base_visual.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <!-- Primitive cylinder/box colliders from CAD exports (Hand-e/model.sdf shifted by +0.0139 m
+           in Z, and IO Adapter/model.sdf shifted by +0.0070 m in Z). -->
+      <collision name="collision_body">
+        <pose>0 0 0.06177 0 0 -1.570796</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.037544</radius>
+            <length>0.09574</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision name="collision_io_coupler">
+        <pose>0 0 0.00545 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.0379</radius>
+            <length>0.0169</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision name="collision_io_coupler_box1">
+        <pose>-0.000733 0.054862 0.005695 0 1.570796 0</pose>
+        <geometry>
+          <box>
+            <size>0.011817 0.025604 0.010486</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="collision_io_coupler_box2">
+        <pose>-0.000739 0.037415 0.00575 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.005041 0.011557 0.0095</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="collision_io_coupler_cyl">
+        <pose>0.009816 0.061755 0.005695 0 1.570796 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.005</radius>
+            <length>0.008147</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- Fingers and their prismatic joints (rack colliders from Hand-e/model.sdf shifted by +0.0139 m in Z) -->
+    <link name="finger_1_rack">
+      <visual name="visual_finger_1_rack">
+        <pose>0 0 0.0139 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/assets/standard_tooling/robotiq_hande/jaw_l_visual.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="collision_finger_1_rack">
+        <pose>-0.014107 0.01425 0.1033 0 0 -4.712389</pose>
+        <geometry>
+          <box>
+            <size>0.005967 0.04339 0.0164</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <link name="finger_2_rack">
+      <visual name="visual_finger_2_rack">
+        <pose>0 0 0.0139 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic_control/intrinsic/models/assets/standard_tooling/robotiq_hande/jaw_r_visual.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="collision_finger_2_rack">
+        <pose>0.013949 -0.01425 0.1033 0 0 -1.570796</pose>
+        <geometry>
+          <box>
+            <size>0.005967 0.043104 0.0164</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="finger_1_joint" type="prismatic">
+      <parent>gripper_body</parent>
+      <child>finger_1_rack</child>
+      <pose>0 0 0 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>0</lower>
+          <upper>0.025</upper>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="finger_2_joint" type="prismatic">
+      <parent>gripper_body</parent>
+      <child>finger_2_rack</child>
+      <pose>0 0 0 0 0 0</pose>
+      <axis>
+        <xyz>-1 0 0</xyz>
+        <limit>
+          <lower>0</lower>
+          <upper>0.025</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <!-- Attachment frames -->
+    <frame name="finger_1_attach_frame" attached_to="finger_1_rack" intrinsic:create_attachment_entity="true">
+      <pose relative_to="finger_1_rack">-0.026514 0.01425 0.1115 0 0 0</pose>
+    </frame>
+
+    <frame name="finger_2_attach_frame" attached_to="finger_2_rack" intrinsic:create_attachment_entity="true">
+      <pose relative_to="finger_2_rack">0.026514 -0.01425 0.1115 0 0 0</pose>
+    </frame>
+
+    <frame name="tool_frame" attached_to="gripper_body" intrinsic:create_entity="true">
+      <pose relative_to="gripper_body">0 0 0.128 0 0 0</pose>
+    </frame>
+  </model>
+</sdf>

@@ -1,0 +1,81 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.motion_planning.v1;
+
+import "intrinsic/kinematics/types/joint_limits.proto";
+import "intrinsic/skills/proto/skill_parameter_metadata.proto";
+
+option go_package = "intrinsic/motion_planning/proto/v1/motion_planning_limits_go_proto";
+
+message DynamicCartesianLimits {
+  // Maximum Cartesian rotational velocity. If not
+  // specified, the default value defined in the robot limits will be used.
+  optional double max_rotational_velocity = 2
+      [(intrinsic_proto.skills.skill_parameter_metadata).unit =
+           "radians/second"];
+  // Maximum Cartesian translational velocity. The value
+  // defines the max translational velocity in the x, y, and z axis. If not
+  // specified, the default value defined in the robot limits will be used.
+  optional double max_translational_velocity = 3
+      [(intrinsic_proto.skills.skill_parameter_metadata).unit =
+           "meters/second"];
+  // Maximum Cartesian rotational acceleration limits.
+  // If not specified, the default value defined in the robot limits will be
+  // used.
+  optional double max_rotational_acceleration = 4
+      [(intrinsic_proto.skills.skill_parameter_metadata).unit =
+           "radians/second^2"];
+  // Maximum Cartesian translational acceleration limits.
+  // The value defines the max translational acceleration in the x, y,
+  // and z axis. If not specified, the default value defined in the robot limits
+  // will be used.
+  optional double max_translational_acceleration = 5
+      [(intrinsic_proto.skills.skill_parameter_metadata).unit =
+           "meters/second^2"];
+}
+
+// TODO(b/241596676); Add the option of percentage of max l2 limit.
+// Specifies an update to apply on top of an existing JointLimits message. While
+// the fields are "the same", they have different usage.
+//   * Any field may be not provided (or empty) in which case no update is made
+//     to the JointLimits this update is applied on.
+//   * Any field that is not empty will replace the original value.  It must
+//     have the same size as the field it replaces in JointLimits.
+message JointLimitsUpdate {
+  // Lower joint position limits allow to restrict the robot joint movement in
+  // joint space. Each joint of the robot has lower (min) and upper (max)
+  // limits. The specified limits need to be within the robot application
+  // limits.
+  optional intrinsic_proto.RepeatedDouble min_position = 1;
+  // Upper joint position limits allow to restrict the robot joint movement in
+  // joint space. Each joint of the robot has lower (min) and upper (max)
+  // limits. The specified limits need to be within the robot application
+  // limits.
+  optional intrinsic_proto.RepeatedDouble max_position = 2;
+  // Maximum joint velocity limits per joint. Units are in radians or degrees
+  // per second. When not specified, the application limits of the robot will be
+  // used.
+  optional intrinsic_proto.RepeatedDouble max_velocity = 3;
+  // Max joint acceleration limits per joint. Units are in radians or degrees
+  // per second^2. When not specified, the acceleration limits from the robot
+  // application limits will be used.
+  optional intrinsic_proto.RepeatedDouble max_acceleration = 4;
+  // Maximum joint jerk limits for the robot. Units are in radians or degrees
+  // per second^3. When not specified, the jerk limits from the robot
+  // application limits will be used.
+  optional intrinsic_proto.RepeatedDouble max_jerk = 5;
+}

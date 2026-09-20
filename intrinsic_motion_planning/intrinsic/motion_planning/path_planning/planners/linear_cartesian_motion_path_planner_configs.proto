@@ -1,0 +1,62 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.motion_planning;
+
+import "intrinsic/math/proto/pose.proto";
+
+option go_package = "intrinsic/motion_planning/path_planning/planners/linear_cartesian_motion_path_planner_configs_go_proto";
+
+// Used to configure LinearCartesianMotionPathPlanner.
+message LinearCartesianMotionPathPlannerConfig {
+  // Blending deviation used for translations in the Cartesian path generation.
+  // Reasonable values ranges between 0.001 and 0.05 m.
+  optional double translational_rounding_m = 1;
+
+  // Blending deviation used for rotations in the Cartesian path generation.
+  // Reasonable values ranges between 0.01 and 0.2 rad.
+  optional double rotational_rounding_rad = 2;
+
+  // Step size used to sample the Cartesian translational path. Ideal values
+  // ranges between 0.0005 and 0.001.
+  optional double translational_path_sampling_distance_m = 3;
+
+  // Step size used to sample the Cartesian rotational path. Ideal values
+  // ranges between 0.001 and 0.002.
+  optional double rotational_path_sampling_distance_rad = 6;
+
+  // Spacing between collision checks (in radians in the joint space of the
+  // robot). A typical value is 0.01. Increasing this value will speed up
+  // collision checking at the expense of possibly having small collisions on
+  // the path (in between the discrete points checked).
+  optional double collision_checking_spacing = 5;
+
+  // Offset between robot tip (flange) and the target frame for which the motion
+  // is defined.
+  intrinsic_proto.Pose tip_t_target = 4;
+
+  // Optional distance at which the Cartesian path will be uniformly sampled in
+  // joint space. Note that the resulting sampling distance is adjusted to
+  // produce an uneven number of samples. If set, an approximately uniform joint
+  // sampling scheme is applied. Otherwise, joint samples will be irregularly
+  // spaced according to the Cartesian rotational/translational sampling
+  // distance included in this configuration. There is currently no default
+  // value (thus, non-uniform sampling is the default behaviour). A good value
+  // range is [0.01, 0.05]. This parameter is relevant in the context of better
+  // conditioning a sampled path by preserving its arc length for high level
+  // blending.
+  optional double joint_sampling_distance_rad = 7;
+}

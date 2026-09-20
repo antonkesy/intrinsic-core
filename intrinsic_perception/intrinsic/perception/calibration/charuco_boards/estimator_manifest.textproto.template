@@ -1,0 +1,35 @@
+# proto-file: intrinsic/assets/data/proto/v1/data_manifest.proto
+# proto-message: DataManifest
+
+metadata {
+  id {
+    package: "ai.intrinsic"
+    name: "$ESTIMATOR_NAME"
+  }
+  display_name: "$ESTIMATOR_NAME"
+  vendor {
+    display_name: "Intrinsic"
+  }
+}
+data {
+  [type.googleapis.com/intrinsic_proto.perception.v1.PerceptionModel] {
+    pose_estimation_config {
+      targets {
+        id: "$BOARD_ID"
+        marker {
+          charuco_pattern {
+            squares_x: $SQUARES_X
+            squares_y: $SQUARES_Y
+            square_length: $SQUARE_LENGTH
+            marker_length: $MARKER_LENGTH
+            dictionary: $DICTIONARY
+          }
+        }
+      }
+      params {
+        [type.googleapis.com/intrinsic_proto.perception.v1.CharucoMarkerPoseEstimationConfig] {
+        }
+      }
+    }
+  }
+}

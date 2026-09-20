@@ -1,0 +1,112 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef INTRINSIC_MOTION_PLANNING_DATA_TYPES_CONSTRAINTS_JOINT_POSITION_POSITION_BOUNDING_BOX_H_
+#define INTRINSIC_MOTION_PLANNING_DATA_TYPES_CONSTRAINTS_JOINT_POSITION_POSITION_BOUNDING_BOX_H_
+
+#include <memory>
+
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "intrinsic/eigenmath/types.h"
+#include "intrinsic/kinematics/elements.h"
+#include "intrinsic/kinematics/model_interface.h"
+#include "intrinsic/kinematics/state.h"
+#include "intrinsic/math/numopt/constraint_interface.h"
+#include "intrinsic/math/pose3.h"
+#include "intrinsic/motion_planning/proto/v1/geometric_constraints.pb.h"
+#include "intrinsic/world/objects/object_world.h"
+
+namespace intrinsic {
+namespace motion_planning {
+
+// Constrains a point attached to a target frame to lie in a bounding box of
+// positions in a reference frame. See geometric_constraints.proto for details.
+// The cost function used in the evaluate and gradient methods corresponds to
+// finding the closest point on the bounding box to the target point, and then
+// measuring the (squared) distance from the target point to that closest point.
+class PositionBoundingBoxConstraint : public ConstraintInterface {
+ public:
+  static constexpr int kConstraintDim = 1;
+  static constexpr absl::string_view kConstraintName =
+      "PositionBoundingBoxConstraint";
+  static constexpr double kDefaultTolerance = 1e-6;  // Units: squared meters
+
+  static absl::StatusOr<std::unique_ptr<PositionBoundingBoxConstraint>> Create(
+      const object_world::ObjectWorld& world,
+      const intrinsic_proto::motion_planning::v1::PositionBoundingBox&
+          constraint,
+      double tolerance = kDefaultTolerance);
+
+  ConstraintType Type() const override { return GENERAL_INEQUALITY; }
+
+  int ConstraintDimension() const override { return kConstraintDim; }
+
+  int DomainDimension() const override {
+    return kinematic_model_->GetNumberDegreesOfFreedom();
+  }
+
+  absl::string_view Name() const override { return kConstraintName; }
+
+  absl::StatusOr<eigenmath::VectorXd> Evaluate(
+      const eigenmath::VectorXd& joint_positions) override;
+
+  absl::StatusOr<eigenmath::VectorXd> EvaluatePoint3d(
+      const eigenmath::Vector3d& reference_p_point) const;
+
+  absl::StatusOr<eigenmath::MatrixXd> Gradient(
+      const eigenmath::VectorXd& joint_positions) override;
+
+  const eigenmath::VectorXd& Tolerance() const override { return tolerance_; }
+
+  absl::StatusOr<bool> IsSatisfied(
+      const eigenmath::VectorXd& joint_positions) override;
+
+  absl::StatusOr<bool> IsSatisfiedPoint3d(
+      const eigenmath::Vector3d& reference_p_point) const;
+
+  Pose3d ReferenceTBbox() const { return reference_t_bbox_; }
+  eigenmath::Vector3d LowerBounds() const { return lower_bounds_; }
+  eigenmath::Vector3d UpperBounds() const { return upper_bounds_; }
+  eigenmath::Vector3d TargetPPoint() const { return target_p_point_; }
+
+ private:
+  PositionBoundingBoxConstraint(
+      std::unique_ptr<kinematics::ModelInterface> kinematic_model,
+      const eigenmath::Vector3d& target_p_point,
+      const Pose3d& reference_t_bbox_center,
+      const eigenmath::Vector3d& lower_bounds,
+      const eigenmath::Vector3d& upper_bounds, double tolerance);
+
+  std::unique_ptr<kinematics::ModelInterface> kinematic_model_;
+  mutable kinematics::State kinematic_state_;
+  kinematics::ElementId tip_element_id_;
+
+  const eigenmath::Vector3d target_p_point_;
+  const Pose3d reference_t_bbox_;
+  const Pose3d bbox_t_reference_;
+  const eigenmath::Vector3d lower_bounds_;
+  const eigenmath::Vector3d upper_bounds_;
+  const eigenmath::VectorXd tolerance_;
+
+  eigenmath::Vector3d ClosestPointInBox(const eigenmath::Vector3d& point) const;
+
+  absl::StatusOr<Pose3d> GetReferenceTTarget(
+      const eigenmath::VectorXd& joint_positions) const;
+};
+
+}  // namespace motion_planning
+}  // namespace intrinsic
+
+#endif  // INTRINSIC_MOTION_PLANNING_DATA_TYPES_CONSTRAINTS_JOINT_POSITION_POSITION_BOUNDING_BOX_H_

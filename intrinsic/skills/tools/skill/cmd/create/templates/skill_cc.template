@@ -1,0 +1,78 @@
+{{/*
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/ -}}
+
+#include "{{.SkillNameSnakeCase}}.h"
+
+#include <memory>
+#include <string>
+
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "{{strJoin .BazelPackage "/"}}{{if .BazelPackage}}/{{end}}{{.SkillNameSnakeCase}}.pb.h"
+#include "google/protobuf/message.h"
+#include "intrinsic/skills/cc/skill_utils.h"
+#include "intrinsic/util/status/status_macros.h"
+
+{{- /* Don't use a namespace when creating a skill adjacent to WORKSPACE because
+it will be an anonymous namespace. It would prevent CreateSkill from being
+callable from outside this translation unit. */}}
+{{if .BazelPackage }}
+namespace {{strJoin .BazelPackage "::"}} {
+{{end}}
+using ::{{strJoin .ProtoPackage "::"}}::{{.SkillNameUpperCamelCase}}Params;
+
+using ::intrinsic::skills::ExecuteContext;
+using ::intrinsic::skills::ExecuteRequest;
+using ::intrinsic::skills::GetFootprintContext;
+using ::intrinsic::skills::GetFootprintRequest;
+using ::intrinsic::skills::PreviewContext;
+using ::intrinsic::skills::PreviewRequest;
+using ::intrinsic::skills::SkillInterface;
+using ::intrinsic::skills::SkillProjectInterface;
+
+std::unique_ptr<SkillInterface> {{.SkillNameUpperCamelCase}}::CreateSkill() {
+  return std::make_unique<{{.SkillNameUpperCamelCase}}>();
+}
+
+absl::StatusOr<intrinsic_proto::skills::Footprint> {{.SkillNameUpperCamelCase}}::GetFootprint(
+    const GetFootprintRequest& request, GetFootprintContext& context) const {
+  intrinsic_proto::skills::Footprint result;
+  result.set_lock_the_universe(true);
+  return std::move(result);
+}
+
+absl::StatusOr<std::unique_ptr<::google::protobuf::Message>> {{.SkillNameUpperCamelCase}}::Preview(
+      const PreviewRequest& request, PreviewContext& context) {
+    return absl::UnimplementedError("Skill has not implemented `Preview`.");
+}
+
+absl::StatusOr<std::unique_ptr<::google::protobuf::Message>> {{.SkillNameUpperCamelCase}}::Execute(
+    const ExecuteRequest& request, ExecuteContext& context) {
+
+  // Get parameters.
+  INTR_ASSIGN_OR_RETURN(
+      auto params, request.params<{{.SkillNameUpperCamelCase}}Params>());
+
+  // Log the text provided.
+  LOG(INFO) << params.text();
+
+  return nullptr;
+}
+{{if .BazelPackage }}
+}  // namespace {{strJoin .BazelPackage "::"}}
+{{- end}}

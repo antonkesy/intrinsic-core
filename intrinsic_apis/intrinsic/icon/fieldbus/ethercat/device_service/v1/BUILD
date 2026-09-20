@@ -1,0 +1,121 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+
+package(default_visibility = ["//visibility:public"])
+
+proto_library(
+    name = "device_service_config_proto",
+    srcs = ["device_service_config.proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+        "@intrinsic_apis//intrinsic/assets/proto:field_metadata_proto",
+        "@intrinsic_apis//intrinsic/assets/proto/v1:resolved_dependency_proto",
+        "@intrinsic_apis//intrinsic/icon/hal/lib/fieldbus/v1:value_parsing_proto",
+        "@intrinsic_apis//intrinsic/icon/hal/lib/service_variable_value/v1:service_variable_config_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "device_service_config_cc_proto",
+    deps = [":device_service_config_proto"],
+)
+
+go_proto_library(
+    name = "device_service_config_go_proto",
+    importpath = "intrinsic/icon/fieldbus/ethercat/device_service/v1/device_service_config_go_proto",
+    protos = [":device_service_config_proto"],
+    deps = [
+        "@intrinsic_apis//intrinsic/assets/proto:field_metadata_go_proto",
+        "@intrinsic_apis//intrinsic/assets/proto/v1:dependency_go_proto",
+        "@intrinsic_apis//intrinsic/assets/proto/v1:resolved_dependency_go_proto",
+        "@intrinsic_apis//intrinsic/icon/hal/lib/fieldbus/v1:value_parsing_go_proto",
+        "@intrinsic_apis//intrinsic/icon/hal/lib/service_variable_value/v1:service_variable_config_go_proto",
+    ],
+)
+
+proto_library(
+    name = "esi_proto",
+    srcs = ["esi.proto"],
+)
+
+cc_proto_library(
+    name = "esi_cc_proto",
+    deps = [":esi_proto"],
+)
+
+go_proto_library(
+    name = "esi_go_proto",
+    importpath = "intrinsic/icon/fieldbus/ethercat/device_service/v1/esi_go_proto",
+    protos = [":esi_proto"],
+)
+
+proto_library(
+    name = "device_service_proto",
+    srcs = ["device_service.proto"],
+    deps = [
+        ":device_service_config_proto",
+        ":esi_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "device_service_cc_proto",
+    deps = [":device_service_proto"],
+)
+
+cc_grpc_library(
+    name = "device_service_cc_grpc_proto",
+    srcs = [":device_service_proto"],
+    generate_mocks = True,
+    grpc_only = True,
+    deps = [":device_service_cc_proto"],
+)
+
+go_proto_library(
+    name = "device_service_go_proto",
+    compilers = [
+        "@io_bazel_rules_go//proto:go_grpc_v2",
+        "@io_bazel_rules_go//proto:go_proto",
+    ],
+    importpath = "intrinsic/icon/fieldbus/ethercat/device_service/v1/device_service_go_proto",
+    protos = [
+        ":device_service_proto",
+    ],
+    deps = [
+        ":device_service_config_go_proto",
+        ":esi_go_proto",
+        "@intrinsic_apis//intrinsic/assets/proto:id_go_proto",
+    ],
+)
+
+proto_library(
+    name = "eni_proto",
+    srcs = ["eni.proto"],
+)
+
+cc_proto_library(
+    name = "eni_cc_proto",
+    deps = [":eni_proto"],
+)
+
+go_proto_library(
+    name = "eni_go_proto",
+    importpath = "intrinsic/icon/fieldbus/ethercat/device_service/v1/eni_go_proto",
+    protos = [":eni_proto"],
+)

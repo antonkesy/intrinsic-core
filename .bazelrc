@@ -1,0 +1,338 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Enable Bzlmod for every Bazel command
+common --enable_bzlmod
+common --enable_workspace=false
+
+# Custom downloader configs. This makes it so that external URLs to download dependencies from
+# can be rewritten at build time and, for example, support custom mirrors.
+# For more info, see go/intrinsic-content-mirror 
+common               --downloader_config=bazel/content_mirror/permissive.cfg
+common:strict_mirror --downloader_config=bazel/content_mirror/strict.cfg 
+
+# Static linking to workaround OpenCV symbol lookup errors: https://github.com/bazelbuild/rules_foreign_cc/issues/1164
+common --dynamic_mode=off
+
+# Always use the pre-configured toolchain.
+common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+common --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
+# Use C++20.
+common --cxxopt='-std=c++20'
+common --host_cxxopt='-std=c++20'
+
+# Keep using the Python bootstrap implementation since we don't have a shell
+# available in the distroless base images.
+common --@rules_python//python/config_settings:bootstrap_impl=system_python
+
+# Use a static value for `PATH` and does not inherit `LD_LIBRARY_PATH`. Doesn't let environment
+# variables like `PATH` sneak into the build, which can cause massive cache misses when they change.
+# Use `--action_env=ENV_VARIABLE` if you want to inherit specific environment variables from the
+# client, but note that doing so can prevent cross-user caching if a shared cache is used.
+# Docs: https://bazel.build/reference/command-line-reference#flag--incompatible_strict_action_env
+common --incompatible_strict_action_env
+
+# Silences spurious warnings like:
+# `bazel-out/k8-fastbuild/bin/external/com_github_grpc_grpc/external/com_github_grpc_grpc: warning: directory does not exist`
+common --incompatible_default_to_explicit_init_py
+
+# Incompatible flags which will be flipped in future Bazel versions
+# Taken from https://github.com/bazelbuild/bazel-central-registry/blob/main/incompatible_flags.yml
+# https://github.com/bazelbuild/bazel/issues/22080
+common --incompatible_disable_native_repo_rules
+# https://github.com/bazelbuild/bazel/issues/25755
+common --incompatible_disable_autoloads_in_main_repo
+# https://github.com/bazelbuild/bazel/issues/23043
+# TODO requires Bazel 8.5 or 9 for http_jar()
+# TODO requires grpc-java https://github.com/grpc/grpc-java/commit/b61a8f49c0e14f98f5315deb2ca89d67d1e2ea4a
+#common --incompatible_autoload_externally=
+# https://github.com/bazelbuild/bazel/issues/17032
+# TODO requires xacro https://github.com/ros/xacro/commit/1f24172cbe9af4ebd7fcb820d06f071f92fff65b
+# TODO requires protoc-gen-validate 1.3.0 https://github.com/bufbuild/protoc-gen-validate/commit/0ca681bd2fe572c34890405ff36147b22be8d8f5
+#common --incompatible_disable_starlark_host_transitions
+# https://github.com/bazelbuild/bazel/issues/12933
+#common --incompatible_config_setting_private_default_visibility
+# https://github.com/bazelbuild/bazel/issues/23144
+# TODO requires rules_license https://github.com/bazelbuild/rules_license/pull/178
+#common --noincompatible_enable_deprecated_label_apis
+
+# Avoid warnings from third-party deps that we don't control.
+common --output_filter='^//((?!(external):).)*$'
+
+# Set a higher timeout value, just in case.
+common --remote_timeout=6h
+
+# Ensure that you don't accidentally make non-hermetic actions/tests
+# which depend on remote services.
+common --sandbox_default_allow_network=false
+
+# Docker Sandbox Mode
+# https://bazel.build/remote/sandbox
+# LINT.IfChange
+common:docker --experimental_docker_image="docker://us-central1-docker.pkg.dev/intrinsic-mirror/intrinsic-build-images/bazel-rbe-executor@sha256:c2d50e5f5a3bbea4c47ffcdc1b2755168d1c682ec2b3ba620fb3134eca4bab0d"
+# LINT.ThenChange(//bazel/exec_properties.bzl)
+common:docker --spawn_strategy=docker --genrule_strategy=docker
+common:docker --experimental_docker_verbose
+common:docker --experimental_enable_docker_sandbox
+common:docker --host_platform=//bazel:linux_x86_64
+
+# Enable absl support in googletest. If this define is set, googletest's default
+# main function initializes absl, including the command line flag subsystem.
+#
+# See https://github.com/google/googletest/issues/2883#issuecomment-647540343
+common --define absl=1
+
+# Default compilation mode is opt.
+# See go/inpr/45495 
+common -c opt
+# Define --config intrinsic as a no-op to not break current users.
+common:intrinsic -c opt
+
+
+
+# go/sponge-undeclared-outputs only works if outputs are zipped.
+test --zip_undeclared_test_outputs
+
+# Do not write to the shared RBE cache when running Bazel locally. This can lead
+# to cache poisoning and false positivies in the RBE based CI.
+common --remote_upload_local_results=false
+
+# for rules_cuda to detect our custom cc_toolchain
+common --repo_env=CUDA_COMPILER_USE_CC_TOOLCHAIN=true
+
+# Flags for rules_cuda
+common --@rules_cuda//cuda:compiler=clang
+common --@rules_cuda//cuda:runtime=@cuda//:cuda_runtime_static
+# sm_75 corresponding to Turing architecture in our Tesla T4 GPU Pool
+# sm_70 corresponding to Volta architecture in our NVIDIA V100 GPU Pool
+# sm_80 corresponding to Ampere architecture for A100
+# sm_86 corresponding to Ampere architecture for A5000
+# sm_89 corresponding to Ampere architecture for RTX 4090
+common --@rules_cuda//cuda:archs=sm_89,sm_86,sm_80,sm_75,sm_70
+# TODO(b/405059662): Remove once https://github.com/bazel-contrib/rules_cuda/issues/344 is fixed.
+# enable C++20 features also in clang
+common --@rules_cuda//cuda:copts='-std=c++20'
+# cuda compiler by default only supports libstdc++,
+# this has to be explicitly stated to support libc++.
+common --@rules_cuda//cuda:copts='-stdlib=libc++'
+common --@rules_cuda//cuda:copts="-D_ALLOW_UNSUPPORTED_LIBCPP"
+
+# Honor the setting of `skipLibCheck` in the tsconfig.json file. This makes
+# aspect TS rules use stricter type checking.
+common --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
+
+# Fail the build if there are lint violations.
+common --@aspect_rules_lint//lint:fail_on_violation=true
+
+# Enable custom profiling by default.
+common --@gz-common//profiler:config=custom
+
+# Disable the less permissive Luksan solver from nlopt.
+common --@nlopt//:use_luksan=false
+
+# Use the 'boringssl' SSL implementation for postgres.
+common --@postgres//:with_ssl=boringssl
+
+# Equivalent of --enable-version3 when building via cmake.
+common --@ffmpeg//:enable_lgplv3=True
+
+# Switch to boringssl in ffmpeg.
+common --@ffmpeg//:enable_openssl=False
+common --@ffmpeg//:enable_boringssl=True
+
+# Enable SVT-AV1 encoder in ffmpeg
+common --@ffmpeg//:enable_libsvtav1_encoder=True
+
+# Enable VPX (VP8 & VP9 Decoders/Encoders) in ffmpeg
+common --@ffmpeg//:enable_libvpx_vp8_decoder=True
+common --@ffmpeg//:enable_libvpx_vp8_encoder=True
+common --@ffmpeg//:enable_libvpx_vp9_decoder=True
+common --@ffmpeg//:enable_libvpx_vp9_encoder=True
+
+# Enable AOM (AV1 Decoder/Encoder) in ffmpeg
+common --@ffmpeg//:enable_libaom_av1_decoder=True
+common --@ffmpeg//:enable_libaom_av1_encoder=True
+
+# TODO(b/451846278): Review AVX setup
+common --copt='-DPCL_SILENCE_MALLOC_WARNING'
+
+# Disable warnings for external code that we don't control.
+common      --per_file_copt=+external/.*@-Wno-everything
+common --host_per_file_copt=+external/.*@-Wno-everything
+# Use `-Werror` to make sure warnings don't slip past.
+common --copt=-Werror
+
+# Disable "grandfathered" warnings failing the build.
+# These are required to make code build which has been migrated from google3
+# (http://tools/cpp/warnings.bzl).
+common --per_file_copt=//.*@-Wno-deprecated-declarations  # TODO(b/467267084): Enable, warnings disabled because they are very spammy.
+common --per_file_copt=//.*@-Wno-error=deprecated-pragma  # TODO(b/467267841): Enable
+common --per_file_copt=//.*@-Wno-nullability-completeness # TODO(b/467268103): Enable, warnings disabled because they are very spammy.
+
+# TODO(b/381398679) Enable once https://github.com/bazel-contrib/rules_foreign_cc/issues/1333 is resolved
+# common --host_copt=-Werror
+# common --host_copt=-Wno-error=deprecated-declarations
+
+# Turn on "beta" features of thread safety analysis. Required for some
+# absl-related thread safety analysis to work.
+common --copt=-Wthread-safety-beta
+
+# Disable warnings again for some parts we enabled above, in particular
+# third_party vendored code.
+common      --per_file_copt=google3/third_party/.*,third_party/.*@-Wno-everything
+common --host_per_file_copt=google3/third_party/.*,third_party/.*@-Wno-everything
+
+# insrc builds target Linux x86. Explicitly specifying this ensures we can
+# switch between --config=remote (RBE) and local builds without discarding the
+# analysis cache.
+common --host_platform=//bazel:linux_x86_64
+
+# Opt out of 3P telemetry tracking.
+common --repo_env=DO_NOT_TRACK=1
+
+# Prevent action graph output collisions between test targets and non-test targets sharing dependencies.
+common --experimental_retain_test_configuration_across_testonly=false
+
+# Save local diskspace by symlinking rather than copying across the repo cache.
+common --experimental_repository_cache_hardlinks
+
+# --config benchmark to align with google3 for microbenchmarks:
+# http://tools/bazelrcs/configs.bazelrc;l=333-359;rcl=738074216
+common:benchmark --compilation_mode=opt
+common:benchmark --dynamic_mode=off
+common:benchmark --copt=-gmlt
+common:benchmark --features=-prefer_pic_for_opt_binaries
+
+# --config haswell for building for the Haswell architecture.
+common:haswell --cpu=haswell
+common:haswell --copt=-mcrc32
+common --config=haswell
+
+# Address sanitizer
+common:asan --strip=never
+common:asan --copt -fsanitize=address
+common:asan --copt -DADDRESS_SANITIZER
+common:asan --copt -O1
+common:asan --copt -g
+common:asan --copt -fno-omit-frame-pointer
+common:asan --linkopt -fsanitize=address
+common:asan --test_env=ASAN_OPTIONS=detect_leaks=0:detect_odr_violation=0
+test:asan --test_tag_filters=-noasan
+
+# Memory sanitizer
+common:msan --strip=never
+common:msan --copt -fsanitize=memory
+common:msan --copt -DMEMORY_SANITIZER
+common:msan --copt -O1
+common:msan --copt -g
+common:msan --copt -fno-omit-frame-pointer
+common:msan --linkopt -fsanitize=memory
+test:msan --test_tag_filters=-nomsan
+
+# Thread sanitizer
+common:tsan --strip=never
+common:tsan --copt -fsanitize=thread
+common:tsan --copt -DTHREAD_SANITIZER
+common:tsan --copt -O1
+common:tsan --copt -g
+common:tsan --copt -fno-omit-frame-pointer
+common:tsan --linkopt -fsanitize=thread
+test:tsan --test_tag_filters=-notsan
+
+# Undefined Behavior sanitizer
+common:ubsan --strip=never
+common:ubsan --copt -fsanitize=undefined
+common:ubsan --copt -DUNDEFINED_BEHAVIOR_SANITIZER
+common:ubsan --copt -O1
+common:ubsan --copt -g
+common:ubsan --copt -fno-omit-frame-pointer
+common:ubsan --linkopt -fsanitize=undefined
+common:ubsan --test_env=UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=0
+test:ubsan --test_tag_filters=-noubsan
+
+# Real-time sanitizer
+common:rtsan --strip=never
+common:rtsan --copt -fsanitize=realtime
+common:rtsan --copt -DREALTIME_SANITIZER
+common:rtsan --copt -O1
+common:rtsan --copt -g
+common:rtsan --copt -fno-omit-frame-pointer
+common:rtsan --linkopt -fsanitize=realtime
+test:rtsan --test_tag_filters=-nortsan
+
+# Define a dynamic execution strategy (https://bazel.build/remote/dynamic)
+# causing some build actions to run both locally and remotely and using whichever
+# finishes first. Only usable together with --config=remote.
+common:dynamic --internal_spawn_scheduler
+# Also run for [for tool] actions
+common:dynamic --noexperimental_dynamic_exclude_tools
+# Specify which mnemonics use this strategy. To check which
+# mnemonics building a specific rule uses you can use
+# `bazel aquery <target> | grep Mnemonic`
+common:dynamic --strategy=ArchitectBuild=dynamic
+common:dynamic --strategy=AspectRulesLintClangTidy=dynamic
+common:dynamic --strategy=AspectRulesLintParseToSarif=dynamic
+common:dynamic --strategy=AspectRulesLintTy=dynamic
+common:dynamic --strategy=CcConfigureMakeRule=dynamic
+common:dynamic --strategy=CcCmakeMakeRule=dynamic
+common:dynamic --strategy=CopyFile=dynamic
+common:dynamic --strategy=CppCompile=dynamic
+common:dynamic --strategy=CppLink=dynamic
+common:dynamic --strategy=CudaCompile=dynamic
+common:dynamic --strategy=FileWrite=dynamic
+common:dynamic --strategy=GoCompilePkg=dynamic
+common:dynamic --strategy=GoCompilePkgExternal=dynamic
+common:dynamic --strategy=GoLink=dynamic
+common:dynamic --strategy=GoProtocGen=dynamic
+common:dynamic --strategy=GoTestGenTest=dynamic
+common:dynamic --strategy=OCIDescriptor=dynamic
+common:dynamic --strategy=OCIImage=dynamic
+common:dynamic --strategy=OCITarball=dynamic
+common:dynamic --strategy=PackageTar=dynamic
+common:dynamic --strategy=PackageZip=dynamic
+common:dynamic --strategy=PyCompile=dynamic
+common:dynamic --strategy=Servicebundle=dynamic
+common:dynamic --strategy=Tar=dynamic
+common:dynamic --strategy=TsProject=dynamic
+common:dynamic --strategy=TsStrictDeps=dynamic
+common:dynamic --strategy=TsValidateOptions=dynamic
+common:dynamic --strategy=WasmClangCompile=dynamic
+common:dynamic --strategy=esbuild=dynamic
+common:intrinsic --config=dynamic
+
+# Java used only by copybara
+common --java_language_version=21
+common --tool_java_language_version=21
+common --java_runtime_version=remotejdk_21
+common --tool_java_runtime_version=remotejdk_21
+
+
+# Clang-Tidy Auto-Fix Configuration (generates patches in bazel-bin)
+build:clang-tidy-fix --aspects=//bazel/cpp:linters.bzl%clang_tidy
+build:clang-tidy-fix --@aspect_rules_lint//lint:fix
+build:clang-tidy-fix --output_groups=rules_lint_patch
+build:clang-tidy-fix --build_tag_filters=clang-tidy
+
+# Allow defining a local bazelrc to set individual defaults only for insrc.
+try-import local.bazelrc
+
+# To create this file, please run:
+#
+#  bazel run @com_google_fuzztest//bazel:setup_configs | sed 's/_LIBCPP_ENABLE_ASSERTIONS=1/_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE/' > fuzztest.bazelrc
+#
+try-import %workspace%/fuzztest.bazelrc
+
+

@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Schema for AppRollout v1alpha1",
+  "properties": {
+    "spec": {
+      "type": "object",
+      "properties": {
+        "appName": {
+          "type": "string"
+        },
+        "cloud": {
+          "type": "object",
+          "properties": {
+            "values": {
+              "type": "object"
+            }
+          }
+        },
+        "robots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "values": {
+                "type": "object"
+              },
+              "version": {
+                "type": "string"
+              },
+              "selector": {
+                "type": "object",
+                "properties": {
+                  "any": {
+                    "type": "boolean"
+                  },
+                  "matchLabels": {
+                    "type": "object"
+                  },
+                  "matchExpressions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "operator": {
+                          "type": "string"
+                        },
+                        "values": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "object",
+      "properties": {
+        "observedGeneration": {
+          "type": "integer"
+        },
+        "assignments": {
+          "type": "integer"
+        },
+        "readyAssignments": {
+          "type": "integer"
+        },
+        "settledAssignments": {
+          "type": "integer"
+        },
+        "failedAssignments": {
+          "type": "integer"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lastUpdateTime": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "lastTransitionTime": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": []
+}

@@ -1,0 +1,123 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "intrinsic/icon/control/safety/safety_messages_utils.h"
+
+#include <bitset>
+
+#include "flatbuffers/detached_buffer.h"
+#include "flatbuffers/flatbuffer_builder.h"
+#include "intrinsic/icon/control/safety/extern/safety_status.fbs.h"
+#include "intrinsic/icon/control/safety/safety_messages.fbs.h"
+
+namespace intrinsic_fbs {
+
+flatbuffers::DetachedBuffer BuildSafetyStatusMessage(
+    ModeOfSafeOperation mode_of_safe_operation,
+    ButtonStatus estop_button_status, ButtonStatus enable_button_status,
+    RequestedBehavior requested_behavior) {
+  flatbuffers::FlatBufferBuilder builder;
+  builder.ForceDefaults(true);
+  builder.Finish(CreateSafetyStatusMessage(
+      builder, mode_of_safe_operation, estop_button_status,
+      enable_button_status, requested_behavior));
+  return builder.Release();
+}
+
+void SetSafetyStatusMessage(
+    const ::intrinsic_fbs::ModeOfSafeOperation mode_of_safe_operation,
+    const ::intrinsic_fbs::ButtonStatus estop_button_status,
+    const ::intrinsic_fbs::ButtonStatus enable_button_status,
+    const ::intrinsic_fbs::RequestedBehavior requested_behavior,
+    ::intrinsic_fbs::SafetyStatusMessage& message) {
+  message.mutate_mode_of_safe_operation(mode_of_safe_operation);
+  message.mutate_estop_button_status(estop_button_status);
+  message.mutate_enable_button_status(enable_button_status);
+  message.mutate_requested_behavior(requested_behavior);
+}
+
+ModeOfSafeOperation ExtractModeOfSafeOperation(
+    const std::bitset<8>& safety_inputs) {
+  bool is_auto_mode_set = safety_inputs[AsIndex(SafetyStatusBit::MSO_AUTO)];
+  bool is_t1_mode_set = safety_inputs[AsIndex(SafetyStatusBit::MSO_T1)];
+
+  // Return UNKNOWN, if both bits (AUTO and T1) are identical.
+  if (is_auto_mode_set == is_t1_mode_set) {
+    return ModeOfSafeOperation::UNKNOWN;
+  }
+  return is_auto_mode_set ? ModeOfSafeOperation::AUTOMATIC
+                          : ModeOfSafeOperation::TEACH_PENDANT_1;
+}
+
+ButtonStatus ExtractEStopButtonStatus(const std::bitset<8>& safety_inputs) {
+  // Checks that the e-stop button is supported by checking if either of the
+  // ModeOfSafeOperation (MSO) bits is `true`. If both bits are `false`, the
+  // e-stop button and MSO status are not supported. This was the case for early
+  // versions of the safety logic (copper release).
+  const bool is_auto_mode_set =
+      safety_inputs[AsIndex(SafetyStatusBit::MSO_AUTO)];
+  const bool is_t1_mode_set = safety_inputs[AsIndex(SafetyStatusBit::MSO_T1)];
+
+  const bool is_button_state_supported = is_auto_mode_set != is_t1_mode_set;
+
+  if (!is_button_state_supported) {
+    return ButtonStatus::NOT_AVAILABLE;
+  }
+
+  // E-Stop is Active-Low, i.e. the signal is low/false, when the button is
+  // engaged.
+  return safety_inputs[AsIndex(SafetyStatusBit::E_STOP)]
+             ? ButtonStatus::DISENGAGED
+             : ButtonStatus::ENGAGED;
+}
+
+ButtonStatus ExtractEnableButtonStatus(const std::bitset<8>& safety_inputs) {
+  // Checks that the enable button is supported by checking if either of the
+  // ModeOfSafeOperation (MSO) bits is `true`. If both bits are `false`, the
+  // enable button and MSO status are not supported. This was the case for early
+  // versions of the safety logic (copper release).
+  const bool is_auto_mode_set =
+      safety_inputs[AsIndex(SafetyStatusBit::MSO_AUTO)];
+  const bool is_t1_mode_set = safety_inputs[AsIndex(SafetyStatusBit::MSO_T1)];
+
+  const bool is_button_state_supported = is_auto_mode_set != is_t1_mode_set;
+
+  if (!is_button_state_supported) {
+    return ButtonStatus::NOT_AVAILABLE;
+  }
+
+  // Enable is ENGAGED, if and only if both SS1t and MSO_T1 are HIGH
+  return safety_inputs[AsIndex(SafetyStatusBit::SS1_T)] && is_t1_mode_set
+             ? ButtonStatus::ENGAGED
+             : ButtonStatus::DISENGAGED;
+}
+
+RequestedBehavior ExtractRequestedBehavior(
+    const std::bitset<8>& safety_inputs) {
+  if (safety_inputs[AsIndex(SafetyStatusBit::SS1_T)] == true) {
+    return RequestedBehavior::NORMAL_OPERATION;
+  }
+  if (safety_inputs[AsIndex(SafetyStatusBit::SS1_T)] == false) {
+    // E_STOP is active low, i.e. if pressed the signal is 0.
+    if (safety_inputs[AsIndex(SafetyStatusBit::E_STOP)] == false) {
+      return RequestedBehavior::SAFE_STOP_1_TIME_MONITORED;
+    } else {
+      return RequestedBehavior::SAFE_STOP_2_TIME_MONITORED;
+    }
+  }
+
+  return RequestedBehavior::UNKNOWN;
+}
+
+}  // namespace intrinsic_fbs

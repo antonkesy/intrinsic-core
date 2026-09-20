@@ -1,0 +1,124 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.assets.v1;
+
+import "google/api/annotations.proto";
+import "google/longrunning/operations.proto";
+import "intrinsic/assets/proto/v1/solution.proto";
+import "intrinsic/kubernetes/generator/proto/auth_options.proto";
+import "intrinsic/config/proto/operation_mode.proto";
+import "intrinsic/util/status/extended_status.proto";
+
+option go_package = "intrinsic/assets/proto/v1/solution_deployment_go_proto";
+
+// The SolutionDeploymentService manages solution deployments on a cluster.
+// There is only ever a single active solution deployment at a time.  Each call
+// acts on that deployment.
+service SolutionDeploymentService {
+  // Auth annotations for consumption by the following helm_chart:
+  //   cs/symbol://intrinsic/kubernetes/api_relay/cloud:api-relay
+  option (intrinsic_proto.auth.service_options).auth_methods =
+      AUTH_METHOD_API_KEY;
+
+  // Creates a solution deployment on the cluster from the specified versioned
+  // solution in the Solution Version Service.
+  rpc CreateSolutionDeploymentFromVersionedSolution(
+      CreateSolutionDeploymentFromVersionedSolutionRequest)
+      returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      metadata_type: "CreateSolutionDeploymentFromVersionedSolutionMetadata"
+      response_type: "SolutionDeployment"
+    };
+    option (google.api.http) = {
+      post: "/v1/solutionDeployment:createFromVersionedSolution"
+      body: "*"
+    };
+  }
+
+  // Stops the current solution deployment, if running.  Will not return an
+  // error if there is no active solution deployment.
+  rpc DeleteSolutionDeployment(DeleteSolutionDeploymentRequest)
+      returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      metadata_type: "DeleteSolutionDeploymentMetadata"
+      response_type: "google.protobuf.Empty"
+    };
+    option (google.api.http) = {
+      delete: "/v1/solutionDeployment"
+    };
+  }
+
+  // Gets the current solution deployment, if running. Returns NotFound if there
+  // is no active solution deployment.  Returns a basic view of the solution
+  // deployment.
+  rpc GetSolutionDeployment(GetSolutionDeploymentRequest)
+      returns (SolutionDeployment) {
+    option (google.api.http) = {
+      get: "/v1/solutionDeployment"
+    };
+  }
+
+  // Updates the current solution deployment, if running.  It provides the
+  // option to start a solution deployment if not.  Returns a basic view of the
+  // updated solution.
+  rpc UpdateSolutionDeployment(UpdateSolutionDeploymentRequest)
+      returns (google.longrunning.Operation) {
+    option (google.longrunning.operation_info) = {
+      metadata_type: "UpdateSolutionDeploymentMetadata"
+      response_type: "SolutionDeployment"
+    };
+    option (google.api.http) = {
+      patch: "/v1/solutionDeployment"
+    };
+  }
+}
+
+message SolutionDeployment {
+  // A basic view of the solution is returned by default by create calls.  In
+  // the basic view, solution will only contain id version and type information
+  // about assets and name and asset information for instances.  No object world
+  // updates are included.
+  Solution solution = 1;
+  string solution_id = 2;
+  intrinsic_proto.config.OperationMode operation_mode = 3;
+}
+
+message CreateSolutionDeploymentFromVersionedSolutionRequest {
+  string solution_id = 1;
+  intrinsic_proto.config.OperationMode operation_mode = 2;
+}
+
+message GetSolutionDeploymentRequest {}
+
+message UpdateSolutionDeploymentMetadata {
+  intrinsic_proto.status.ExtendedStatus warnings = 1;
+}
+
+message UpdateSolutionDeploymentRequest {
+  SolutionDeployment solution_deployment = 1;
+
+  // If set to true, and no solution deployment is running, one will be created.
+  bool allow_missing = 3;
+}
+
+message CreateSolutionDeploymentFromVersionedSolutionMetadata {
+  intrinsic_proto.status.ExtendedStatus warnings = 1;
+}
+
+message DeleteSolutionDeploymentRequest {}
+
+message DeleteSolutionDeploymentMetadata {}

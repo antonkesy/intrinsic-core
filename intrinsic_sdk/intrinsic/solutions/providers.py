@@ -1,0 +1,263 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Abstract base classes for skill and resource providers."""
+
+import abc
+from typing import Any
+from typing import Iterable
+from typing import Iterator
+from typing import Type
+from typing import Union
+
+from intrinsic.resources.proto import resource_handle_pb2
+from intrinsic.solutions import behavior_tree
+from intrinsic.solutions import provided
+
+# isort: off
+# isort: on
+
+
+class ResourceProvider(abc.ABC):
+  """Provides access resources from a solution."""
+
+  @abc.abstractmethod
+  def update(self) -> None:
+    """Fetches current resources from registry.
+
+    Raises:
+      grpc.RpcError: When gRPC call to resource registry fails.
+    """
+    ...
+
+  @abc.abstractmethod
+  def append(
+      self,
+      handle_or_proto: Union[
+          provided.ResourceHandle, resource_handle_pb2.ResourceHandle
+      ],
+  ) -> None:
+    """Appends a handle to the resources.
+
+    If an item is appended with special characters not allowed in Python
+    field names, it generates a sanitized version replacing special
+    characters by underscores. Consider a handle called "special:name". It
+    will be accessible through:
+    list.special_name
+    list["special_name"]
+    list["special:name"]
+    The handle's proto will always contain special:name as its name.
+
+    Args:
+      handle_or_proto: Resource handle to add, either wrapper or proto
+    """
+    ...
+
+  @abc.abstractmethod
+  def __getitem__(self, name: str) -> provided.ResourceHandle:
+    """Returns the resource handle for the given name."""
+    ...
+
+  @abc.abstractmethod
+  def __getattr__(self, name: str) -> provided.ResourceHandle:
+    """Returns the resource handle for the given name."""
+    ...
+
+  @abc.abstractmethod
+  def __dir__(self) -> list[str]:
+    """Returns the names of the available resources in sorted order.
+
+    Only returns names which are valid Python identifiers.
+    """
+    ...
+
+  @abc.abstractmethod
+  def __str__(self) -> str:
+    ...
+
+
+class ProductProvider(abc.ABC):
+  """A dict-like container for products."""
+
+  @abc.abstractmethod
+  def __getitem__(self, name: str) -> provided.Product:
+    """Returns the product for the given name."""
+    ...
+
+  @abc.abstractmethod
+  def __getattr__(self, name: str) -> provided.Product:
+    """Returns the product for the given name."""
+    ...
+
+  @abc.abstractmethod
+  def __dir__(self) -> list[str]:
+    """Returns the names of the stored products in sorted order.
+
+    Only returns names which are valid Python identifiers.
+    """
+    ...
+
+
+class ProcessProvider(abc.ABC):
+  """A container that provides access to the processes of a solution."""
+
+  @abc.abstractmethod
+  def keys(self) -> Iterable[str]:
+    """Returns the identifiers of available processes."""
+    ...
+
+  @abc.abstractmethod
+  def items(self) -> Iterable[tuple[str, behavior_tree.BehaviorTree]]:
+    """Returns an iterator over the process identifiers and behavior trees."""
+
+  @abc.abstractmethod
+  def values(self) -> Iterable[behavior_tree.BehaviorTree]:
+    """Returns an iterator over the behavior trees of all processes."""
+
+  @abc.abstractmethod
+  def __iter__(self) -> Iterator[str]:
+    """Returns an iterator over all available process identifiers."""
+    ...
+
+  @abc.abstractmethod
+  def __contains__(self, identifier: str) -> bool:
+    """Returns whether the process with the given identifier is available.
+
+    Args:
+      identifier: The process identifier. For Process assets, this is the string
+        representation of the asset id
+        (BehaviorTree.asset_metadata_proto.id_version.id), e.g.,
+        "ai.intrinsic.my_process". For legacy processes, this is the same as
+        BehaviorTree.name.
+    """
+
+  @abc.abstractmethod
+  def __getitem__(self, identifier: str) -> behavior_tree.BehaviorTree:
+    """Returns the behavior tree of the process with the given identifier.
+
+    Args:
+      identifier: The process identifier. For Process assets, this is the string
+        representation of the asset id
+        (BehaviorTree.asset_metadata_proto.id_version.id), e.g.,
+        "ai.intrinsic.my_process". For legacy processes, this is the same as
+        BehaviorTree.name.
+    """
+    ...
+
+  @abc.abstractmethod
+  def __setitem__(
+      self, identifier: str, value: behavior_tree.BehaviorTree
+  ) -> None:
+    """Updates the process with the given identifier in the solution.
+
+    Deprecated: Use save() instead.
+
+    Args:
+      identifier: The process identifier of the legacy process which corresponds
+        to BehaviorTree.name.
+      value: The behavior tree to set.
+    """
+    ...
+
+  @abc.abstractmethod
+  def save(self, bt: behavior_tree.BehaviorTree):
+    """Saves the given BehaviorTree to the solution.
+
+    If the BehaviorTree has the required asset metadata (see
+    BehaviorTree.asset_metadata_proto and BehaviorTree.set_metadata()) it will
+    be saved as a Process asset. Otherwise it will be saved as a legacy process.
+    Saving as a Process asset MAY MUTATE the given BehaviorTree as a
+    side-effect. In particular, the version-related metadata will be updated to
+    reflect the new version generated by the installed assets service upon
+    installation.
+
+    After saving, Process assets can be called from other behavior trees. It is
+    recommended to set the SUBPROCESS tag (see BehaviorTree.set_metadata()) for
+    such trees so that they get listed as a runnable "Skill" in the Process
+    Explorer in the Frontend. If the saved BehaviorTree does not have any asset
+    metadata set and represents a legacy process, it also needs to be sideloaded
+    into the PBT registry in order to be called from another behavior tree (see
+    Solution.pbt_registry.sideload_behavior_tree()).
+
+    Args:
+      bt: The BehaviorTree to save.
+    """
+
+  @abc.abstractmethod
+  def __delitem__(self, identifier: str):
+    """Deletes the process with the given identifier from the solution.
+
+    Args:
+      identifier: The process identifier. For Process assets, this is the string
+        representation of the asset id
+        (BehaviorTree.asset_metadata_proto.id_version.id), e.g.,
+        "ai.intrinsic.my_process". For legacy processes, this is the same as
+        BehaviorTree.name.
+    """
+    ...
+
+
+# Deprecated. Use the new name ProcessProvider instead.
+BehaviorTreeProvider = ProcessProvider
+
+
+class SkillProvider(abc.ABC):
+  """A container that provides access to the skills of a solution.
+
+  Skill providers are directly user-facing. Hence `__dir__` and `__getattr__`
+  may be used by auto-completion and must adhere to the standard interface,
+  which this abstract base class enforces.
+  """
+
+  @abc.abstractmethod
+  def update(self) -> None:
+    """Refreshes the set of skills for the provider.
+
+    This causes the provider to regenerate its set of skills. This should be
+    called whenever a skill is added, deleted, or modified in a workcell."
+    """
+    ...
+
+  @abc.abstractmethod
+  def __dir__(self) -> list[str]:
+    """Returns the names of available skills."""
+    ...
+
+  # We would like to use Type[SkillBase] instead, but Python then checks
+  # the constructor parameters explicitly against SkillBase, which we don't
+  # want and which is rather odd. Therefore, just state that it's a type.
+  @abc.abstractmethod
+  def __getattr__(self, name: str) -> Union[Type[Any], provided.SkillPackage]:
+    """Returns the global skill class or skill package with the given name."""
+    ...
+
+  @abc.abstractmethod
+  def __getitem__(self, skill_name: str) -> Type[Any]:
+    """Returns the skill class with the given skill id."""
+    ...
+
+  @abc.abstractmethod
+  def get_skill_ids(self) -> Iterable[str]:
+    """Returns all available skill ids."""
+    ...
+
+  @abc.abstractmethod
+  def get_skill_classes(self) -> Iterable[Type[Any]]:
+    """Returns all available skill classes."""
+    ...
+
+  @abc.abstractmethod
+  def get_skill_ids_and_classes(self) -> Iterable[tuple[str, Type[Any]]]:
+    """Returns all available skill ids and corresponding skill classes."""
+    ...

@@ -1,0 +1,69 @@
+{{/*
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/ -}}
+
+import unittest
+
+from intrinsic.skills.testing import skill_test_utils as stu
+
+from {{if .BazelPackage}}{{strJoin .BazelPackage "."}}.{{end}}{{.SkillNameSnakeCase}} import {{.SkillNameUpperCamelCase}}
+from {{if .BazelPackage}}{{strJoin .BazelPackage "."}}.{{end}}{{.SkillNameSnakeCase}}_pb2 import {{.SkillNameUpperCamelCase}}Params
+
+
+class {{.SkillNameUpperCamelCase}}Test(unittest.TestCase):
+
+    def test_get_footprint(self):
+        skill = {{.SkillNameUpperCamelCase}}()
+
+        params = {{.SkillNameUpperCamelCase}}Params(
+            text="hello world",
+        )
+        context = stu.make_test_get_footprint_context()
+        request = stu.make_test_get_footprint_request(params)
+
+        result = skill.get_footprint(request, context)
+        self.assertTrue(result.lock_the_universe)
+
+    def test_preview(self):
+        skill = {{.SkillNameUpperCamelCase}}()
+
+        params = {{.SkillNameUpperCamelCase}}Params(
+            text="hello world",
+        )
+        context = stu.make_test_preview_context()
+        request = stu.make_test_preview_request(params)
+
+        # Update this test when you implement preview
+        with self.assertRaises(NotImplementedError):
+            skill.preview(request, context)
+
+    def test_execute(self):
+        skill = {{.SkillNameUpperCamelCase}}()
+
+        params = {{.SkillNameUpperCamelCase}}Params(
+            text="hello world",
+        )
+        context = stu.make_test_execute_context()
+        request = stu.make_test_execute_request(params)
+
+        with self.assertLogs() as log_output:
+            skill.execute(request, context)
+
+        output = log_output[0][0].message
+        self.assertEqual(output, '"text" parameter passed in skill params: hello world')
+
+
+if __name__ == '__main__':
+    unittest.main()

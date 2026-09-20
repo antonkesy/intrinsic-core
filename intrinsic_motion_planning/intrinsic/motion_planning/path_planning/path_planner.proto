@@ -1,0 +1,48 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.motion_planning;
+
+import "intrinsic/icon/proto/joint_space.proto";
+import "intrinsic/messages/geometry_types.proto";
+
+option go_package = "intrinsic/motion_planning/path_planning/path_planner_go_proto";
+
+// Proto version of path.
+message Path {
+  repeated blue.messages_proto.VectorXd points = 1;
+}
+
+// Path with fields for some additional metadata to help debugging. Not all the
+// fields need be filled in.
+message PlannedPath {
+  Path path = 1;
+
+  // Remainder of the fields are optional and will be set depending on the
+  // context of the planning call.
+
+  // TODO(keegang): Use something other than group id here.
+  string robot = 2;
+  // If the path was planned within a skill, this field contains the name of the
+  // field.
+  string skill_name = 3;
+}
+
+// Adding this message with addition metadata.
+message PlannedTrajectory {
+  intrinsic_proto.icon.JointTrajectoryPVA trajectory = 1;
+  string robot = 2;
+}

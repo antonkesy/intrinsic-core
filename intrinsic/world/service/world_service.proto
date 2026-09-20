@@ -1,0 +1,291 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world.internal;
+
+import "intrinsic/geometry/proto/geometry_service_types.proto";
+import "intrinsic/math/proto/pose.proto";
+import "intrinsic/world/proto/collections_component.proto";
+import "intrinsic/world/proto/world_entity.proto";
+import "intrinsic/world/proto/world_updates.proto";
+import "intrinsic/world/proto/physics_component.proto";
+import "intrinsic/world/proto/sensor_component.proto";
+import "intrinsic/world/world.proto";
+
+option go_package = "intrinsic/world/service/world_service_go_proto";
+
+// World Service representing managed World objects that can be queried and
+// modified through the service interface.
+// TODO(b/388267231): Remove this service once we've migrated the users to the
+// object world service and the missing functionality has been added to the
+// object world service.
+service WorldService {
+  /// World management APIs
+
+  // Adds a new World to be managed by the service.
+  rpc CreateWorld(CreateWorldRequest) returns (WorldWithMetadata) {}
+
+  // Gets the World data for a specific World object.
+  rpc GetWorld(GetWorldRequest) returns (WorldWithMetadata) {}
+
+  /// Robot APIs
+
+  // Get IK solution for a specified segment of kinematic chain and target pose.
+  rpc GetIkSolution(GetIkSolutionRequest) returns (SingleIKSolution) {}
+}
+
+/// World management API messages
+
+// World information for a single world managed by the service.
+message WorldWithMetadata {
+  // The id of the world.
+  string world_id = 1;
+
+  // The world object.
+  World world_data = 3;
+
+  // A hash representing the current structure portions of the world data. This
+  // hash will change when there are structural changes to the world, but may
+  // not change when state is updated. State in this case could mean pose values
+  // for parent_t_this or dof values for joints.
+  string world_structure_hash = 6;
+
+  reserved 2, 4, 5;
+  reserved "db_world_id", "dirty";
+
+  // Arbitrary user tag.
+  optional string user_tag = 7;
+}
+
+// Request message for adding a new World into the service.
+message CreateWorldRequest {
+  // The World object to add as a managed world. The world_id field is ignored.
+  // If world_data is unset, an empty world is created.
+  WorldWithMetadata world = 1;
+
+  // The Geometry associated with the new world object.
+  repeated intrinsic_proto.geometry.GeometryWithMetadata geometries = 2;
+
+  // Arbitrary user tag that is passed to WorldWithMetadata.
+  optional string user_tag = 3;
+}
+
+// Request message for getting the data from a specific world managed by the
+// service.
+message GetWorldRequest {
+  // The id of the world
+  string world_id = 1;
+
+  // TODO: b/325289138 -- Remove this once we've updated ICON to actually
+  // use object world APIs.
+  bool keep_frame_entity_collection_members_hack = 2;
+}
+
+// A single update to make to the world
+// TODO(stoyang): Reconcile with intrinsic_proto.world.WorldUpdate
+// Next tag: 9
+message WorldServerUpdate {
+  oneof update {
+    // Add more WorldUpdates as needed.
+    intrinsic_proto.world.SetRobotDofValues set_robot_dof_values = 8;
+    intrinsic_proto.world.ReparentEntities reparent_entity = 2;
+    intrinsic_proto.world.UpdateAttachmentPose update_attachment = 3;
+    intrinsic_proto.world.SetNamedConfiguration set_named_configuration = 4;
+    intrinsic_proto.world.AddLabel add_label = 6;
+    intrinsic_proto.world.RemoveLabel remove_label = 7;
+
+    // Deprecated. Use SetRobotDofValues instead.
+    SetDofValues set_dof_values = 1 [deprecated = true];
+  }
+
+  reserved 5;
+  reserved "set_resource";
+}
+
+// Updates to make to the world. Things like adding labels or setting dofs.
+// TODO(stoyang): Reconcile with intrinsic_proto.world.WorldUpdate
+message WorldServerUpdates {
+  repeated WorldServerUpdate updates = 1;
+}
+
+/// Entity API messages
+
+message EntityWithMetadata {
+  // The id of the world that owns the entity.
+  string world_id = 1;
+
+  // The id of the entity.
+  uint32 entity_id = 2;
+
+  // The entity object.
+  WorldEntity entity_data = 3;
+}
+
+message SingleIKSolution {
+  // The id of the world for this ik solution.
+  string world_id = 1;
+
+  // The map of joint entity id and value pairs for this ik solution.
+  // Note those joints may span more than one robot.
+  map<uint32, double> joint_vals = 3;
+}
+
+// Specification for a new attachment component
+message AttachmentComponentSpec {
+  // The parent to use for the entity.
+  uint32 parent_id = 1;
+
+  // The transform between the entity and its parent.
+  intrinsic_proto.Pose parent_t_this = 2;
+}
+
+// Specification for a new collision component
+message CollisionComponentSpec {
+  // Nothing here for now
+}
+
+// Specification for a new physics component
+message PhysicsComponentSpec {
+  // The actual physics parameters to use with the component
+  intrinsic_proto.world.PhysicsComponent physics_component = 1;
+}
+
+// Specification for a new sensor component
+message SensorComponentSpec {
+  // The actual sensor parameters to use with the component
+  intrinsic_proto.world.SensorComponent sensor_component = 1;
+}
+
+message CollectionsComponentSpec {
+  message ExistingParentCollection {
+    // The parent collection to use for the entity.
+    uint32 collection_id = 1;
+  }
+
+  message NewParentCollection {
+    // The local name of the entity.
+    string local_name = 1;
+    // The (optional) alias of the entity
+    string alias = 2;
+  }
+
+  // The type under which the new entity should be added.
+  CollectionsComponent.CollectionType collection_type = 1;
+
+  // The parent collection to add the new entity into.
+  oneof parent {
+    ExistingParentCollection existing_collection = 2;
+    NewParentCollection new_collection = 3;
+  }
+}
+
+// A set of filters for an entity.
+// Next tag: 6
+message EntityFilterSet {
+  // Entity property based filter.
+  message EntityFilter {
+    string local_name = 1;
+  }
+
+  // Attachment component based filter.
+  message AttachmentComponentFilter {
+    // Will use the existence of the component for the filter. If true, it will
+    // return only entities that have the attachment component.
+    bool exists = 1;
+  }
+
+  // Collision component based filter.
+  message CollisionComponentFilter {
+    // Will use the existence of the component for the filter. If true, it will
+    // return only entities that have the collision component.
+    bool exists = 1;
+  }
+
+  // Geometry component based filter.
+  message GeometryComponentFilter {
+    // Will use the existence of the component for the filter. If true, it will
+    // return only entities that have the geometry component.
+    bool exists = 1;
+  }
+
+  // Robot component based filter.
+  message RobotComponentFilter {
+    // Will use the existence of the component for the filter. If true, it
+    // will return only entities that have the robot component.
+    bool exists = 1;
+  }
+
+  // ------------------------
+  // IMPORTANT. Filters are treated as if they were AND'd together, for an
+  // entity to appear in the results it must meat all filtering requirements.
+  // ------------------------
+
+  // Filter based on the entity properties.
+  EntityFilter entity_filter = 1;
+
+  // Filter based on the attachment component of an entity
+  AttachmentComponentFilter attachment_component_filter = 3;
+  // Filter based on the collision component of an entity
+  CollisionComponentFilter collision_component_filter = 4;
+  // Filter based on the geometry component of an entity
+  GeometryComponentFilter geometry_component_filter = 5;
+  // Filter based on the robot component of an entity
+  RobotComponentFilter robot_component_filter = 2;
+}
+
+// Request message for updating the attachment pose between two entities.
+message UpdateAttachmentPoseRequest {
+  // The id of the world
+  string world_id = 1;
+
+  // The id of the child entity.
+  uint32 entity_id = 2;
+
+  // The updated transform between the entity and its parent.
+  intrinsic_proto.Pose parent_t_entity = 4;
+}
+
+// Request message for reparenting an entity in the world.
+message ReparentEntityRequest {
+  // The id of the world
+  string world_id = 1;
+
+  // The id of the entity to reparent.
+  uint32 entity_id = 2;
+
+  // The id for the new parent.
+  uint32 new_parent_id = 3;
+
+  // The transform between the entity and its new parent. If no transform is
+  // specified the existing transform between the new parent and the entity will
+  // be used instead.
+  intrinsic_proto.Pose parent_t_entity = 4;
+}
+
+message GetIkSolutionRequest {
+  // The id of the world this request is related to.
+  string world_id = 1;
+  // The entity id of the root of the kinematic chain to solve for IK, can set
+  // this to base of a robot or simply world origin.
+  uint32 root_id = 2;
+  // The entity id of the tip of the kinematic chain to solve for IK, usually
+  // a frame on tip of a robot.
+  uint32 tip_id = 3;
+  // The target pose for the tip frame, relative to the specified root frame.
+  intrinsic_proto.Pose root_t_tip = 4;
+  // If true, we set the robot to the solution it returns (if exist).
+  bool update_robot_to_solution = 5;
+}

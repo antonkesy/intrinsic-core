@@ -1,0 +1,28 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.config;
+
+import "intrinsic/kubernetes/workcell_spec/proto/transfer.proto";
+
+option go_package = "intrinsic/config/proto/data_files_go_proto";
+
+// Data files are general dependency files that are uploaded to GCS and are
+// available on app runtime.
+message DataFiles {
+  // FileReferences to the data files.
+  repeated intrinsic_proto.workcell_spec.v1.FileReference files = 1;
+}

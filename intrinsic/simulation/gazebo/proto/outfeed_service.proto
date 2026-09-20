@@ -1,0 +1,48 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package xfa.simulation;
+
+import "intrinsic/math/proto/vector3.proto";
+
+option go_package = "intrinsic/simulation/gazebo/proto/outfeed_service_go_proto";
+
+message ProcessOutfeedRequest {
+  // The world-space position for which we'd like to outfeed objects. Ignored
+  // if the outfeed_resource_name is non-empty.
+  intrinsic_proto.Vector3 position = 2;
+
+  // The extents of the bounding box centered at the outfeed_position within
+  // which we search for objects to outfeed. Defaults to (1, 1, 1). Ignored if
+  // the outfeed_resource_name is non-empty.
+  intrinsic_proto.Vector3 bounds = 3;
+
+  // The world object name prefix that we will remove from the bounds specified
+  // by this outfeed request. Ignored if the outfeed_resource_name is non-empty.
+  string prefix = 4;
+
+  reserved 1;
+  reserved "outfeed_resource_name";
+}
+
+message ProcessOutfeedResponse {}
+
+service OutfeedService {
+  // Removes all of the products whose origin is currently occupying the volume
+  // defined by the given resource. The products are configured using the
+  // outfeed object in the world.
+  rpc ProcessOutfeed(ProcessOutfeedRequest) returns (ProcessOutfeedResponse) {}
+}

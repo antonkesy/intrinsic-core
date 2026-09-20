@@ -1,0 +1,93 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.icon;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "intrinsic/icon/hardware_modules/kuka_rsi/kuka_rsi_go_proto";
+
+message KukaTeachPendantClientParams {}
+
+message KukaPlcClientParams {
+  // The OPC-UA address of the server, e.g. "opc.tcp://172.16.14.1:4840".
+  optional string plc_opcua_address = 1;
+  // Node of the PLC in the OPC-UA server, e.g. "r5012".
+  optional string plc_opcua_node_name = 2;
+  // Timeout for the opc-ua connection.
+  optional google.protobuf.Duration plc_opcua_timeout = 3;
+}
+
+message KukaEkiClientParams {
+  // The IP address of the KLI interface on the KUKA KRC. The host can be found
+  // in the EKI configuration on the KRC.
+  string eki_address = 1;
+  // Port on which the EKI server is listening. The port can be found in the EKI
+  // configuration on the KRC.
+  uint32 eki_port = 2;
+  // Frequency at which the RSI HWM will send requests to the EKI on KRC side.
+  double update_frequency = 3;
+}
+
+message KukaRsiModule {
+  // The local host for the socket where RSI data is expected.
+  optional string local_rsi_host = 1;
+  // The port for the socket where RSI data is expected
+  optional uint32 local_rsi_port = 2;
+
+  // Parameters to for the different operating modes for controlling the KUKA
+  // system. Depending which variable is set, the corresponding instance will be
+  // created and configured.
+  oneof kuka_system_controller {
+    // Set this when using an OPC-UA PLC that controls the KRC in Automatic
+    // External mode.
+    KukaPlcClientParams plc_client_params = 4;
+    // This mode expect that someone or something else will start the RSI, clear
+    // faults etc. Usually, this is the operator on the teach pendant, but could
+    // also be a PLC that is not connected to Flowstate.
+    KukaTeachPendantClientParams teach_pendant_client_params = 9;
+    // Set this when using an IO device connected to the KRC and the Ethernet
+    // KRL Interface (EKI) option package on the KRC. The RSI HWM will send
+    // commands via EKI to control the system state.
+    KukaEkiClientParams eki_control_client_params = 10;
+  }
+
+  // Parameters for the system status mode. Depending which variable is set, the
+  // corresponding instance will be created and configured.
+  oneof kuka_system_status {
+    // In this mode, the RSI HWM will retrieve status information from the KRC
+    // via the Ethernet KRL Interface (EKI).
+    KukaEkiClientParams eki_status_client_params = 12;
+  }
+
+  // The cutoff frequency is used in a butterworth filter to smooth the
+  // joint velocity values, which are computed from the joint position values.
+  double velocity_settling_cutoff_frequency = 5;
+
+  // Names of each digital input. The KUKA RSI needs to report exactly this many
+  // digital inputs.
+  repeated string digital_input_names = 6;
+  // Names of each digital output. The ICON server needs to provide exactly this
+  // many outputs and the KUKA RSI needs to send these outputs back as inputs.
+  repeated string digital_output_names = 7;
+
+  // Timeout until the RSI telemetry updates are considered late and the
+  // HWM will disable itself. Defaults to 40ms.
+  optional google.protobuf.Duration rsi_timeout = 8;
+
+  reserved 3;
+  reserved "joint_limits";
+}

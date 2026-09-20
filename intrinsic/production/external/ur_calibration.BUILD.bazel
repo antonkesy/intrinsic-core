@@ -1,0 +1,60 @@
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Package to allow computing robot model corrections based on the kinematic calibration values for
+# UR robots
+load("@rules_license//rules:license.bzl", "license")
+
+package(
+    default_applicable_licenses = [":license"],
+    default_visibility = ["//visibility:public"],
+)
+
+exports_files([
+    "package.xml",
+    "src/calibration.cpp",
+    "include/ur_calibration/calibration.hpp",
+])
+
+license(
+    name = "license",
+    package_name = "universal-robots-client-library",
+    license_kinds = [
+        "@rules_license//licenses/spdx:BSD-3-Clause",
+    ],
+    license_text = "package.xml",
+)
+
+cc_library(
+    name = "calibration",
+    srcs = ["src/calibration.cpp"],
+    hdrs = ["include/ur_calibration/calibration.hpp"],
+    includes = ["include"],
+    deps = [
+        "@abseil-cpp//absl/log",
+        "@com_gitlab_libeigen_eigen//:eigen",
+        "@ros2_rclcpp//:rclcpp",
+        "@yaml-cpp//:yaml-cpp",
+    ],
+)
+
+cc_test(
+    name = "calibration_test",
+    srcs = ["test/calibration_test.cpp"],
+    includes = ["include"],
+    deps = [
+        ":calibration",
+        "@com_google_googletest//:gtest_main",
+    ],
+)

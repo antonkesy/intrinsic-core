@@ -1,0 +1,149 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: Manifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+id {
+  package: "ai.intrinsic"
+  name: "move_robot"
+}
+display_name: "Move robot"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+    "The skill plans a path and trajectory according to the user-defined motion"
+    " specification and executes the resulting trajectory.\n"
+    "\n"
+    "The motion specification allow the user to set a sequence of motion"
+    " segments. Each segment consists of a motion target, motion type,"
+    " collision settings, path constraints, robot (joint and cartesian) limits"
+    "."
+    " Instead of multiple consecutive separate"
+    " invocations prefer one invocation with multiple motion segments.\n"
+    "\n"
+    "Motion targets will be defined in form of geometric constraints, this can"
+    " be either a joint configuration, a 6d Cartesian pose, or a series of other"
+    " constraints such as a point constraint together with a rotation cone"
+    " constraint. For a series of motion segments, the motion between their"
+    " targets are blended according to the blending parameters set in the"
+    " motion specs.\n"
+    "\n"
+    "Each motion segment defines a motion type. The default value is ANY, i.e.,"
+    " the planner will compute a trajectory that is collision-free and fulfills"
+    " the specified path constraints. Otherwise, the user can specify JOINT"
+    " (e.g., linear in joint space) or LINEAR (linear in Cartesian space).\n"
+    "\n"
+    "Each motion segment may specify specific collision settings."
+    " By default, collision checking is enabled using the world's collision"
+    " settings that can be defined via the frontend. Each segment can override "
+    "these settings, including turning collision checking off or providing "
+    "specific collision margins.\n"
+    "\n"
+    "Path constraints, such as Rotation Cone, Position Bounding Box, or"
+    " Joint Position-Sum Limit constraints, allow the user to constrain the"
+    " end-effector of the robot during the entire motion of the segment.\n"
+    "\n"
+    "It is also possible to define robot joint limits (from position and its"
+    " time derivatives down to jerk) for an individual segment. If not defined,"
+    " we will use the application limits of the robot in the application.\n"
+    "\n"
+    "The required `robot` resource is a robot controller. Do not confuse this"
+    " with the robot object in the world.\n"
+}
+extended_documentation {
+  prerequisites:
+    "Required assets:\n"
+    "* Robot arm"
+    "\n\n"
+    "Before invoking `move_robot`, make sure the robot is in a collision-free "
+    "configuration. If the motion starts out in a collision state it is possible "
+    "to exclude those collisions for the first motion segment. See the example "
+    "guide below for more details."
+  usage_example:
+    "A full guide for using and setting `move_robot` skill parameters can be "
+    "found in the Plan and execute motion guide."
+    # txtpbfmt: off
+    # Commenting the path below because the new path is not yet published.
+    # "found in the [Plan and execute motion](/catalog/skills/how_to_guides/"
+    #"plan_and_execute_motions.md) guide."
+    # txtpbfmt: on
+}
+options {
+  supports_cancellation: true
+  cancellation_ready_timeout {
+    seconds: 30
+  }
+  cc_config {
+    create_skill: "::intrinsic::skills::MoveRobot::CreateSkill"
+  }
+}
+dependencies {
+  required_equipment {
+    key: "robot"
+    value {
+      capability_names: "intrinsic_proto.icon.v1.IconApi"
+      capability_names: "Icon2PositionPart"
+    }
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.MoveRobotParams"
+  default_value {
+    type_url: "type.googleapis.com/intrinsic_proto.skills.MoveRobotParams"
+  }
+}
+return_type {
+  message_full_name: "intrinsic_proto.skills.MoveRobotReturnValue"
+}
+status_info: [
+  {
+    code: 10201
+    title: "Collision Error"
+    recovery_instructions: "Check the error message for recovery instructions."
+  },
+
+  {
+    code: 10301
+    title: "Inverse Kinematics (IK) Error"
+    recovery_instructions: "Check the error message for recovery instructions."
+  },
+
+  {
+    code: 10401
+    title: "Generic Linear Cartesian Path Planning Error"
+    recovery_instructions: "Check the error message for recovery instructions."
+  },
+
+  {
+    code: 10402
+    title: "Linear Cartesian Path Planning Error: Fine Path Inverse Kinematics"
+    recovery_instructions: "Check the error message for recovery instructions."
+  },
+
+  {
+    code: 10501
+    title: "Joint Limit Error"
+    recovery_instructions: "Check the error message for recovery instructions."
+  },
+
+  {
+    code: 10601
+    title: "Generic Motion Planning Error"
+    recovery_instructions: "Check the error message for recovery instructions."
+  }
+]

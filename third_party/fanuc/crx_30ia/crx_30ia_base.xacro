@@ -1,0 +1,312 @@
+<sdf version='1.9' xmlns:xacro='http://www.ros.org/wiki/xacro' xmlns:intrinsic='https://intrinsic.ai/'>
+  <xacro:macro name='crx_30ia_base_sdf' params='name **model_options'>
+    <model name='${name}'>
+      <intrinsic:ik_solver>kinematic_chain</intrinsic:ik_solver>
+      <intrinsic:control_frequency_hz>500</intrinsic:control_frequency_hz>
+      <intrinsic:cartesian_limits>
+        <intrinsic:min_translational_position>-5 -5 -5</intrinsic:min_translational_position>
+        <intrinsic:max_translational_position>5 5 5</intrinsic:max_translational_position>
+        <intrinsic:min_translational_acceleration>-2 -2 -2</intrinsic:min_translational_acceleration>
+        <intrinsic:max_translational_acceleration>2 2 2</intrinsic:max_translational_acceleration>
+        <intrinsic:min_translational_velocity>-2 -2 -2</intrinsic:min_translational_velocity>
+        <intrinsic:max_translational_velocity>2 2 2</intrinsic:max_translational_velocity>
+        <intrinsic:min_translational_jerk>-60 -60 -60</intrinsic:min_translational_jerk>
+        <intrinsic:max_translational_jerk>60 60 60</intrinsic:max_translational_jerk>
+        <intrinsic:max_rotational_jerk>40</intrinsic:max_rotational_jerk>
+      </intrinsic:cartesian_limits>
+
+      <link name='base_link'>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>21.685</mass>
+          <pose>-0.00536 0.00024 0.09678 0 0 0</pose>
+          <inertia>
+            <ixx>0.12527923</ixx>
+            <ixy>0.000291545</ixy>
+            <ixz>0.003029499</ixz>
+            <iyy>0.138144056</iyy>
+            <iyz>-0.000163996</iyz>
+            <izz>0.181495336</izz>
+          </inertia>
+        </inertial>
+        <collision name='base_link_collision'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/collision/base.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name='base_link_visual'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/visual/base.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+      <joint name='joint_a1' type='revolute'>
+        <pose relative_to='base_link'>0 0 0.370 0 0 0</pose>
+        <parent>base_link</parent>
+        <child>link_1</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+      <link name='link_1'>
+        <pose relative_to='joint_a1'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>41.083</mass>
+          <pose>0.00035 -0.06889 -0.05678 0 0 0</pose>
+          <inertia>
+            <ixx>0.82048807</ixx>
+            <ixy>-0.017541919</ixy>
+            <ixz>0.007165887</ixz>
+            <iyy>0.517715904</iyy>
+            <iyz>-0.164727565</iyz>
+            <izz>0.604395877</izz>
+          </inertia>
+        </inertial>
+        <collision name='link_1_collision'>
+          <pose>0 0 -0.37 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/collision/j1.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name='link_1_visual'>
+          <pose>0 0 -0.37 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/visual/j1.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+      <joint name='joint_a2' type='revolute'>
+        <pose relative_to='link_1'>0 0 0 0 0 0</pose>
+        <parent>link_1</parent>
+        <child>link_2</child>
+        <axis>
+          <xyz>0 1 0</xyz>
+        </axis>
+      </joint>
+      <link name='link_2'>
+        <pose relative_to='joint_a2'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>41.783</mass>
+          <pose>-0.00009 -0.27645 0.42608 0 0 0</pose>
+          <inertia>
+            <ixx>7.23046923</ixx>
+            <ixy>-0.0000150504</ixy>
+            <ixz>-0.001548667</ixz>
+            <iyy>7.18875657</iyy>
+            <iyz>0.346298742</iyz>
+            <izz>0.310511653</izz>
+          </inertia>
+        </inertial>
+        <collision name='link_2_collision'>
+          <pose>0 0 -0.37 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/collision/j2.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name='link_2_visual'>
+          <pose>0 0 -0.37 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/visual/j2.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+      <joint name='joint_a3' type='revolute'>
+        <pose relative_to='link_2'>0 0 0.950 0 0 0</pose>
+        <parent>link_2</parent>
+        <child>link_3</child>
+        <axis>
+          <xyz>0 -1 0</xyz>
+        </axis>
+      </joint>
+      <link name='link_3'>
+        <pose relative_to='joint_a3'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>11.493</mass>
+          <pose>0.04858 -0.05541 -0.00002 0 0 0</pose>
+          <inertia>
+            <ixx>0.07644438</ixx>
+            <ixy>0.032033116</ixy>
+            <ixz>-0.000109013</ixz>
+            <iyy>0.088680582</iyy>
+            <iyz>0.00008535</iyz>
+            <izz>0.113440904</izz>
+          </inertia>
+        </inertial>
+        <collision name='link_3_collision'>
+          <pose>0 0 -1.32 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/collision/j3.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name='link_3_visual'>
+          <pose>0 0 -1.32 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/visual/j3.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+      <joint name='joint_a4' type='revolute'>
+        <pose relative_to='link_3'>0 0 0 0 0 0</pose>
+        <parent>link_3</parent>
+        <child>link_4</child>
+        <axis>
+          <xyz>-1 0 0</xyz>
+        </axis>
+      </joint>
+      <link name='link_4'>
+        <pose relative_to='joint_a4'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>10.453</mass>
+          <pose>0.47486 -0.01068 0.00284 0 0 0</pose>
+          <inertia>
+            <ixx>0.033221786</ixx>
+            <ixy>-0.031400677</ixy>
+            <ixz>-0.006788255</ixz>
+            <iyy>0.585886882</iyy>
+            <iyz>0.000138711</iyz>
+            <izz>0.591926466</izz>
+          </inertia>
+        </inertial>
+        <collision name='link_4_collision'>
+          <pose>0 0 -1.32 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/collision/j4.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name='link_4_visual'>
+          <pose>0 0 -1.32 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/visual/j4.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+      <joint name='joint_a5' type='revolute'>
+        <pose relative_to='link_4'>0.750 0 0 0 0 0</pose>
+        <parent>link_4</parent>
+        <child>link_5</child>
+        <axis>
+          <xyz>0 -1 0</xyz>
+        </axis>
+      </joint>
+      <link name='link_5'>
+        <pose relative_to='joint_a5'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>4.247</mass>
+          <pose>0.02013 -0.1566 0.00022 0 0 0</pose>
+          <inertia>
+            <ixx>0.014928224</ixx>
+            <ixy>-0.002745126</ixy>
+            <ixz>-0.0000653103</ixz>
+            <iyy>0.013565914</iyy>
+            <iyz>-0.0000866351</iyz>
+            <izz>0.020297868</izz>
+          </inertia>
+        </inertial>
+        <collision name='link_5_collision'>
+          <pose>-0.75 0 -1.32 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/collision/j5.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name='link_5_visual'>
+          <pose>-0.75 0 -1.32 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/visual/j5.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+      <joint name='joint_a6' type='revolute'>
+        <pose relative_to='link_5'>0 -0.185 0 0 0 0</pose>
+        <parent>link_5</parent>
+        <child>link_6</child>
+        <axis>
+          <xyz>-1 0 0</xyz>
+        </axis>
+      </joint>
+      <link name='link_6'>
+        <pose relative_to='joint_a6'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>2.075</mass>
+          <pose>0.13104 0.00101 -0.00108 0 0 0</pose>
+          <inertia>
+            <ixx>0.003415927</ixx>
+            <ixy>0.000027248</ixy>
+            <ixz>-0.0000322498</ixz>
+            <iyy>0.003012322</iyy>
+            <iyz>-0.0000572683</iyz>
+            <izz>0.003057703</izz>
+          </inertia>
+        </inertial>
+        <collision name='link_6_collision'>
+          <pose>-0.75 0.185 -1.32 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/collision/j6.stl</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name='link_6_visual'>
+          <pose>-0.75 0.185 -1.32 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>1 1 1</scale>
+              <uri>model://third_party/fanuc/crx_30ia/visual/j6.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+      <joint name="joint_tool0" type="fixed">
+        <pose relative_to='link_6'>0.180 0 0 3.1415927 -1.5707963 0</pose>
+        <parent>link_6</parent>
+        <child>tool0</child>
+      </joint>
+      <link name='tool0'>
+        <pose relative_to='joint_tool0'>0 0 0 0 0 0</pose>
+        <inertial>
+          <mass>0.01</mass>
+        </inertial>
+      </link>
+      <frame name='flange' attached_to='tool0' intrinsic:create_attachment_entity='true'/>
+      <xacro:insert_block name='model_options'/>
+    </model>
+  </xacro:macro>
+</sdf>

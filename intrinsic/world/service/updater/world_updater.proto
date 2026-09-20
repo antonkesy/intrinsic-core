@@ -1,0 +1,68 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+option go_package = "intrinsic/world/service/updater/world_updater_go_proto";
+
+service WorldUpdater {
+  // Resets the world updater. This causes all pending connections to terminate
+  // and prompts the updater to search for new connections based on its
+  // configuration once more.
+  rpc Reset(ResetUpdaterRequest) returns (ResetUpdaterResponse);
+
+  // Pauses the world updater indefinitely until it is resumed. If the world
+  // updater is already paused this is a no-op. The world updater is guaranateed
+  // to perform no further updates until resumed when this returns.
+  rpc Pause(PauseUpdaterRequest) returns (PauseUpdaterResponse);
+
+  // Resumes the world updater when it is paused. If the world updater is not
+  // paused this is a no-op.
+  rpc Resume(ResumeUpdaterRequest) returns (ResumeUpdaterResponse);
+}
+
+message BeliefWorldOptions {
+  string world_id = 1;
+}
+
+message SimWorldOptions {
+  string world_id = 1;
+}
+
+// Request to reset the world updater.
+// If belief_world_options or sim_world_options are not set, the corresponding
+// world IDs will remain unchanged.
+message ResetUpdaterRequest {
+  // If set, updates the belief world ID to the one specified in the options.
+  // If unset, the current belief world ID is retained.
+  BeliefWorldOptions belief_world_options = 1;
+
+  // If set, updates the simulation world ID to the one specified in the
+  // options. If unset, the current simulation world ID is retained.
+  SimWorldOptions sim_world_options = 2;
+}
+message ResetUpdaterResponse {
+  // The topic name of the simulation world updates subscription.
+  // The topic accepts messages of type
+  // intrinsic_proto.world.v1.PubsubWorldUpdates.
+  string sim_world_updates_topic_name = 1;
+}
+
+message PauseUpdaterRequest {}
+message PauseUpdaterResponse {}
+
+message ResumeUpdaterRequest {}
+message ResumeUpdaterResponse {}

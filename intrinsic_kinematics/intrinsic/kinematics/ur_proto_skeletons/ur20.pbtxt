@@ -1,0 +1,578 @@
+# proto-file: intrinsic/kinematics/proto/skeleton.proto
+# proto-message: Skeleton
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+name: "skeleton_id_3_to_id_9"
+anchor_offset {
+  position {
+  }
+  orientation {
+    w: 1
+  }
+}
+links {
+  element {
+    id: 1
+    name: "base_link"
+    parent_t_this {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    children: 2
+  }
+  parameters {
+    mass: 4
+    center_of_gravity {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    inertia {
+      rows: 3
+      cols: 3
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+    }
+  }
+}
+links {
+  element {
+    id: 3
+    name: "shoulder_link"
+    parent_t_this {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    parent: 2
+    children: 4
+  }
+  parameters {
+    mass: 16.343
+    center_of_gravity {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    inertia {
+      rows: 3
+      cols: 3
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+    }
+  }
+}
+links {
+  element {
+    id: 5
+    name: "upper_arm_link"
+    parent_t_this {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    parent: 4
+    children: 6
+  }
+  parameters {
+    mass: 29.632
+    center_of_gravity {
+      position {
+        z: 0.28
+      }
+      orientation {
+        w: 1
+      }
+    }
+    inertia {
+      rows: 3
+      cols: 3
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+    }
+  }
+}
+links {
+  element {
+    id: 7
+    name: "forearm_link"
+    parent_t_this {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    parent: 6
+    children: 8
+  }
+  parameters {
+    mass: 7.879
+    center_of_gravity {
+      position {
+        z: 0.25
+      }
+      orientation {
+        w: 1
+      }
+    }
+    inertia {
+      rows: 3
+      cols: 3
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+    }
+  }
+}
+links {
+  element {
+    id: 9
+    name: "wrist_1_link"
+    parent_t_this {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    parent: 8
+    children: 10
+  }
+  parameters {
+    mass: 3.054
+    center_of_gravity {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    inertia {
+      rows: 3
+      cols: 3
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+    }
+  }
+}
+links {
+  element {
+    id: 11
+    name: "wrist_2_link"
+    parent_t_this {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    parent: 10
+    children: 12
+  }
+  parameters {
+    mass: 3.126
+    center_of_gravity {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    inertia {
+      rows: 3
+      cols: 3
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+    }
+  }
+}
+links {
+  element {
+    id: 13
+    name: "wrist_3_link"
+    parent_t_this {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    parent: 12
+  }
+  parameters {
+    mass: 0.846
+    center_of_gravity {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    inertia {
+      rows: 3
+      cols: 3
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+      values: 0
+      values: 0
+      values: 0
+      values: 1
+    }
+  }
+}
+joints {
+  element {
+    id: 2
+    name: "shoulder_pan_joint"
+    parent_t_this {
+      position {
+        z: 0.2363
+      }
+      orientation {
+        z: 1
+        w: 0
+      }
+    }
+    parent: 1
+    children: 3
+  }
+  parameters {
+    axis {
+      z: 1
+    }
+    system_limits {
+      position {
+        lower: -6.22
+        upper: 6.22
+      }
+      velocity: 0.45
+      acceleration: 5
+      jerk: 100
+      effort: 730
+    }
+    soft_limits {
+      position {
+        lower: -6.22
+        upper: 6.22
+      }
+      velocity: 0.45
+      acceleration: 5
+      jerk: 100
+      effort: 730
+    }
+    dynamics {
+    }
+  }
+}
+joints {
+  element {
+    id: 4
+    name: "shoulder_lift_joint"
+    parent_t_this {
+      position {
+      }
+      orientation {
+        w: 1
+      }
+    }
+    parent: 3
+    children: 5
+  }
+  parameters {
+    axis {
+      y: 1
+    }
+    system_limits {
+      position {
+        lower: -6.22
+        upper: 6.22
+      }
+      velocity: 0.35
+      acceleration: 3
+      jerk: 100
+      effort: 730
+    }
+    soft_limits {
+      position {
+        lower: -6.22
+        upper: 6.22
+      }
+      velocity: 0.35
+      acceleration: 3
+      jerk: 100
+      effort: 730
+    }
+    dynamics {
+    }
+  }
+}
+joints {
+  element {
+    id: 6
+    name: "elbow_joint"
+    parent_t_this {
+      position {
+        x: 0.862
+      }
+      orientation {
+        w: 1
+      }
+    }
+    parent: 5
+    children: 7
+  }
+  parameters {
+    axis {
+      y: 1
+    }
+    system_limits {
+      position {
+        lower: -3.11
+        upper: 3.11
+      }
+      velocity: 0.35
+      acceleration: 3
+      jerk: 100
+      effort: 430
+    }
+    soft_limits {
+      position {
+        lower: -3.11
+        upper: 3.11
+      }
+      velocity: 0.35
+      acceleration: 3
+      jerk: 100
+      effort: 430
+    }
+    dynamics {
+    }
+  }
+}
+joints {
+  element {
+    id: 8
+    name: "wrist_1_joint"
+    parent_t_this {
+      position {
+        x: 0.7287
+      }
+      orientation {
+        w: 1
+      }
+    }
+    parent: 7
+    children: 9
+  }
+  parameters {
+    axis {
+      y: 1
+    }
+    system_limits {
+      position {
+        lower: -6.22
+        upper: 6.22
+      }
+      velocity: 0.75
+      acceleration: 7
+      jerk: 200
+      effort: 100
+    }
+    soft_limits {
+      position {
+        lower: -6.22
+        upper: 6.22
+      }
+      velocity: 0.75
+      acceleration: 7
+      jerk: 200
+      effort: 100
+    }
+    dynamics {
+    }
+  }
+}
+joints {
+  element {
+    id: 10
+    name: "wrist_2_joint"
+    parent_t_this {
+      position {
+        y: 0.201
+        z: -0.1593
+      }
+      orientation {
+        w: 1
+      }
+    }
+    parent: 9
+    children: 11
+  }
+  parameters {
+    axis {
+      z: -1
+    }
+    system_limits {
+      position {
+        lower: -6.22
+        upper: 6.22
+      }
+      velocity: 0.75
+      acceleration: 7
+      jerk: 200
+      effort: 100
+    }
+    soft_limits {
+      position {
+        lower: -6.22
+        upper: 6.22
+      }
+      velocity: 0.75
+      acceleration: 7
+      jerk: 200
+      effort: 100
+    }
+    dynamics {
+    }
+  }
+}
+joints {
+  element {
+    id: 12
+    name: "wrist_3_joint"
+    parent_t_this {
+      position {
+        y: 0.15429999990000007
+      }
+      orientation {
+        x: 7.3123010771673112e-14
+        y: 0.70710678118827874
+        z: 0.70710678118481629
+        w: -7.3123010772031166e-14
+      }
+    }
+    parent: 11
+    children: 13
+  }
+  parameters {
+    axis {
+      z: 1
+    }
+    system_limits {
+      position {
+        lower: -6.22
+        upper: 6.22
+      }
+      velocity: 0.75
+      acceleration: 7
+      jerk: 200
+      effort: 100
+    }
+    soft_limits {
+      position {
+        lower: -6.22
+        upper: 6.22
+      }
+      velocity: 0.75
+      acceleration: 7
+      jerk: 200
+      effort: 100
+    }
+    dynamics {
+    }
+  }
+}
+element_id_to_dof_index {
+  key: 2
+  value: 0
+}
+element_id_to_dof_index {
+  key: 4
+  value: 1
+}
+element_id_to_dof_index {
+  key: 6
+  value: 2
+}
+element_id_to_dof_index {
+  key: 8
+  value: 3
+}
+element_id_to_dof_index {
+  key: 10
+  value: 4
+}
+element_id_to_dof_index {
+  key: 12
+  value: 5
+}

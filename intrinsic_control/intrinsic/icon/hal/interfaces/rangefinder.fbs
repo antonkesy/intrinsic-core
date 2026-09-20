@@ -1,0 +1,43 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+namespace intrinsic_fbs;
+
+enum RangeFinderError : uint8 {
+  NoError = 0,
+  // The distance is under the lower measurement range limit.
+  DistanceBelowMeasurementRange,
+  // The distance is over the upper measurement range limit.
+  DistanceAboveMeasurementRange
+}
+
+table RangeFinderStatus {
+  // Measurement timestamp of PDO receipt in L0 driver.
+  // Note that this is not actually when the measurement itself was taken.
+  timestamp:int64 = 0;
+
+  // Range measurement data from the sensor [m].
+  distance:float = 0.0;
+
+  // Intensity measurement from the sensor.
+  intensity:float = 0.0;
+
+  // Increments for each new measurement.
+  // Note it is only uint8, so will wrap around after 255.
+  measurement_number:uint8 = 0;
+
+  // The rangefinder error output. It can be used to check if the distance is
+  // valid.
+  error:RangeFinderError = NoError;
+}

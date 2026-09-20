@@ -1,0 +1,72 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.icon.actions.proto;
+
+import "intrinsic/icon/actions/cartesian_impedance.proto";
+import "intrinsic/icon/proto/cart_space.proto";
+import "intrinsic/math/proto/pose.proto";
+import "intrinsic/math/proto/twist.proto";
+import "intrinsic/math/proto/vector3.proto";
+
+option go_package = "intrinsic/icon/actions/cartesian_admittance_action_go_proto";
+
+message CartesianAdmittanceActionFixedParams {
+  intrinsic_proto.icon.actions.proto.CartesianImpedanceParameters
+      cartesian_impedance_parameters = 1;
+}
+
+message CartesianAdmittanceStatus {
+  // Position-level tracking error, expressed in the task frame.
+  intrinsic_proto.Vector3 error_state_position = 1;
+  intrinsic_proto.Vector3 error_state_orientation = 2;
+  // Velocity-level tracking error, expressed in the task frame.
+  intrinsic_proto.Vector3 error_state_translational_velocity = 3;
+  intrinsic_proto.Vector3 error_state_angular_velocity = 4;
+  // Effort-level tracking error, expressed in the task frame.
+  intrinsic_proto.Vector3 error_state_force = 5;
+  intrinsic_proto.Vector3 error_state_torque = 6;
+
+  // Cartesian acceleration command computed by the admittance law in the
+  // previous control cycle, expressed in base frame.
+  intrinsic_proto.Vector3
+      previous_cartesian_translational_acceleration_command = 7;
+  intrinsic_proto.Vector3 previous_cartesian_angular_acceleration_command = 8;
+
+  // Sensed, payload-compensated wrench at tool, expressed in the task frame.
+  intrinsic_proto.Vector3 sensed_force_at_tool_in_task_frame = 19;
+  intrinsic_proto.Vector3 sensed_torque_at_tool_in_task_frame = 20;
+
+  // Post-sensor dynamic load, expressed in the task frame.
+  intrinsic_proto.Vector3 post_sensor_dynamics_force_in_task_frame = 21;
+  intrinsic_proto.Vector3 post_sensor_dynamics_torque_in_task_frame = 22;
+
+  // Scalar quantities also exported as State Variables.
+  double settled_for_seconds = 13;
+  double sensed_force_magnitude = 14;
+  double sensed_torque_magnitude = 15;
+  double translational_distance_traveled = 16;
+  double maximum_translational_displacement_in_time_window = 17;
+  bool is_settled = 18;
+
+  intrinsic_proto.Pose robot_tip_t_robot_tool = 23;
+  intrinsic_proto.Pose robot_base_t_task = 24;
+  intrinsic_proto.Pose task_t_tool_reference_pose = 25;
+  intrinsic_proto.Twist tool_reference_twist = 26;
+  intrinsic_proto.icon.Wrench tool_reference_wrench = 27;
+
+  reserved 9, 10, 11, 12;
+}

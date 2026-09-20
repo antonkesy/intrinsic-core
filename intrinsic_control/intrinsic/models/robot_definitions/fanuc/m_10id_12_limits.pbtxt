@@ -1,0 +1,164 @@
+# proto-file: intrinsic/scene/proto/v1/scene_object_updates.proto
+# proto-message: intrinsic_proto.scene_object.v1.SceneObjectUpdates
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# This file contains the limits for the Fanuc M10i-12 robot. Also called
+# M-10/12-14D or M-10iD/12.
+# The limits are taken from the Fanuc documentation.
+#
+# Specifically, the position limits match the official FANUC description URDF
+# (m10_12_14d_urdf_macro.xacro) and the drawings in the robot manual B-83944EN_08.
+#
+updates: {
+  update_joints {
+    joint_system_limits: {
+      key: "joint_a1"
+      value: {
+        min_position: -3.228859116  # -185 deg
+        max_position: 3.228859116  # +185 deg
+        max_velocity: 4.4470989340815521
+        max_acceleration: 22.235494670407757
+        max_jerk: 222.35494670407758
+        max_effort: 200
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a2"
+      value: {
+        min_position: -1.570796327  # -90 deg
+        max_position: 2.530727415  # +145 deg
+        max_velocity: 2.0525072003453313
+        max_acceleration: 10.262536001726659
+        max_jerk: 102.62536001726657
+        max_effort: 200
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a3"
+      value: {
+        min_position: -1.570796327  # -90 deg
+        max_position: 3.874630939  # +222 deg
+        max_velocity: 2.0525072003453313
+        max_acceleration: 10.262536001726659
+        max_jerk: 102.62536001726657
+        max_effort: 200
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a4"
+      value: {
+        min_position: -3.316125579  # -190 deg
+        max_position: 3.316125579  # +190 deg
+        max_velocity: 7.3548174679041036
+        max_acceleration: 36.774087339520527
+        max_jerk: 367.7408733952052
+        max_effort: 200
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a5"
+      value: {
+        min_position: -3.141592654  # -180 deg
+        max_position: 3.141592654  # +180 deg
+        max_velocity: 7.6969020012949931
+        max_acceleration: 38.48451000647497
+        max_jerk: 384.84510006474966
+        max_effort: 200
+      }
+    }
+    joint_system_limits: {
+      key: "joint_a6"
+      value: {
+        min_position: -7.853981634  # -450 deg
+        max_position: 7.853981634  # +450 deg
+        max_velocity: 12.315043202071989
+        max_acceleration: 61.575216010359945
+        max_jerk: 615.75216010359952
+        max_effort: 200
+      }
+    }
+
+    # Joint position limits are set 0.1 rad below system limits.
+    # All other application limits have been set at 10% below system limits.
+    joint_application_limits: {
+      key: "joint_a1"
+      value: {
+        min_position: -3.128859116  # -185 deg + 0.1 rad (-179.27 deg)
+        max_position: 3.128859116  # +185 deg - 0.1 rad (+179.27 deg)
+        max_velocity: 4.2242992774840662
+        max_acceleration: 21.121496387420329
+        max_jerk: 211.21496387420328
+        max_effort: 180
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a2"
+      value: {
+        min_position: -1.470796327  # -90 deg + 0.1 rad (-84.27 deg)
+        max_position: 2.430727415  # +145 deg - 0.1 rad (+139.27 deg)
+        max_velocity: 1.9496765896080301
+        max_acceleration: 9.7483829480401525
+        max_jerk: 97.483829480401511
+        max_effort: 180
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a3"
+      value: {
+        min_position: -1.470796327  # -90 deg + 0.1 rad (-84.27 deg)
+        max_position: 3.774630939  # +222 deg - 0.1 rad (+216.27 deg)
+        max_velocity: 1.9496765896080301
+        max_acceleration: 9.7483829480401525
+        max_jerk: 97.483829480401511
+        max_effort: 180
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a4"
+      value: {
+        min_position: -3.216125579  # -190 deg + 0.1 rad (-184.27 deg)
+        max_position: 3.216125579  # +190 deg - 0.1 rad (+184.27 deg)
+        max_velocity: 6.9863411127621076
+        max_acceleration: 34.931705563810546
+        max_jerk: 349.31705563810539
+        max_effort: 180
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a5"
+      value: {
+        min_position: -3.041592654  # -180 deg + 0.1 rad (-174.27 deg)
+        max_position: 3.041592654  # +180 deg - 0.1 rad (+174.27 deg)
+        max_velocity: 7.3112872110301135
+        max_acceleration: 36.55643605515057
+        max_jerk: 365.56436055150567
+        max_effort: 180
+      }
+    }
+    joint_application_limits: {
+      key: "joint_a6"
+      value: {
+        min_position: -7.753981634  # -450 deg + 0.1 rad (-444.27 deg)
+        max_position: 7.753981634  # +450 deg - 0.1 rad (+444.27 deg)
+        max_velocity: 11.698059537648181
+        max_acceleration: 58.490297688240908
+        max_jerk: 584.90297688240912
+        max_effort: 180
+      }
+    }
+  }
+}

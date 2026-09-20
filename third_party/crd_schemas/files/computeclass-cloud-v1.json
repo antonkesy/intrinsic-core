@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "apiVersion": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "nodePoolAutoCreation": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "nodePoolConfig": {
+          "type": "object"
+        },
+        "priorities": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "whenUnsatisfiable": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

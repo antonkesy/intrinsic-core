@@ -1,0 +1,94 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef INTRINSIC_ICON_HAL_HARDWARE_MODULE_MAIN_UTIL_H_
+#define INTRINSIC_ICON_HAL_HARDWARE_MODULE_MAIN_UTIL_H_
+
+#include <memory>
+#include <optional>
+#include <vector>
+
+#include "absl/base/nullability.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "google/protobuf/any.pb.h"
+#include "intrinsic/icon/hal/hardware_module_runtime.h"
+#include "intrinsic/icon/hal/hardware_module_util.h"
+#include "intrinsic/icon/hal/proto/hardware_module_config.pb.h"
+#include "intrinsic/icon/hal/realtime_clock.h"
+#include "intrinsic/icon/interprocess/shared_memory_manager/shared_memory_manager.h"
+#include "intrinsic/resources/proto/runtime_context.pb.h"
+#include "intrinsic/util/thread/thread_options.h"
+
+namespace intrinsic::icon {
+
+// Helper struct containing configuration data the Hardware Module execution.
+struct HardwareModuleMainConfig {
+  // Runtime context to be used by this instance. Not set, if process does not
+  // run as resource.
+  std::optional<intrinsic_proto::config::RuntimeContext> runtime_context;
+  // Either loaded from a proto file directly or from the runtime context.
+  intrinsic_proto::icon::HardwareModuleConfig module_config;
+  // Whether to use realtime scheduling for the mainloop threads and for custom
+  // HWM realtime threads.
+  bool use_realtime_scheduling;
+};
+
+// Initializes the Intrinsic Data Logger singleton using the runtime asset
+// configured in module_config.
+absl::Status InitDataLogger(
+    const intrinsic_proto::icon::HardwareModuleConfig& module_config,
+    absl::Duration connection_timeout);
+
+// Loads in and updates the HardwareModuleConfig from disk.  This is expected to
+// be in the resource's configuration, unless --module_config_file is specified,
+// in which case we assume this is not running as a resource, but as an
+// standalone hardware module.
+absl::StatusOr<HardwareModuleMainConfig> LoadConfig(
+    absl::string_view module_config_file,
+    absl::string_view runtime_context_file, bool use_realtime_scheduling);
+
+struct HardwareModuleRtSchedulingData {
+  // Realtime clock to be used by this Hardware Module.
+  std::unique_ptr<intrinsic::icon::RealtimeClock> realtime_clock;
+  // Options for the realtime thread.
+  intrinsic::ThreadOptions rt_thread_options;
+  // CPU cores that will be used for realtime scheduling.
+  absl::flat_hash_set<int> affinity_set;
+};
+
+absl::StatusOr<HardwareModuleRtSchedulingData> SetupRtScheduling(
+    const intrinsic_proto::icon::HardwareModuleConfig& module_config,
+    SharedMemoryManager& shm_manager, bool use_realtime_scheduling,
+    std::optional<int> realtime_core, bool disable_malloc_guard);
+
+// Runs HWM runtime and the gRPC server and waits for runtime to shutdown as
+// signaled by system signals or the resource health service.
+absl::StatusOr<std::optional<HardwareModuleExitCode>>
+RunRuntimeWithGrpcServerAndWaitForShutdown(
+    const absl::StatusOr<HardwareModuleMainConfig>& main_config,
+    const std::shared_ptr<SharedPromiseWrapper<HardwareModuleExitCode>>&
+        exit_code_promise,
+    absl::StatusOr<
+        absl_nonnull std::unique_ptr<intrinsic::icon::HardwareModuleRuntime>>&
+        runtime,
+    std::optional<int> cli_grpc_server_port,
+    const std::vector<int>& cpu_affinity);
+
+}  // namespace intrinsic::icon
+#endif  // INTRINSIC_ICON_HAL_HARDWARE_MODULE_MAIN_UTIL_H_

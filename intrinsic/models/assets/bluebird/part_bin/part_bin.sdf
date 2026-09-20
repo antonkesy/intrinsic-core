@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Copyright 2026 Intrinsic Innovation LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<sdf version="1.6">
+  <model name="part_bin">
+    <link name="base_link">
+      <inertial>
+        <inertia>
+          <ixx>0.00262275</ixx>
+          <iyy>0.00227283</iyy>
+          <izz>0.00435408</izz>
+        </inertia>
+        <mass>1.0</mass>
+        <pose>0.0775 0.084 0.0285 0 0 0</pose>
+      </inertial>
+      <visual name="visual">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://intrinsic/models/assets/bluebird/part_bin/part_bin.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="collision_base">
+        <pose>0.07815751 0.0832325 0.0038655002 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.14796901 0.16693099 0.009321 </size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="collision_side1">
+        <pose>0.0034355002 0.0835855 0.0322025 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.008387 0.169325 0.050565 </size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="collision_side2">
+        <pose>0.15085101 0.084357 0.0318085 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.008387998 0.169324 0.050565 </size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="collision_back">
+        <pose>0.07673851 0.16483599 0.0316945 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.15791501 0.008387998 0.050565 </size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>

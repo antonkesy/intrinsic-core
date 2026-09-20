@@ -1,0 +1,62 @@
+# proto-file: intrinsic/skills/proto/skill_manifest.proto
+# proto-message: Manifest
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+id {
+  package: "ai.intrinsic"
+  name: "disable_realtime_control"
+}
+display_name: "Disable real-time control"
+vendor {
+  display_name: "Intrinsic"
+}
+documentation {
+  description:
+    "Disables the real-time control service.\n"
+    "\n"
+    "The real-time control service typically control robots, fieldbuses and \n"
+    "other hardware connected to the real-time PC.\n"
+    "Disabled state means that no control commands are sent to the hardware.\n"
+    "Also, disable_realtime_control cancels all active sessions of the real-time \n"
+    "control service, stopping skills that control connected hardware.\n"
+    "It sends DisableRealtimeControl to hardware modules that are connected to the \n"
+    "real-time control service. For robot hardware modules, this typically \n"
+    "shuts downs the real-time streaming control connection, after which the \n"
+    "robot control box can cleanly exit the automated/external control mode."
+    "\n"
+    "The main use case is to cleanly shut down robot real-time streaming \n"
+    "before exiting the automated control mode of robot hardware.\n"
+    "The parameter skip_cell_control_hardware allows disabling only \n"
+    "operational hardware modules, while keeping cell control hardware \n"
+    "running.\n"
+    "See https://flowstate.intrinsic.ai/docs/guides/design_a_workcell/set_up_hardware_modules/configure_the_realtime_control_service/#cell-control \n"
+    "for details.\n"
+    "\n"
+    "Another use case is to manually cancel skills or jogging sessions that \n"
+    "stopped responding.\n"
+}
+options {
+  supports_cancellation: false
+  cc_config {
+    create_skill: "::intrinsic::skills::DisableRealtimeControl::CreateSkill"
+  }
+}
+parameter {
+  message_full_name: "intrinsic_proto.skills.DisableRealtimeControlParams"
+  default_value {
+    type_url: "type.googleapis.com/intrinsic_proto.skills.DisableRealtimeControlParams"
+  }
+}

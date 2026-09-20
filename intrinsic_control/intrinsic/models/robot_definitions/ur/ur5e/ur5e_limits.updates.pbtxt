@@ -1,0 +1,184 @@
+# proto-file: intrinsic/scene/proto/v1/scene_object_updates.proto
+# proto-message: intrinsic_proto.scene_object.v1.SceneObjectUpdates
+
+# Copyright 2026 Intrinsic Innovation LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+updates: {
+  update_joints {
+    joint_positions {
+      key: "shoulder_pan_joint"
+      value: -1.45
+    }
+    joint_positions {
+      key: "shoulder_lift_joint"
+      value: -1.18
+    }
+    joint_positions {
+      key: "elbow_joint"
+      value: -2.15
+    }
+    joint_positions {
+      key: "wrist_1_joint"
+      value: -1.35
+    }
+    joint_positions {
+      key: "wrist_2_joint"
+      value: 1.57
+    }
+    joint_positions {
+      key: "wrist_3_joint"
+      value: -0.5
+    }
+
+    # These velocity limits are significantly below UR5e datasheet values due to
+    # saturation behaviour of UR controller above these velocities. Please
+    # consult with @sotiropoulos before changing.
+    joint_system_limits: {
+      key: "shoulder_pan_joint"
+      value: {
+        min_position: -6.2831853
+        max_position: 6.2831853
+        max_velocity: 1.0
+        max_acceleration: 15
+        max_jerk: 9000
+        max_effort: 100
+      }
+    }
+    joint_system_limits: {
+      key: "shoulder_lift_joint"
+      value: {
+        min_position: -4.1
+        max_position: 0.96
+        max_velocity: 1.0
+        max_acceleration: 15
+        max_jerk: 9000
+        max_effort: 100
+      }
+    }
+    joint_system_limits: {
+      key: "elbow_joint"
+      value: {
+        min_position: -2.8
+        max_position: 2.8
+        max_velocity: 1.0
+        max_acceleration: 15
+        max_jerk: 9000
+        max_effort: 100
+      }
+    }
+    joint_system_limits: {
+      key: "wrist_1_joint"
+      value: {
+        min_position: -6.2831853
+        max_position: 6.2831853
+        max_velocity: 1.0
+        max_acceleration: 15
+        max_jerk: 9000
+        max_effort: 100
+      }
+    }
+    joint_system_limits: {
+      key: "wrist_2_joint"
+      value: {
+        min_position: -6.2831853
+        max_position: 6.2831853
+        max_velocity: 1.0
+        max_acceleration: 15
+        max_jerk: 9000
+        max_effort: 100
+      }
+    }
+    joint_system_limits: {
+      key: "wrist_3_joint"
+      value: {
+        min_position: -6.2831853
+        max_position: 6.2831853
+        max_velocity: 1.0
+        max_acceleration: 15
+        max_jerk: 9000
+        max_effort: 100
+      }
+    }
+
+    # 95% of system limits, rounded down
+    joint_application_limits: {
+      key: "shoulder_pan_joint"
+      value: {
+        min_position: -6.2203534
+        max_position: 6.2203534
+        max_velocity: 0.8
+        max_acceleration: 10
+        max_jerk: 8001
+        max_effort: 100
+      }
+    }
+    joint_application_limits: {
+      key: "shoulder_lift_joint"
+      value: {
+        min_position: -4.059
+        max_position: 0.9504
+        max_velocity: 0.8
+        max_acceleration: 10
+        max_jerk: 8001
+        max_effort: 100
+      }
+    }
+    joint_application_limits: {
+      key: "elbow_joint"
+      value: {
+        min_position: -2.772
+        max_position: 2.772
+        max_velocity: 0.8
+        max_acceleration: 10
+        max_jerk: 8001
+        max_effort: 100
+      }
+    }
+    joint_application_limits: {
+      key: "wrist_1_joint"
+      value: {
+        min_position: -6.2203534
+        max_position: 6.2203534
+        max_velocity: 0.8
+        max_acceleration: 10
+        max_jerk: 8001
+        max_effort: 100
+      }
+    }
+    joint_application_limits: {
+      key: "wrist_2_joint"
+      value: {
+        min_position: -6.2203534
+        max_position: 6.2203534
+        max_velocity: 0.8
+        max_acceleration: 10
+        max_jerk: 8001
+        max_effort: 100
+      }
+    }
+    joint_application_limits: {
+      key: "wrist_3_joint"
+      value: {
+        min_position: -6.2203534
+        max_position: 6.2203534
+        max_velocity: 0.8
+        max_acceleration: 10
+        max_jerk: 8001
+        max_effort: 100
+      }
+    }
+  }
+}

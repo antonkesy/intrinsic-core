@@ -1,0 +1,125 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+syntax = "proto3";
+
+package intrinsic_proto.config;
+
+import "intrinsic/assets/proto/v1/recommended_configuration_config.proto";
+import "intrinsic/assets/services/proto/service_http_config.proto";
+import "intrinsic/assets/services/proto/service_permissions.proto";
+import "intrinsic/assets/services/proto/v1/dynamic_reconfiguration.proto";
+import "intrinsic/assets/services/proto/v1/service_inspection.proto";
+import "intrinsic/assets/services/proto/v1/service_state.proto";
+import "intrinsic/kubernetes/workcell_spec/proto/image.proto";
+import "intrinsic/resources/proto/resource_permissions.proto";
+import "intrinsic/resources/proto/resource_volume.proto";
+
+option go_package = "intrinsic/resources/proto/resource_service_definition_go_proto";
+
+message ResourceServiceDefinition {
+  repeated string service_proto_prefixes = 1;
+
+  string config_message_full_name = 8;
+
+  // Deprecated: Provide an empty `http_config` instead.
+  bool provides_http_endpoint = 4 [deprecated = true];
+
+  // The HTTP configuration for this resource. If provided (including empty
+  // config), an HTTP route to the resource will be set up.
+  intrinsic_proto.services.ServiceHttpConfig http_config = 5;
+
+  // Optional configuration for the dynamic reconfiguration service interfaces
+  // provided to the Intrinsic platform.
+  optional intrinsic_proto.services.v1.DynamicReconfigurationConfig
+      dynamic_reconfiguration_config = 11;
+  bool supports_dynamic_reconfiguration = 6 [deprecated = true];
+
+  // Optional configuration for the service state service interfaces provided
+  // to the Intrinsic platform.
+  optional intrinsic_proto.services.v1.ServiceStateConfig service_state_config =
+      12;
+  bool supports_service_state = 7 [deprecated = true];
+
+  // Services needed to use this resource type with real hardware.  Is specified
+  // only if a pod needs to be run.
+  ResourceSpec real_spec = 2;
+
+  // Services needed to use this resource type in sim.  Is specified only if a
+  // pod needs to be run in sim.
+  ResourceSpec sim_spec = 3;
+
+  // The inspection config for the service. Optional since not all services
+  // support inspection.
+  optional services.v1.ServiceInspectionConfig service_inspection_config = 9;
+
+  // Config recommendation options for the Service.
+  optional intrinsic_proto.assets.v1.RecommendedConfigurationConfig
+      recommended_configuration_config = 10;
+}
+
+// ResourceSpec defines the pod that is run for the asset and the
+// manner in which it is run.  It translates more-or-less directly into a k8s
+// Pod spec.  Some limits or allowlists may be enforced on the requested spec at
+// runtime.
+message ResourceSpec {
+  // Images to be run in the pod. The first image will always be set, more than
+  // one image is optional.
+  repeated ImageWithSettings image = 6;
+  // Init containers to be run in the pod. Optional.
+  repeated ImageWithSettings init_containers = 8;
+
+  bool host_network = 3;
+
+  // The accessible volumes for the resource.
+  repeated Volume volumes = 4;
+
+  // Security settings for the pod and all its containers.
+  intrinsic_proto.services.PodSecurityContext security_context = 7;
+
+  reserved 1, 2, 5;
+  reserved "images", "service_proto_prefixes", "use_provided_pod_spec";
+}
+
+message ImageWithSettings {
+  workcell_spec.v1.Image image = 1;
+
+  repeated VolumeMount volume_mounts = 3;
+
+  SecurityContext security_context = 4;
+
+  // The compute resource requirements for the image.
+  ResourceRequirements resources = 6;
+
+  // If true, then this image's workload must be scheduled on a real-time
+  // capable system.
+  bool requires_rtpc_node = 5;
+
+  // The environment variables to set in the container.
+  repeated EnvVar env_vars = 7;
+
+  // The arguments to pass to the container.
+  repeated string args = 8;
+
+  reserved 2;
+}
+
+message EnvVar {
+  // The name of the environment variable.
+  string name = 1;
+  // The value of the environment variable.
+  string value = 2;
+}
+

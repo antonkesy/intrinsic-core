@@ -1,0 +1,340 @@
+// Copyright 2026 Intrinsic Innovation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package intrinsic_proto.world;
+
+import "intrinsic/math/proto/pose.proto";
+import "intrinsic/world/proto/entity_search.proto";
+import "intrinsic/world/proto/collision_settings.proto";
+
+option go_package = "intrinsic/world/proto/world_updates_go_proto";
+
+// A single update to make to the world
+// Next tag: 26
+message WorldUpdate {
+  oneof update {
+    MoveGroup move_group = 1;
+    RenameGroup rename_group = 22;
+    GroupCollisionExclusion group_collision_exclusions = 3;
+    SetRobotDofValues set_robot_dof_values = 21;
+    DisableRobot disable_robots = 5;
+    RobotSelfExclusions robot_self_exclusions = 25;
+    AddLabel add_label = 7;
+    RemoveLabel remove_label = 20;
+    SetAlias set_alias = 8;
+    SetObjectNames set_object_names = 23;
+    AddEntity add_entity = 9;
+    DeleteEntity delete_entity = 10;
+    SetRobotIkSolverKey set_robot_ik_solver_key = 11;
+    CollisionExclusion collision_exclusions = 12;
+    ReparentEntities reparent_entity = 14;
+    UpdateAttachmentPose update_attachment = 15;
+    RenameEntity rename_entity = 16;
+    SetNamedConfiguration set_named_configuration = 17;
+    AppendToDefaultRuleSet append_to_default_rule_set = 24;
+
+    // Deprecated. Use RobotSelfExclusions instead.
+    // TODO(b/283374158): This is blocking worlds from removing group id.
+    SelfExclusions self_exclusions = 6 [deprecated = true];
+
+    // Deprecated. Use SetRobotDofValues instead.
+    SetDofValues set_dof_values = 4 [deprecated = true];
+
+    // TODO(b/283374158): This is blocking worlds from removing group id.
+    // Deprecated. Use SetRobotIkSolverKey instead.
+    SetRobotTip set_robot_tip = 13 [deprecated = true];
+  }
+
+  reserved 2, 19, 18;
+  reserved "additional_label", "set_resource";
+}
+
+// Updates to make to the world. Things like adding labels or setting dofs.
+message WorldUpdates {
+  // A set of updates to apply to the world in order
+  repeated WorldUpdate updates = 1;
+}
+
+message AddEntity {
+  // Search criteria for finding the parent of the new entity.
+  intrinsic_proto.world.EntitySearchCriteria parent = 1;
+  // The local name of the new entity.
+  string local_name = 2;
+  // An optional alias for the new entity.
+  string alias = 3;
+  // The pose of the entity relative to its parent.
+  intrinsic_proto.Pose parent_t_this = 7;
+
+  reserved 4, 5, 6;
+  reserved "parent_t_this_old", "collision_geo", "visual_geo";
+}
+
+message DeleteEntity {
+  // The search criteria to use when finding the entities to delete.
+  intrinsic_proto.world.EntitySearchCriteria entities = 1;
+  // If set to true and more than one entity is found, this will delete all of
+  // the entities that match the search criteria. If there are multiple matches
+  // found and apply_to_multiple is false an error will be returned.
+  bool apply_to_multiple = 2;
+
+  // If set the children of the found entities will be removed as well.
+  bool remove_children = 3;
+}
+
+// Add additional labels to entities in the world.
+message AddLabel {
+  // The search criteria to use when finding the entities to update.
+  intrinsic_proto.world.EntitySearchCriteria entities = 1;
+  // If set to true and more than one entity is found, this will update all of
+  // the entities that match the search criteria. If there are multiple matches
+  // found and apply_to_multiple is false an error will be returned.
+  bool apply_to_multiple = 2;
+  // The labels to add to the found entities.
+  repeated string labels_to_add = 3;
+}
+
+// Remove labels from entities in the world.
+message RemoveLabel {
+  // The search criteria to use when finding the entities to update.
+  intrinsic_proto.world.EntitySearchCriteria entities = 1;
+  // If set to true and more than one entity is found, this will update all of
+  // the entities that match the search criteria. If there are multiple matches
+  // found and apply_to_multiple is false an error will be returned.
+  bool apply_to_multiple = 2;
+  // The labels to remove to the found entities.
+  repeated string labels_to_remove = 3;
+}
+
+// Set the tip of a robot. This specifies where the solver solves for.
+message SetRobotTip {
+  // The name of the robot to update.
+  string robot_name = 1;
+
+  // The search criteria to use when finding the tip entity to update.
+  intrinsic_proto.world.EntitySearchCriteria tip_entity = 2;
+}
+
+// Moves all object in a group into another group.
+message MoveGroup {
+  string old_group_id = 1;
+  string new_group_id = 2;
+}
+
+// Rename group name
+message RenameGroup {
+  string old_group_id = 1;
+  string new_group_id = 2;
+}
+
+// Exclude all collisions between pairs of objects from each group.
+message GroupCollisionExclusion {
+  string group1 = 1;
+  string group2 = 2;
+}
+
+// Set the dof values of the robots to the given value.
+message SetDofValues {
+  string robot_id = 1;
+  repeated double dof_values = 2;
+
+  // If true, we will skip limit checks when setting the dof values.
+  bool skip_limit_enforcement = 3;
+}
+
+// Set the dof values of the robots to the given value.
+message SetRobotDofValues {
+  oneof robot {
+    uint32 robot_entity_id = 1;
+    string resource_name = 2;
+  }
+
+  message DofValues {
+    repeated double dof_values = 1;
+  }
+
+  oneof dof_values {
+    DofValues values = 3;
+    string named_configuration = 4;
+  }
+
+  // If true, we will skip limit checks when setting the dof values.
+  bool skip_limit_enforcement = 5;
+}
+
+// Disable the given robot by changing all of its joints to fixed joints.
+//
+// Note: This operation is currently irreversible.
+message DisableRobot {
+  string robot_id = 1;
+}
+
+// Add exclusion pairs for all pairs of objects for the robot that are currently
+// in collision, assuming that in the current position nothing should be in
+// collision.
+message SelfExclusions {
+  string robot_id = 1;
+}
+
+// Add exclusion pairs for all pairs of objects for the robot that are currently
+// in collision, assuming that in the current position nothing should be in
+// collision.
+message RobotSelfExclusions {
+  // The search criteria to use when finding the robot entity to update.
+  intrinsic_proto.world.EntitySearchCriteria entity = 1;
+
+  // If set we will also mark multiple links connected rigidly within the robot
+  // as excluded from collision with each other. For example if we have the
+  // elbow link of a robot that contains an extra attachment adapter plate, the
+  // plate and the elbow are attached to each other with no joint between them.
+  // This means they cannot move relative to each other and are part of the same
+  // conceptual link. The entities that are conceptually connected like this
+  // will be excluded from collisions with other.
+  bool also_exclude_link_groups = 2;
+}
+
+// Sets the alias for an entity in the world. This alias must be unique within
+// the world.
+message SetAlias {
+  // The search criteria to use when finding the entity to update.
+  intrinsic_proto.world.EntitySearchCriteria entities = 1;
+  // The alias to assign to the entity.
+  string alias = 2;
+}
+
+// Convenience update type for naming objects (in the sense of the object world
+// API) in worlds created from SDF.
+//
+// The following two world updates are equivalent:
+//
+//   SetObjectNames {
+//     models_to_objects: {
+//       sdf_model_name: "robot::arm"
+//       object_name: "my_robot"
+//     }
+//   }
+//
+//   SetAlias {
+//     entities: {
+//       by_and: {
+//         criteria: { by_labels: { label_ids: "robot::arm" } } # model name
+//         criteria: { by_components: { collections_component: PRESENT } }
+//       }
+//     }
+//     alias: "my_robot" # object name
+//   }
+message SetObjectNames {
+  message ModelToObject {
+    // Full SDF model name which is present as a label on the collection entity
+    // that is created for the SDF model. E.g., "ground_plane" or "robot::arm".
+    string sdf_model_name = 1;
+
+    // The object name to assign as an alias to the collection entity that is
+    // created for the SDF model.
+    string object_name = 2;
+  }
+
+  repeated ModelToObject models_to_objects = 1;
+}
+
+// Sets robots' IK solver keys.
+message SetRobotIkSolverKey {
+  // The search criteria to use to find the robot(s). For each entity found:
+  // - If it is a robot, its solver key will be changed.
+  // - If it is a part of a robot (e.g. link or joint), the solver key of its
+  //   parent robot will be changed.
+  // - If it is neither a robot nor a part of a robot, this operation will fail
+  //   with an error and make no changes.
+  intrinsic_proto.world.EntitySearchCriteria entities = 1;
+
+  // If set to true and more than one entity is found, this will update all of
+  // the entities that match the search criteria. If there are multiple matches
+  // found and apply_to_multiple is false an error will be returned.
+  bool apply_to_multiple = 2;
+
+  // The name of the solver key to assign.
+  string solver_key = 3;
+
+  // If specified, override_tip_entity must resolve to exactly one entity. This
+  // entity will be marked with a "tip" label and used as the tip frame for all
+  // affected robots.
+  //
+  // If not specified, the existing tip frames of affected robots will be left
+  // unchanged.
+  intrinsic_proto.world.EntitySearchCriteria override_tip_entity = 4;
+}
+
+// Add a collision exclusion between the pair of entities
+message CollisionExclusion {
+  // Search criteria for finding one of the entities.
+  intrinsic_proto.world.EntitySearchCriteria entity_a = 1;
+  // Search criteria for finding the other entity.
+  intrinsic_proto.world.EntitySearchCriteria entity_b = 2;
+}
+
+// Updates the parent of an entity
+message ReparentEntities {
+  // The search criteria to use when finding the entity to update.
+  intrinsic_proto.world.EntitySearchCriteria entity = 1;
+
+  // The search criteria to use when finding the new parent.
+  intrinsic_proto.world.EntitySearchCriteria parent_entity = 2;
+
+  // The pose of the entity relative to its new parent.
+  //
+  // NOTE: If not specified then the world relative transform of the entity and
+  // the new parent will remain the same after the reparenting.
+  intrinsic_proto.Pose parent_t_entity = 4;
+
+  reserved 3;
+  reserved "parent_t_entity_old";
+}
+
+// Updates the attachment pose between two entities
+message UpdateAttachmentPose {
+  // The search criteria to use when finding the entity to update.
+  intrinsic_proto.world.EntitySearchCriteria entity = 1;
+
+  // The pose of the entity relative to its parent.
+  intrinsic_proto.Pose parent_t_entity = 3;
+
+  reserved 2;
+  reserved "parent_t_entity_old";
+}
+
+// Changes the local and display names of an entity.
+message RenameEntity {
+  // The search criteria to use when finding the entity to update.
+  intrinsic_proto.world.EntitySearchCriteria entity = 1;
+
+  // Name to assign.
+  string new_name = 2;
+}
+
+// Sets the values for a named configuration of a robot
+message SetNamedConfiguration {
+  // The search criteria to use when finding the robot entity to update.
+  intrinsic_proto.world.EntitySearchCriteria entity = 1;
+
+  // Name of the configuration. If it exists, it will be overridden.
+  string configuration_name = 2;
+
+  // The dof values representing the configuration.
+  repeated double dof_values = 3;
+}
+
+message AppendToDefaultRuleSet {
+  intrinsic_proto.world.CollisionSettings collision_settings = 1;
+}
