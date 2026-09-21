@@ -183,6 +183,7 @@ cc_library(
         "//intrinsic_sdk/intrinsic/geometry/api:shape_factory",
         "//intrinsic_sdk/intrinsic/geometry/internal/util:scale_shape",
         "//intrinsic_sdk/intrinsic/math:pose3",
+        "//intrinsic_sdk/intrinsic/util/object_store:object_ref",
         "//intrinsic_sdk/intrinsic/world:entity_id",
         "//intrinsic_sdk/intrinsic/world:geometry_types",
         "//intrinsic_sdk/intrinsic/world/hashing",

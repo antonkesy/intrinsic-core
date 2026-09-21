@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <sstream>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
@@ -36,6 +37,7 @@
 #include "intrinsic/geometry/api/shape_factory.h"
 #include "intrinsic/geometry/internal/util/scale_shape.h"
 #include "intrinsic/util/eigen.h"
+#include "intrinsic/util/object_store/object_ref.h"
 #include "intrinsic/util/status/ret_check.h"
 #include "intrinsic/util/status/status_macros.h"
 #include "intrinsic/world/collision/collision_check_cache.h"
@@ -71,8 +73,21 @@ struct ScaledCoalGeo {
   std::size_t mem_usage_bytes = 0;
 };
 
-// Cache for generated Coal collision geometries to avoid re-generating meshes
-// or point clouds for identical geometry & scaling.
+// Explicit cache key identifying geometry data via ObjectStore reference
+// fingerprints, avoiding raw pointers whose memory addresses may be recycled.
+using GeoKey = std::variant<std::monostate, ObjectRef<Mesh>,
+                            ObjectRef<shapes::PointCloud>>;
+
+GeoKey GetExactGeoKey(const ExactGeometry& exact_geo) {
+  if (exact_geo.HasMesh()) {
+    return *exact_geo.GetMesh();
+  }
+  if (exact_geo.HasPointCloud()) {
+    return *exact_geo.GetPointCloud();
+  }
+  return std::monostate{};
+}
+
 class CoalGeoCache {
  public:
   CoalGeoCache();
@@ -83,9 +98,16 @@ class CoalGeoCache {
 
   std::string DebugString() const;
   void Clear() { intr_to_coal_map_.clear(); }
+  CoalCollisionChecker::GeoCacheStats GetStats() const {
+    return CoalCollisionChecker::GeoCacheStats{
+        .hits = cache_hits_,
+        .misses = cache_misses_,
+        .size_bytes = intr_to_coal_map_.size(),
+    };
+  }
 
  private:
-  using CoalGeoLru = LruCache<const void*, std::vector<ScaledCoalGeo>>;
+  using CoalGeoLru = LruCache<GeoKey, std::vector<ScaledCoalGeo>>;
   CoalGeoLru intr_to_coal_map_;
   int cache_hits_ = 0;
   int cache_misses_ = 0;
@@ -163,6 +185,19 @@ ScaledCoalGeo CreateScaledCoalGeoFromIntrMesh(
   return ScaledCoalGeo{.coal_geo = std::move(coal_model),
                        .scale = scale,
                        .mem_usage_bytes = mem_usage_bytes};
+}
+
+absl::StatusOr<ScaledCoalGeo> ComputeScaledCoalGeoFromKey(
+    const GeoKey& key, const eigenmath::Vector3d& scale) {
+  if (std::holds_alternative<ObjectRef<Mesh>>(key)) {
+    return CreateScaledCoalGeoFromIntrMesh(
+        std::get<ObjectRef<Mesh>>(key).Value(), scale);
+  }
+  if (std::holds_alternative<ObjectRef<shapes::PointCloud>>(key)) {
+    return CreateScaledCoalGeoFromIntrPointCloud(
+        std::get<ObjectRef<shapes::PointCloud>>(key).Value(), scale);
+  }
+  return absl::FailedPreconditionError("Geometry was empty!");
 }
 
 absl::StatusOr<CoalCollider> MakeColliderFromIntrPrimitive(
@@ -602,12 +637,8 @@ CoalGeoCache::GetOrComputeCoalGeo(const Geometry& geo,
                                   const eigenmath::Vector3d& requested_scale) {
   const ExactGeometry& exact_geo = geo.GetExactGeometry();
 
-  const void* key = nullptr;
-  if (exact_geo.HasMesh()) {
-    key = static_cast<const void*>(&exact_geo.GetMesh()->Value());
-  } else if (exact_geo.HasPointCloud()) {
-    key = static_cast<const void*>(&exact_geo.GetPointCloud()->Value());
-  } else {
+  const GeoKey key = GetExactGeoKey(exact_geo);
+  if (std::holds_alternative<std::monostate>(key)) {
     return absl::InvalidArgumentError("Unexpected ExactGeometry type!");
   }
   auto lookup =
@@ -631,18 +662,8 @@ CoalGeoCache::GetOrComputeCoalGeo(const Geometry& geo,
   }
 
   ++cache_misses_;
-  ScaledCoalGeo new_scaled_geo;
-  if (exact_geo.HasPointCloud()) {
-    INTR_ASSIGN_OR_RETURN(
-        new_scaled_geo,
-        CreateScaledCoalGeoFromIntrPointCloud(
-            exact_geo.GetPointCloud()->Value(), requested_scale));
-  } else if (exact_geo.HasMesh()) {
-    new_scaled_geo = CreateScaledCoalGeoFromIntrMesh(
-        exact_geo.GetMesh()->Value(), requested_scale);
-  } else {
-    return absl::FailedPreconditionError("Geometry was empty!");
-  }
+  INTR_ASSIGN_OR_RETURN(const ScaledCoalGeo new_scaled_geo,
+                        ComputeScaledCoalGeoFromKey(key, requested_scale));
 
   scaled_coal_geos.push_back(new_scaled_geo);
 
@@ -771,6 +792,17 @@ CoalCollisionChecker::~CoalCollisionChecker() = default;
 void CoalCollisionChecker::ClearGlobalGeoCacheForTesting() {
   absl::MutexLock lock(&geo_cache_mutex);
   global_geo_cache.Clear();
+}
+
+std::string CoalCollisionChecker::GetGlobalGeoCacheDebugStringForTesting() {
+  absl::MutexLock lock(&geo_cache_mutex);
+  return global_geo_cache.DebugString();
+}
+
+CoalCollisionChecker::GeoCacheStats
+CoalCollisionChecker::GetGlobalGeoCacheStatsForTesting() {
+  absl::MutexLock lock(&geo_cache_mutex);
+  return global_geo_cache.GetStats();
 }
 
 absl::StatusOr<std::unique_ptr<CoalCollisionChecker>>

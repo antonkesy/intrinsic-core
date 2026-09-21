@@ -16,6 +16,7 @@
 #define INTRINSIC_WORLD_COAL_COLLISION_CHECKER_H_
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -68,7 +69,19 @@ class CoalCollisionChecker : public CollisionChecker {
     distance_stats_ = distance_stats;
   }
 
+  struct GeoCacheStats {
+    int hits = 0;
+    int misses = 0;
+    int64_t size_bytes = 0;
+  };
+
+  // Empties the global geometry cache for testing. Note that cumulative
+  // telemetry counters (hits and misses) are intentionally preserved across
+  // clears to reflect production monitoring semantics; tests should inspect
+  // metric deltas via GetGlobalGeoCacheStatsForTesting().
   static void ClearGlobalGeoCacheForTesting();
+  static std::string GetGlobalGeoCacheDebugStringForTesting();
+  static GeoCacheStats GetGlobalGeoCacheStatsForTesting();
 
   struct ColliderUserData {
     PhysicalEntityId entity_id;
