@@ -19,4 +19,5 @@ exports_files([
     "MODULE.bazel",
     "requirements.txt",
     "requirements.in",
+    "AGENTS.md",
 ])
