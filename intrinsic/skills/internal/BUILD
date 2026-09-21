@@ -192,6 +192,28 @@ cc_library(
 )
 
 cc_library(
+    name = "kinematic_object_for_position_part",
+    srcs = ["kinematic_object_for_position_part.cc"],
+    hdrs = ["kinematic_object_for_position_part.h"],
+    deps = [
+        "//intrinsic/util/status:status_macros",
+        "//intrinsic_control/intrinsic/icon/equipment:equipment_utils",
+        "//intrinsic_sdk/intrinsic/skills/cc:equipment_pack",
+        "//intrinsic_sdk/intrinsic/world/objects:kinematic_object",
+        "//intrinsic_sdk/intrinsic/world/objects:object_world_client",
+        "//intrinsic_sdk/intrinsic/world/objects:object_world_ids",
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/strings:string_view",
+        "@intrinsic_apis//intrinsic/icon/equipment:icon_equipment_cc_proto",
+        "@intrinsic_apis//intrinsic/logging/proto:context_cc_proto",
+        "@intrinsic_apis//intrinsic/resources/proto:resource_handle_cc_proto",
+    ],
+)
+
+cc_library(
     name = "predict_context_impl",
     srcs = ["predict_context_impl.cc"],
     hdrs = ["predict_context_impl.h"],
@@ -228,28 +250,6 @@ py_library(
         "//intrinsic_sdk/intrinsic/world/python:object_world_ids",
         "//intrinsic_sdk/intrinsic/world/python:object_world_resources",
         "@intrinsic_apis//intrinsic/resources/proto:resource_handle_py_pb2",
-    ],
-)
-
-cc_library(
-    name = "kinematic_object_for_position_part",
-    srcs = ["kinematic_object_for_position_part.cc"],
-    hdrs = ["kinematic_object_for_position_part.h"],
-    deps = [
-        "//intrinsic/util/status:status_macros",
-        "//intrinsic_control/intrinsic/icon/equipment:equipment_utils",
-        "//intrinsic_sdk/intrinsic/skills/cc:equipment_pack",
-        "//intrinsic_sdk/intrinsic/world/objects:kinematic_object",
-        "//intrinsic_sdk/intrinsic/world/objects:object_world_client",
-        "//intrinsic_sdk/intrinsic/world/objects:object_world_ids",
-        "@abseil-cpp//absl/log",
-        "@abseil-cpp//absl/status",
-        "@abseil-cpp//absl/status:statusor",
-        "@abseil-cpp//absl/strings",
-        "@abseil-cpp//absl/strings:string_view",
-        "@intrinsic_apis//intrinsic/icon/equipment:icon_equipment_cc_proto",
-        "@intrinsic_apis//intrinsic/logging/proto:context_cc_proto",
-        "@intrinsic_apis//intrinsic/resources/proto:resource_handle_cc_proto",
     ],
 )
 
