@@ -61,9 +61,9 @@ message PinchGripperCommand {
 // For percentage properties, min values will be converted to 0 % and
 // max values will be converted to 100 %.
 // I do not use
-// import "intrinsic/perception/public/proto/camera_settings.proto";
+// import "intrinsic/perception/proto/camera_settings.proto";
 // because it will expect camera_settings_fastrtps_cc_proto which is not
-// declared in package intrinsic/perception/public/proto .
+// declared in package intrinsic/perception/proto .
 message PhysicalQuantityFormatProperties {
   // The properties in the International System of Units (SI).
   intrinsic_proto.perception.v1.FloatSettingProperties si_properties = 1;
