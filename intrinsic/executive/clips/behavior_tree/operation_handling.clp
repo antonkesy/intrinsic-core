@@ -98,7 +98,7 @@
       (parameter-proto 0) (resources (create$ )) (return-value-proto 0)
       (span-reference-id ?*TRACING-INVALID-SPAN-ID*)
       (predictions-span-reference-id ?*TRACING-INVALID-SPAN-ID*) (scene-id "")
-      (extended-status-proto-id 0)
+      (extended-status-proto-id 0) (recovery-state-proto 0)
       (skill-instances-are-reset FALSE))
   )
   (return (result-create TRUE ""))
@@ -421,10 +421,21 @@
     (pb-remove ?old-recovery-state-proto)
   )
 
+  (bind ?new-recovery-state-proto ?old-recovery-state-proto)
+  (if (<> ?recovery-state-proto 0) then
+    (if (<> ?old-recovery-state-proto 0) then
+      (printout error (str-cat "When transitioning to " ?target-state ": There "
+        "was an old recovery state proto already set and a new recovery state "
+        "proto specified. This should not happen.") crlf)
+      (pb-remove ?old-recovery-state-proto)
+    )
+    (bind ?new-recovery-state-proto ?recovery-state-proto)
+  )
+
   (modify ?of (state ?target-state) (span-reference-id ?new-span-reference-id)
               (parameter-proto ?new-parameter-proto)
               (resources ?new-resources)
-              (recovery-state-proto ?recovery-state-proto)
+              (recovery-state-proto ?new-recovery-state-proto)
               (trace-id ?trace-id) (trace-url ?trace-url)
               (execution-mode ?execution-mode)
               (logged-on-suspend FALSE))
