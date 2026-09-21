@@ -390,3 +390,14 @@
   (modify ?node (run-metadata-proto-execution-mode ?mode)
                 (run-metadata-proto-execution-mode-result-state ?result-state))
 )
+
+(defrule run-metadata-proto-update-scene-id
+  (declare (salience ?*SALIENCE-HIGHER*))
+  ?op <- (operation-envelope (name ?operation-name)
+                      (scene-id ?scene-id)
+                      (run-metadata-proto-scene-id ~?scene-id)
+  )
+ =>
+  (run-metadata-proto-update-field "scene_id" ?scene-id ?operation-name)
+  (modify ?op (run-metadata-proto-scene-id ?scene-id))
+)

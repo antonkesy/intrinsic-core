@@ -138,6 +138,10 @@
   ; cleared when the operation is reset.
   (slot scene-id (type STRING))
 
+  ; Tracks the state of scene-id in the metadata proto so we can keep it
+  ; up-to-date
+  (slot run-metadata-proto-scene-id (type STRING))
+
   ; An ExtendedStatus proto created or propagated up on failure.
   (slot extended-status-proto-id (type INTEGER))
 
