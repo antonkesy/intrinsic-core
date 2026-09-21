@@ -2,7 +2,6 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/Intrinsic%20developer%20community-Join%20us-blue.svg)](https://developer.intrinsic.ai)
 [![ROS2 Compatibility](https://img.shields.io/badge/ROS2_Compatible-brightgreen.svg)](https://www.ros.org/)
-[![Discourse](https://img.shields.io/badge/Join_Community-231f20.svg)](https://developer.intrinsic.ai)
 
 Intrinsic Core™ provides an open, local runtime, SDK, and hardware agnostic, real-time control framework for industrial robotics. The goal is to make it easier and faster to build AI-enabled robotics applications by providing open, foundational building blocks—from simulation and 6-DoF perception to hardware execution.
 
@@ -15,7 +14,7 @@ Intrinsic Core™ provides an open, local runtime, SDK, and hardware agnostic, r
 ## Intrinsic Core Architecture
 ![Intrinsic Core Architecture](developer_resources/img/intrinsic_core_architecture.png)
 
-📖 Documentation & community: For  tutorials, guides, and a community forum for support and troubleshooting, visit the Intrinsic developer community.
+📖 [Documentation & community](https://developer.intrinsic.ai): For  tutorials, guides, and a community forum for support and troubleshooting, visit the Intrinsic developer community.
 
 ## Intrinsic Core modules
 
@@ -42,7 +41,7 @@ For detailed installation guide, please see the [Installation Documentation](/de
 
 ## Resources and related repositories
 
-🌐 [Intrinsic developer community](developer.intrinsic.ai): Guides, tutorials, a community forum to ask questions, share projects, and get support, and be the first to hear about new tools and features.
+🌐 [Intrinsic developer community](https://developer.intrinsic.ai): Guides, tutorials, a community forum to ask questions, share projects, and get support, and be the first to hear about new tools and features.
 
 ## Related repositories
 
