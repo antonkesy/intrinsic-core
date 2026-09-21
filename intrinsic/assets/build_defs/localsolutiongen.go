@@ -45,7 +45,7 @@ var (
 	assets                 = intrinsicflag.MultiString("assets", nil, "Path to serialized AssetInfo protos. Can be repeated.")
 	localAssets            = intrinsicflag.MultiString("local_assets", nil, "Spec of <asset_info_path>=<bundle_runfiles_path> for local assets. Can be repeated.")
 	catalogAssets          = intrinsicflag.MultiString("catalog_assets", nil, "Path to serialized AssetCatalogRefInfo protos. Can be repeated.")
-	instances              = intrinsicflag.MultiString("instances", nil, "Path to serialized AssetInstanceInfo protos. Can be repeated.")
+	instanceSpecs          = intrinsicflag.MultiString("instances", nil, "Spec of <name>=<asset>[=<config_path>=<config_runfiles_path>] for asset instances. Can be repeated.")
 	objectWorldUpdateFiles = intrinsicflag.MultiString("object_world_updates", nil, "Path to object world updates pbtxt file. Can be repeated.")
 	defaultOperationMode   = flag.String("default_operation_mode", "", "Operation mode of the app. Can be 'sim' or 'real'.")
 	output                 = flag.String("output", "", "Output LocalSolution proto path.")
@@ -91,13 +91,23 @@ func main() {
 		assetCatalogRefInfos[idx] = assetCatalogRefInfo
 	}
 
-	assetInstanceInfos := make([]*assetpb.AssetInstanceInfo, len(*instances))
-	for idx, p := range *instances {
-		assetInstanceInfo := new(assetpb.AssetInstanceInfo)
-		if err := protoio.ReadBinaryProto(p, assetInstanceInfo); err != nil {
-			log.Exitf("failed to read AssetInstanceInfo proto at %q: %v", p, err)
+	instances := make([]*localsolution.Instance, len(*instanceSpecs))
+	for idx, spec := range *instanceSpecs {
+		parts := strings.Split(spec, "=")
+		if len(parts) != 2 && len(parts) != 4 {
+			log.Exitf("invalid --instances format %q, expected <name>=<asset> or <name>=<asset>=<config_path>=<config_runfiles_path>", spec)
 		}
-		assetInstanceInfos[idx] = assetInstanceInfo
+		var configPath, configRunfilesPath string
+		if len(parts) == 4 {
+			configPath = parts[2]
+			configRunfilesPath = parts[3]
+		}
+		instances[idx] = &localsolution.Instance{
+			Name:               parts[0],
+			Asset:              parts[1],
+			ConfigPath:         configPath,
+			ConfigRunfilesPath: configRunfilesPath,
+		}
 	}
 
 	var objectWorldUpdates []*owupb.ObjectWorldUpdate
@@ -127,7 +137,7 @@ func main() {
 		AssetInfos:           assetInfos,
 		AssetLocalInfos:      localAssetInfos,
 		AssetCatalogRefInfos: assetCatalogRefInfos,
-		AssetInstanceInfos:   assetInstanceInfos,
+		Instances:            instances,
 		ObjectWorldUpdates:   objectWorldUpdates,
 		DefaultOperationMode: defaultOpMode,
 		DisplayName:          *displayName,

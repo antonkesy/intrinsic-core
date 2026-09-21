@@ -38,13 +38,13 @@ def _intrinsic_solution_impl(ctx):
         for a in ctx.attr.assets
         if AssetCatalogRefInfo in a
     ]
-    instances = [
-        i[AssetInstanceInfo].instance_info
+    instance_configs = [
+        i[AssetInstanceInfo].config
         for i in ctx.attr.instances
-        if AssetInstanceInfo in i
+        if AssetInstanceInfo in i and i[AssetInstanceInfo].config
     ]
 
-    inputs = assets + catalog_assets + instances + ctx.files.object_world_updates
+    inputs = assets + catalog_assets + instance_configs + ctx.files.object_world_updates
     args = ctx.actions.args().add(
         "--output",
         out,
@@ -54,9 +54,6 @@ def _intrinsic_solution_impl(ctx):
     ).add_all(
         catalog_assets,
         format_each = "--catalog_assets=%s",
-    ).add_all(
-        instances,
-        format_each = "--instances=%s",
     ).add_all(
         ctx.files.object_world_updates,
         format_each = "--object_world_updates=%s",
@@ -76,6 +73,19 @@ def _intrinsic_solution_impl(ctx):
                 "--local_assets",
                 "%s=%s" % (a[AssetInfo].asset_info.path, to_rlocation_path(ctx, a[AssetLocalInfo].bundle_path)),
             )
+    for i in ctx.attr.instances:
+        if AssetInstanceInfo in i:
+            inst = i[AssetInstanceInfo]
+            if inst.config:
+                args.add(
+                    "--instances",
+                    "%s=%s=%s=%s" % (inst.name, inst.asset, inst.config.path, to_rlocation_path(ctx, inst.config)),
+                )
+            else:
+                args.add(
+                    "--instances",
+                    "%s=%s" % (inst.name, inst.asset),
+                )
 
     ctx.actions.run(
         inputs = inputs,
@@ -139,6 +149,7 @@ exec "$(rlocation "{target}")" "{app}" "$@"
         SolutionInfo(
             solution = out,
             asset_bundles = asset_bundles,
+            instance_configs = instance_configs,
         ),
     ]
 

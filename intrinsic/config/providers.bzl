@@ -26,6 +26,7 @@ SolutionInfo = provider(
     "provided by the intrinsic_solution() rule",
     fields = {
         "asset_bundles": "asset bundle files used in the solution",
+        "instance_configs": "instance config files used in the solution",
         "solution": "binary proto file containing a LocalSolution message",
     },
 )

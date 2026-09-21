@@ -19,27 +19,44 @@ package localsolution
 import (
 	"fmt"
 	"maps"
+	"regexp"
 	"slices"
 
 	"intrinsic/assets/idutils"
+	"intrinsic/util/proto/protoio"
 	"intrinsic/util/proto/registryutil"
 
-	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	assetpb "intrinsic/assets/build_defs/asset_go_proto"
+	icpb "intrinsic/assets/proto/v1/instance_config_go_proto"
 	opmodepb "intrinsic/config/proto/operation_mode_go_proto"
 	owupb "intrinsic/world/public/proto/object_world_updates_go_proto"
-
-	anypb "google.golang.org/protobuf/types/known/anypb"
 )
+
+var validInstanceNameRegexp = regexp.MustCompile(`^[a-z]([a-z0-9_]*[a-z0-9])?$`)
+
+func validateInstanceName(name string) error {
+	if !validInstanceNameRegexp.MatchString(name) {
+		return fmt.Errorf("instance name %q is invalid: name must start with a lowercase letter, must use only lowercase letters, numbers and underscores, and must not end with an underscore", name)
+	}
+	return nil
+}
+
+// Instance represents an asset instance configuration.
+type Instance struct {
+	Name               string
+	Asset              string
+	ConfigPath         string
+	ConfigRunfilesPath string
+}
 
 // Options contains options for creating a LocalSolution proto.
 type Options struct {
 	AssetInfos           []*assetpb.AssetInfo
 	AssetLocalInfos      []*assetpb.AssetLocalInfo
 	AssetCatalogRefInfos []*assetpb.AssetCatalogRefInfo
-	AssetInstanceInfos   []*assetpb.AssetInstanceInfo
+	Instances            []*Instance
 	ObjectWorldUpdates   []*owupb.ObjectWorldUpdate
 	DefaultOperationMode opmodepb.OperationMode
 	DisplayName          string
@@ -95,40 +112,40 @@ func New(opts Options) (*assetpb.LocalSolution, error) {
 		}
 	}
 
-	// instanceNames is a set of asset instance names.
-	instanceNames := map[string]struct{}{}
+	seenNames := map[string]struct{}{}
 	var instances []*assetpb.AssetInstanceInfo
-	for _, ai := range opts.AssetInstanceInfos {
-		asset := ai.GetAsset()
+	for _, inst := range opts.Instances {
+		if err := validateInstanceName(inst.Name); err != nil {
+			return nil, err
+		}
+		asset := inst.Asset
 		if _, exists := assets[asset]; !exists {
 			return nil, fmt.Errorf("solution contains instance with no corresponding asset type %q", asset)
 		}
-		if _, exists := instanceNames[ai.GetInstanceName()]; exists {
-			return nil, fmt.Errorf("solution contains multiple asset instances named %q", ai.GetInstanceName())
+		if _, exists := seenNames[inst.Name]; exists {
+			return nil, fmt.Errorf("solution contains multiple asset instances named %q", inst.Name)
 		}
 
-		// If the instance has a config then we parse it with the available file
-		// descriptors and put it in the instance. For now we produce an error if
-		// there are no descriptors available as no downstream components will be
-		// able to parse it. That might change in the future.
-		if ai.GetTextProto() != "" {
-			t, exists := types[asset]
-			if !exists {
-				return nil, fmt.Errorf("cannot find file descriptor set for instance %q", asset)
-			}
-			config := &anypb.Any{}
-			options := new(prototext.UnmarshalOptions)
-			options.Resolver = t
-			if err := options.Unmarshal([]byte(ai.GetTextProto()), config); err != nil {
-				return nil, fmt.Errorf("failed to parse asset configuration: %v", err)
-			}
-			ai.Config = &assetpb.AssetInstanceInfo_Parsed{
-				Parsed: config,
+		// If the instance has a config then we parse it with the file descriptors
+		// if available to confirm that it is valid for this asset at build time.
+		var parsed *icpb.InstanceConfig
+		if inst.ConfigPath != "" {
+			if t, exists := types[asset]; exists {
+				config := &icpb.InstanceConfig{}
+				if err := protoio.ReadTextProto(inst.ConfigPath, config, protoio.WithResolver(t)); err != nil {
+					return nil, fmt.Errorf("failed to parse asset configuration: %w", err)
+				}
+				parsed = config
 			}
 		}
 
-		instanceNames[ai.GetInstanceName()] = struct{}{}
-		instances = append(instances, ai)
+		seenNames[inst.Name] = struct{}{}
+		instances = append(instances, &assetpb.AssetInstanceInfo{
+			Name:               inst.Name,
+			Asset:              inst.Asset,
+			ConfigRunfilesPath: inst.ConfigRunfilesPath,
+			Parsed:             parsed,
+		})
 	}
 
 	return &assetpb.LocalSolution{

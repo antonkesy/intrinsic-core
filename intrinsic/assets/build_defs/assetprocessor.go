@@ -20,6 +20,7 @@ package assetprocessor
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"intrinsic/assets/bundle"
@@ -30,7 +31,6 @@ import (
 	"go.opencensus.io/trace" 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	assetpb "intrinsic/assets/build_defs/asset_go_proto"
@@ -40,8 +40,6 @@ import (
 	commonpb "intrinsic/config/proto/common_go_proto"
 	processpb "intrinsic/config/proto/process_go_proto"
 	rspb "intrinsic/config/proto/resource_set_go_proto"
-
-	anypb "google.golang.org/protobuf/types/known/anypb"
 )
 
 type processedAsset struct {
@@ -143,11 +141,10 @@ func convertAssets(ctx context.Context, solutionAssets []*assetpb.LocalSolution_
 	if len(assets) == 0 {
 		assets = nil
 	}
-
 	return assets, nil
 }
 
-func convertInstances(instanceInfos []*assetpb.AssetInstanceInfo, assets map[string]*processedAsset) (map[string]*apppb.Application_Instance, error) {
+func convertInstances(instanceInfos []*assetpb.AssetInstanceInfo, assets map[string]*processedAsset, pathResolver PathResolver) (map[string]*apppb.Application_Instance, error) {
 	instances := map[string]*apppb.Application_Instance{}
 	for _, i := range instanceInfos {
 		asset := i.GetAsset()
@@ -156,43 +153,43 @@ func convertInstances(instanceInfos []*assetpb.AssetInstanceInfo, assets map[str
 			return nil, fmt.Errorf("instance references unknown asset %q", asset)
 		}
 
-		var serviceConfig *anypb.Any
-		switch s := i.GetConfig().(type) {
-		case *assetpb.AssetInstanceInfo_TextProto:
-			if pa.types == nil {
-				return nil, fmt.Errorf("cannot find types for instance %q", i.GetInstanceName())
-			}
-
-			serviceConfig = &anypb.Any{}
-			options := &prototext.UnmarshalOptions{Resolver: pa.types}
-			if err := options.Unmarshal([]byte(s.TextProto), serviceConfig); err != nil {
-				return nil, fmt.Errorf("failed to parse asset configuration: %v", err)
-			}
-		case *assetpb.AssetInstanceInfo_Parsed:
-			serviceConfig = s.Parsed
-		}
-
-		var scheduledNodeHostname *string
-		if i.GetRequiredNodeHostname() != "" {
-			scheduledNodeHostname = proto.String(i.GetRequiredNodeHostname())
-		}
-
 		var config *icpb.InstanceConfig
-		if serviceConfig != nil || scheduledNodeHostname != nil {
-			if strings.Contains(string(serviceConfig.GetTypeUrl()), "SceneObjectConfig") {
-				return nil, fmt.Errorf("instance %q has a SceneObjectConfig in config", i.GetInstanceName())
+		if i.GetParsed() != nil {
+			config = i.GetParsed()
+		} else if i.GetConfigRunfilesPath() != "" {
+			resolvePath := pathResolver
+			if resolvePath == nil {
+				resolvePath = func(path string) (string, error) { return path, nil }
 			}
-			config = &icpb.InstanceConfig{
-				Variant: &icpb.InstanceConfig_Service{
-					Service: &icpb.InstanceConfig_ServiceInstanceConfig{
-						ServiceConfig:         serviceConfig,
-						ScheduledNodeHostname: scheduledNodeHostname,
-					},
-				},
+			p, err := resolvePath(i.GetConfigRunfilesPath())
+			if err != nil {
+				return nil, fmt.Errorf("failed to resolve config path for instance %q: %w", i.GetName(), err)
+			}
+			b, err := os.ReadFile(p)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read config for instance %q at %q: %w", i.GetName(), p, err)
+			}
+
+			if strings.TrimSpace(string(b)) != "" {
+				unmarshalOpts := &prototext.UnmarshalOptions{}
+				if pa.types != nil {
+					unmarshalOpts.Resolver = pa.types
+				}
+
+				config = &icpb.InstanceConfig{}
+				if err := unmarshalOpts.Unmarshal(b, config); err != nil {
+					return nil, fmt.Errorf("failed to parse asset configuration: %v", err)
+				}
 			}
 		}
 
-		instances[i.GetInstanceName()] = &apppb.Application_Instance{
+		if svc := config.GetService(); svc != nil && svc.GetServiceConfig() != nil {
+			if strings.Contains(string(svc.GetServiceConfig().GetTypeUrl()), "SceneObjectConfig") {
+				return nil, fmt.Errorf("instance %q has a SceneObjectConfig in config", i.GetName())
+			}
+		}
+
+		instances[i.GetName()] = &apppb.Application_Instance{
 			Asset:  asset,
 			Config: config,
 		}
@@ -303,7 +300,7 @@ func (proc *Processor) Process(ctx context.Context, sa *assetpb.LocalSolution) (
 	if err != nil {
 		return nil, err
 	}
-	instances, err := convertInstances(sa.GetInstances(), processedAssets)
+	instances, err := convertInstances(sa.GetInstances(), processedAssets, proc.PathResolver)
 	if err != nil {
 		return nil, err
 	}
