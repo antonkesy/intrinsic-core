@@ -30,7 +30,6 @@ go_library(
         "//intrinsic/assets/proto:installed_assets_go_proto",
         "//intrinsic/util/proto:protoio",
         "//intrinsic/util/proto:registryutil",
-        "@com_github_masterminds_semver//:semver",
         "@intrinsic_apis//intrinsic/assets/proto:id_go_proto",
         "@intrinsic_apis//intrinsic/assets/proto:view_go_proto",
         "@intrinsic_apis//intrinsic/proto_tools/proto:proto_registry_go_proto",
