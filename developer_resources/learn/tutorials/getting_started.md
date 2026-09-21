@@ -48,7 +48,7 @@ Intrinsic Core uses [Kubernetes](../glossary/general_terms.md#kubernetes-k8s) to
    ```bash
    cd ~
    gh repo clone intrinsic-ai/intrinsic-core -- --revision=20260921.0
-   gh repo clone intrinsic-ai/intrinsic-omts -- --revision=v.0.0.4
+   gh repo clone intrinsic-ai/intrinsic-omts -- --revision=v0.0.4
    ```
 
 4. Install k3s:
@@ -57,7 +57,6 @@ Intrinsic Core uses [Kubernetes](../glossary/general_terms.md#kubernetes-k8s) to
    sudo apt install -y curl
    ~/intrinsic-core/intrinsic_runtime/setup_k3s.sh
    ```
-
 
 5. Make sure that your shell has the access it needs:
 
@@ -70,11 +69,10 @@ Intrinsic Core uses [Kubernetes](../glossary/general_terms.md#kubernetes-k8s) to
 
    ```bash
    gh release download --repo intrinsic-ai/intrinsic-core 20260921.0 \
-   --pattern intrinsic-base-linux-amd64.tar \
-   --output /tmp/intrinsic-base-linux-amd64.tar --clobber
+     --pattern intrinsic-base-linux-amd64.tar \
+     --output /tmp/intrinsic-base-linux-amd64.tar --clobber
    tar -C /tmp -xvf /tmp/intrinsic-base-linux-amd64.tar
-   RUNFILES_DIR=/tmp/intrinsic-base.runfiles \
-   /tmp/intrinsic-base.runfiles/_main/intrinsic_runtime/kubernetes/intrinsic-deploy-local-core.sh
+   /tmp/intrinsic-base
    ```
 
    You should see:
@@ -82,7 +80,9 @@ Intrinsic Core uses [Kubernetes](../glossary/general_terms.md#kubernetes-k8s) to
    ```text
    [... lots of output ...]
    App status at HH:MM:DD:
-   ChartAssignment app-intrinsic-base All pods are running; maybe they're working, maybe they're not!
+     ChartAssignment app-intrinsic-base All pods are running; maybe they're working, maybe they're not!
+
+
    Timing: XX.XX seconds to install Workcell Spec.
    ```
 
@@ -90,16 +90,17 @@ Intrinsic Core uses [Kubernetes](../glossary/general_terms.md#kubernetes-k8s) to
 
    ```bash
    gh release download --repo intrinsic-ai/intrinsic-core 20260921.0 \
-   --pattern inctl-linux-amd64 \
-   --output /tmp/inctl-linux-amd64 --clobber
+     --pattern inctl-linux-amd64 \
+     --output /tmp/inctl-linux-amd64 --clobber
    sudo mv /tmp/inctl-linux-amd64 /usr/local/bin/inctl
    sudo chmod +x /usr/local/bin/inctl
    ```
+
 8. If you need to run supplied perception packages, it is required to run the following script to configure the K3s setup for GPU support.
 
-```bash
+   ```bash
    sudo ~/intrinsic-core/intrinsic_runtime/setup_nvidia.sh
-```
+   ```
 
 ## Step 2: Build and deploy OMTS
 
@@ -137,7 +138,7 @@ Now Intrinsic Core is running, we can prepare to build and deploy the Open Machi
    ```bash
    cd ~/intrinsic-omts
    bazel run //:omts_solution --config=lab_bb_01 -- \
-   --address localhost:17080 --operation_mode=sim
+     --address localhost:17080 --operation_mode=sim
    ```
 
    After a lot of build warnings and status output, you should see:
@@ -154,7 +155,9 @@ Now Intrinsic Core is running, we can prepare to build and deploy the Open Machi
 | :--- | :--- | :--- |
 | Check failed: ::intrinsic::scene_object::MainImpl() is OK (INTERNAL: Failed to load mesh /path/to/file.glb. Error is No suitable reader found for the file format of file "/path/to/file.glb".; Please validate mesh file '/path/to/file.sdf'; while parsing 0th visual geometry 'base_visual' of link 'base_link'; While parsing links in SDF Model block_50x50x75 to convert to an Intrinsic Scene Object. | The git repo contains large files, but these haven't been fetched to the local clone, and the parser fails to parse the placeholder file. | `sudo apt install git-lfs && git lfs install && git lfs pull` |
 | Error: failed to process Asset ai.intrinsic.omts_enclosure: failed to process SceneObject bundle: failed to process bundle from ...: failed to walk tar file to process assets: error processing file "omts_enclosure_scene_object.gzf": failed to process object: could not upload "3b31bd16a12c40bf" to CAS: failed to upload to CAS: closing stream: rpc error: code = Unimplemented desc = | A required Runtime service is not running. | Retry the step "Download and deploy Intrinsic Core". Because Intrinsic Core runs inside Kubernetes, we can use k9s, a terminal UI for managing Kubernetes, to check the logs.<br>In the terminal, run: `k9s -n app-intrinsic-base -c pods`.<br>The Runtime of Intrinsic Core runs as Kubernetes "[pods](../glossary/general_terms.md#pod)" in a namespace called "app-intrinsic-base": Check that these are healthy. |
+| Error: failed to process Asset ai.intrinsic.attach_object_to_robot: failed to process Skill bundle: failed to process bundle from ...: failed to walk tar file to process assets: error processing file "attach_object_to_robot_skill_image.tar": failed to process image: image write failed: check image failed: rpc error: code = Unknown desc = failed to dial "/run/containerd/containerd.sock": connection error: desc = "transport: error while dialing: dial unix /run/containerd/containerd.sock: connect: connection refused" | The service that manages Asset container images cannot connect to containerd, the daemon that runs containers. | Restart the service: In the terminal, run: `k9s -n app-intrinsic-base -c pods`.<br>Select the line "artifacts-deployment-...", press Ctrl+D to delete the pod, and select Enter, then retry. |
 | Error: failed to process Asset ai.intrinsic.inference_service: failed to process Service bundle: failed to process bundle from...: failed to walk tar file <br>to process assets: error processing file "triton_inference_server_image.tar": failed to process image: could not process tar file "triton_inference_server_image.tar": failed to write reader data to temp file: write /tmp/read-opener-120377528: disk quota exceeded<br>(or "no space left on device") | Your /tmp is either too small, or has a restrictive quota, and the large container images in the OTMS solution fill it up. | `mkdir -p ~/tmp`<br>`TMPDIR=~/tmp bazel run //:omts_solution -- --address localhost:17080 --operation_mode=sim` |
+| `failed to get solution information: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial tcp 10.43.123.92:9777: connect: connection refused"` or `Error: failed to process Asset ai.intrinsic.ioc_pose_estimation.pose_estimator.foundationpose: failed to process Data Asset bundle: failed to read Data bundle: failed to process in-tar reference "data_files/foundationpose_refine.onnx": failed to start upload: rpc error: code = Internal desc = failed to create CAS stream: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing: dial tcp 10.43.248.104:9747: connect: connection refused"` | The IP address of your PC may have changed since it was initially set up. | Reconfigure your PC to use a fixed DHCP lease or static IP. Remove k3s, then follow [Getting started](getting_started.md) to set it up fresh: `sudo /usr/local/bin/k3s-uninstall.sh` then `sudo rm -rf /var/lib/rancher /etc/rancher/ /var/lib/longhorn/ /etc/cni/` |
 
 ## Next steps
 

@@ -19,12 +19,12 @@ The output should include an instance "icon" of the generic_realtime_control_ser
 
 ```text
 Name                            Asset
-building_block                  ai.intrinsic.building_block
 calibration_service             ai.intrinsic.calibration_service
+charuco_9x14_20mm_15mm_dict_5x5 ai.intrinsic.charuco_9x14_20mm_15mm_dict_5x5
 [snip: other Asset instances]
 icon                            ai.intrinsic.generic_realtime_control_service
 [snip: other Asset instances]
-ur_module                       ai.intrinsic.ur5e_hardware_module_ioc
+ur_module                       ai.intrinsic.ur3e_hardware_module_core
 ```
 
 Verify that the [Intrinsic Real-Time Control Framework (ICON)](../glossary/intrinsic_terms.md#intrinsic-real-time-control-framework-icon) is operational:
@@ -56,7 +56,7 @@ Operational Status: ENABLED
 >
 >   Press Down to select the `rs-icon-0` pod. If it's "Pending" with a message of `0/1 nodes are available: 1 node(s) didn't match Pod's node affinity/selector` you should either:
 >   * to use a simulated robot, restart the application with `--operation_mode=sim`
->   * to use a real robot, run `~/intrinsic-core/incode/ioc/setup_realtime.sh` and reboot
+>   * to use a real robot, run `sudo ~/intrinsic-core/intrinsic_runtime/setup_realtime.sh` and reboot
 >
 >   You may need to use k9s to delete the Pending pods before your changes are applied: Select them and press Ctrl+D, then select OK and press Enter. You should see the "age" start counting from zero.
 >
@@ -125,4 +125,4 @@ bazel run //tools/jogging:jog_interactive -- \
 
 If you're curious, you can [look at the source code](https://github.com/intrinsic-ai/intrinsic-omts/blob/main/tools/jogging/jog_interactive.py) of the jogging tool to learn how it communicates with ICON by adjusting the goal position.
 
-Then, proceed to [Cell Customization](cell_customization.md) to learn more about the Object World [Service](../glossary/intrinsic_terms.md#service) by changing the position of objects temporarily or permanently.
+Then, proceed to [Visualize the Solution](visualize_the_solution.md) to observe the Open Machine Tending Solution as it loads and unloads a simulated CNC machine.

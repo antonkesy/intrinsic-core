@@ -18,7 +18,7 @@
 [kuka-system-software-8_6]: https://xpert.kuka.com/ID/PB11620
 [kuka-system-software-8_7]: https://xpert.kuka.com/ID/PB14656
 [kuka-workvisual]: https://xpert.kuka.com/ID/AR31290
-[icon-skills]: ../../../../incode/intrinsic_control/intrinsic/icon/skills
+[icon-skills]: ../../../../intrinsic_control/intrinsic/icon/skills
 
 KUKA industrial robots (e.g. [AGILUS KR6][kuka-agilus]) can be controlled with
 Intrinsic Core through the [RobotSensorInterface][kuka-rsi-4] (RSI) option
@@ -59,7 +59,7 @@ The setup consists of the following steps:
 - A supported KUKA industrial robot that is operational
   (**safety is set up** (the robot is in a safety cell) and KUKA programs can be
   executed). See the
-  [hardware module README](../../../../incode/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/README.md)
+  [hardware module README](../../../../intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/README.md)
   for the list of supported models
 - One of
   - [KUKA C4][kuka-c4-quick-start] controlbox (KRC) with
@@ -80,7 +80,7 @@ The setup consists of the following steps:
   package)
 - An industrial PC (IPC) with Intrinsic Core installed, with real-time tuning
   applied (see
-  [`incode/ioc/setup_realtime.sh`](../../../../incode/ioc/setup_realtime.sh))
+  [`intrinsic_runtime/setup_realtime.sh`](../../../../intrinsic_runtime/setup_realtime.sh))
 - 1 RJ45 CAT6 network cable
 
 ## In a nutshell for experienced KUKA robot users
@@ -265,7 +265,7 @@ To control a KUKA robot you need two assets in your solution:
   control loop.
 
 The supported models and their asset IDs are listed in the
-[hardware module README](../../../../incode/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/README.md),
+[hardware module README](../../../../intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/README.md),
 for example `ai.intrinsic.kuka_kr6_hardware_module` for the KR 6 R900-2.
 
 Define the workcell as an `intrinsic_solution` target that lists both assets
@@ -291,8 +291,8 @@ intrinsic_asset_instance(
 intrinsic_solution(
     name = "my_workcell",
     assets = [
-        "@intrinsic-core//incode/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_hardware_module",
-        "@intrinsic-core//incode/intrinsic_control/intrinsic/icon/machines/common:generic_icon_mainloop_type",
+        "@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_hardware_module",
+        "@intrinsic-core//intrinsic_control/intrinsic/icon/machines/common:generic_icon_mainloop_type",
     ],
     default_operation_mode = "real",
     instances = [
@@ -321,7 +321,7 @@ The configuration of the hardware module is an
 `intrinsic_proto.icon.HardwareModuleConfig` text proto, referenced from the
 `service_config` attribute of the instance. Start from the module's default
 configuration,
-[`kuka_rsi_default_config.textproto`](../../../../incode/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/kuka_rsi_default_config.textproto),
+[`kuka_rsi_default_config.textproto`](../../../../intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/kuka_rsi_default_config.textproto),
 which already matches the addresses used by the Intrinsic option packages:
 
 ```textproto

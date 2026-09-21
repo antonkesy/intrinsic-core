@@ -90,14 +90,13 @@ gedit BUILD
 # Solution deployment definition
 intrinsic_solution(
     name = "omts_solution",
-    add_compose_world_test = False,
-    assets = [
+    assets = _OMTS_SKILL_ASSETS + [
         [snip: workcell-independent assets]
     ] + select({
         ":is_lab_bb_01": [
             "@intrinsic-core//intrinsic/apps/bluebird_caw/resources:caw_enclosure",
-            # "@intrinsic-core//incode/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur3e_hardware_module_ioc", # REMOVE
-            "@intrinsic-core//incode/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr10_r1100_2_hardware_module", #ADD
+            # "@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur3e_hardware_module_core", # REMOVE
+            "@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr10_r1100_2_hardware_module", # ADD
         ],
         "//conditions:default": [
             [snip: assets for a different workcell]
@@ -107,15 +106,13 @@ intrinsic_solution(
     instances = [
         ":enclosure",
         ":robotiq_pinch_gripper",
-        ":building_block",
         ":raw_stock_2x3x5",
-        ":raw_stock_50x50x75",
         ":gazebo_simulator",
         ":charuco_9x14_20mm_15mm_dict_5x5",
         ":calibration_service_instance",
         ":icon",
-       # ":ur_module", # REMOVE
-       ":kuka_rsi_hal_module", #ADD
+        # ":ur_module", # REMOVE
+        ":kuka_rsi_hal_module", # ADD
         ":orbbec_camera",
         ":orbbec_gemini_driver",
         ":motion_planner_service",
@@ -123,6 +120,7 @@ intrinsic_solution(
         ":pose_estimator_service",
         ":train_service",
         ":flowstate_ros_bridge",
+        ":hand_e_gripper_service",
     ] + select({
         [snip: workcell-specific instances]
     }),
@@ -132,27 +130,33 @@ intrinsic_solution(
 intrinsic_asset_instance(
     name = "icon",
     asset = "ai.intrinsic.generic_realtime_control_service",
-    # service_config = "//configs:icon_config.textproto", # REMOVE
-    service_config = "//configs:icon_config_kr10.textproto", # ADD
     instance_name = "icon",
+    service_config = select({
+        # ":is_lab_bb_01": "//configs:lab_bb_01/icon_config.textproto", # REMOVE
+        ":is_lab_bb_01": "//configs:kr_10/icon_config.textproto", # ADD
+        "//conditions:default": "//configs:omts/icon_config.textproto",
+    }),
 )
-#ADD
+# ADD
 intrinsic_asset_instance(
     name = "kuka_rsi_hal_module",
     asset = "ai.intrinsic.kuka_kr10_hardware_module",
-    service_config = ":kuka_rsi_config.textproto",
     instance_name = "kuka_rsi_hal_module",
+    service_config = ":kuka_rsi_config.textproto",
 )
-#REMOVE
-#intrinsic_asset_instance(
-#    name = "ur_module",
-#    asset = select({
-#        ":is_lab_bb_01": "ai.intrinsic.ur3e_hardware_module_ioc",
-#        "//conditions:default": "ai.intrinsic.ur5e_hardware_module_ioc",
-#    }),
-#    service_config = ":ur_module_config.textproto",
-#    instance_name = "ur_module",
-#)
+# REMOVE
+# intrinsic_asset_instance(
+#     name = "ur_module",
+#     asset = select({
+#         ":is_lab_bb_01": "ai.intrinsic.ur3e_hardware_module_core",
+#         "//conditions:default": "ai.intrinsic.ur5e_hardware_module_core",
+#     }),
+#     instance_name = "ur_module",
+#     service_config = select({
+#         ":is_lab_bb_01": "//configs:lab_bb_01/ur_module_config.textproto",
+#         "//conditions:default": "//configs:omts/ur_module_config.textproto",
+#     }),
+# )
 ```
 2. Copy the [default KUKA RSI config](../../../intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/kuka_rsi_default_config.textproto) to the Solution directory. *If connecting to a real robot, this file is where you would configure the IP addresses and other Solution-specific settings.*
 
@@ -168,12 +172,12 @@ cp ~/intrinsic-core/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/k
 
 ```bash
 cd ~/intrinsic-omts
-diff configs/icon_config.textproto configs/icon_config_kr10.textproto
+diff configs/lab_bb_01/icon_config.textproto configs/kr_10/icon_config.textproto
 ```
 
 Notice how:
   
-  a. icon\_config.textproto refers to the Asset instance by name (kuka\_rsi\_hal\_module).
+  a. The ICON config refers to the hardware module's Asset instance by name, so every `ur_module` becomes `kuka_rsi_hal_module`.
   
   b. We've changed the control frequency from the UR's 500 Hz to the KR10's 250 Hz.
 
@@ -188,7 +192,7 @@ Notice how:
 
 ```bash
 cd ~/intrinsic-omts
-sed -i "s/ur_module/kuka_rsi_hal_module/g" configs/*.updates.pbtxt
+sed -i "s/ur_module/kuka_rsi_hal_module/g" configs/lab_bb_01/*.updates.pbtxt
 ```
 
 5. Stop the old Solution and start the Solution with the KUKA robot:
@@ -201,7 +205,7 @@ bazel run //:omts_solution --config=lab_bb_01 -- \
   --address localhost:17080 --operation_mode=sim
 ```
 
-*If you see `No object with name "ur_module" exists.`, check that you cleaned up `relocate_robot.updates.pbtxt` from the previous tutorial, and that you successfully rewrote the other ObjectWorldUpdates with sed in the previous step: `find . -name '*.updates.pbtxt' | xargs grep ur_module`*
+*If you see `No object with name "ur_module" exists.`, check that you cleaned up `relocate_robot.updates.pbtxt` from the previous tutorial, and that you successfully rewrote the other ObjectWorldUpdates with sed in the previous step: `grep ur_module configs/lab_bb_01/*.updates.pbtxt` should print nothing. (The `configs/omts/` files still refer to `ur_module`, but they aren't used when deploying with `--config=lab_bb_01`.)*
 
 6. Check that the new robot is operational:
 
@@ -226,7 +230,7 @@ inctl icon status --address localhost:17080 --instance_name icon
 ```bash
 cd ~/intrinsic-omts
 rm kuka_rsi_config.textproto
-git checkout BUILD configs/*.updates.pbtxt
+git checkout BUILD configs/lab_bb_01/*.updates.pbtxt
 inctl solution stop --address localhost:17080
 bazel run //:omts_solution --config=lab_bb_01 -- \
   --address localhost:17080 --operation_mode=sim

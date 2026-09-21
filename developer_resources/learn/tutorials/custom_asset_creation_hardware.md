@@ -154,7 +154,7 @@ intrinsic_asset(
 )
 ```
 
-2. Replace the mounting information in `intrinsic-omts/configs/ur_module.attachments.updates.pbtxt`:
+2. Replace the mounting information in `intrinsic-omts/configs/lab_bb_01/ur_module.attachments.updates.pbtxt` (or the matching file under `configs/omts/` if you deploy the OMTS cell):
 
 ```protobuf
 # proto-file: intrinsic/world/public/proto/object_world_updates.proto

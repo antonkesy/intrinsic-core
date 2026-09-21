@@ -22,19 +22,20 @@ intrinsic_solution(
         "//assets/ur5e",
     ],
     # An instance combines the Asset with configuration.
-    # You can have more than one instance of each Asset 
+    # You can have more than one instance of each Asset.
     instances = [
         "//assets/building_block_instance",
         "//assets/gripper_instance",
         "//assets/ur5e_instance",
-    ],  # ObjectWorldUpdates describe the geometric relationship between objects.
+    ],
+    # ObjectWorldUpdates describe the geometric relationship between objects.
     object_world_updates = [
         "//configs:scene.updates.pbtxt",
     ],
 )
 ```
 
-*This is a snippet from a Bazel BUILD file, which defines a "target" (a build input or output) called "my\_solution" based on other targets (starting with //...). The object\_world\_updates list refers to a target "//configs:scene.updates.pbtxt" - this is a file called scene\_updates.pbtxt in the repo subdirectory called "configs".*
+*This is a snippet from a Bazel BUILD file, which defines a "target" (a build input or output) called "my\_solution" based on other targets (starting with //...). The object\_world\_updates list refers to a target "//configs:scene.updates.pbtxt" - this is a file called scene.updates.pbtxt in the repo subdirectory called "configs".*
 
 
 The object_world_updates attribute provides a list of configuration files that define the relationships and initial positions of every object, for example that the gripper is attached to the robot, and where the building block is.
@@ -71,7 +72,7 @@ We'll create a new frame that could be used to capture an image of an object bef
 
 
 
-3. Create a configuration file defining a [pose](../glossary/general_terms.md#pose) in the robot's workspace:
+2. Create a configuration file defining a [pose](../glossary/general_terms.md#pose) in the robot's workspace:
 >[!NOTE]
 >The OMTS solution has a frame with a similar purpose called "view". We're using a different name here to avoid a conflict. If you haven't used Protocol Buffers before, this [*text format*](https://protobuf.dev/reference/protobuf/textformat-spec/) will be unfamiliar. The "proto-file" and "proto-message" headers help you identify the schema that defines the possible values, [*ObjectWorldUpdates*](https://github.com/intrinsic-ai/sdk/blob/7e76fa3c7f34618074bfb3556dea1db1911c1bb7/intrinsic/world/proto/object_world_updates.proto#L64) in this case. The rest is a nested structure similar to JSON or YAML, although you should be warned about the [*surprising syntax for lists*](https://protobuf.dev/reference/protobuf/textformat-spec/#:~:text=Fields%20marked%20repeated%20can%20have%20multiple%20values), known as "repeated fields".
 
@@ -130,7 +131,7 @@ bazel --quiet run //tools/world:apply_scene_updates -- \
    ![RViz with capture frame](../../img/learn/tutorials/rviz_capture_frame.png)
 
 
-6. Reset the state of the world and [simulation](../glossary/general_terms.md#simulation): After this starts, switch to RViz to watch the result.
+5. Reset the state of the world and [simulation](../glossary/general_terms.md#simulation): After this starts, switch to RViz to watch the result.
 
 
 ```bash
@@ -303,25 +304,30 @@ intrinsic_solution(
     instances = [
         [snip: lots of instances]
     ],
-    object_world_updates = [
-        "//configs:ur_module.attachments.updates.pbtxt",
-        "//configs:scene.updates.pbtxt",
-        "//configs:align_robot.updates.pbtxt",
-    ] + select({
+    object_world_updates = select({
         ":is_lab_bb_01": [
-            "//configs:lab_bb_01_orbbec_gemini.updates.pbtxt",
+            "//configs:lab_bb_01/ur_module.attachments.updates.pbtxt",
+            "//configs:lab_bb_01/scene.updates.pbtxt",
+            "//configs:lab_bb_01/align_robot.updates.pbtxt",
+            "//configs:lab_bb_01/orbbec_gemini.updates.pbtxt",
             # you'll add the new line here
         ],
         "//conditions:default": [
-            "//configs:cnc_enclosure.updates.pbtxt",
-            "//configs:omts_camera_mount.updates.pbtxt",
-            "//configs:schunk.updates.pbtxt",
+            "//configs:omts/ur_module.attachments.updates.pbtxt",
+            "//configs:omts/scene.updates.pbtxt",
+            "//configs:omts/align_robot.updates.pbtxt",
+            "//configs:omts/cnc_enclosure.updates.pbtxt",
+            "//configs:omts/schunk.updates.pbtxt",
+            "//configs:omts/camera_mount.updates.pbtxt",
+            "//configs:omts/orbbec_gemini.updates.pbtxt",
         ],
     }),
 )
 ```
 
-4. You're going to insert this line, which tells Bazel that your config should be part of the solution, and should override all previous configs. The ":relocate\_robot.updates.pbtxt" syntax tells Bazel that the file is in the same directory as the BUILD file you're editing, also known as the package.
+*The ObjectWorldUpdates are grouped by robot cell: `select()` picks the `:is_lab_bb_01` list when you deploy with `--config=lab_bb_01`, and the `//conditions:default` list otherwise. A label like "//configs:lab_bb_01/scene.updates.pbtxt" refers to the file configs/lab\_bb\_01/scene.updates.pbtxt: the part before the colon is the directory containing the BUILD file (the "package"), and the part after it is the path of the file within that package.*
+
+4. You're going to insert this line at the end of the `:is_lab_bb_01` list, which tells Bazel that your config should be part of the solution, and should override all previous configs. The ":relocate\_robot.updates.pbtxt" syntax tells Bazel that the file is in the same directory as the BUILD file you're editing, also known as the package.
 
 
 ```python
@@ -343,16 +349,17 @@ intrinsic_solution(
     instances = [
         [snip: lots of instances]
     ],
-    object_world_updates = [
-        "//configs:ur_module.attachments.updates.pbtxt",
-        "//configs:scene.updates.pbtxt",
-        "//configs:align_robot.updates.pbtxt",
-    ] + select({
+    object_world_updates = select({
         ":is_lab_bb_01": [
-            "//configs:lab_bb_01_orbbec_gemini.updates.pbtxt",
+            "//configs:lab_bb_01/ur_module.attachments.updates.pbtxt",
+            "//configs:lab_bb_01/scene.updates.pbtxt",
+            "//configs:lab_bb_01/align_robot.updates.pbtxt",
+            "//configs:lab_bb_01/orbbec_gemini.updates.pbtxt",
             ":relocate_robot.updates.pbtxt",
         ],
-        [snip: configurations that don't affect the lab_bb_01 config]
+        "//conditions:default": [
+            [snip: configurations that don't affect the lab_bb_01 config]
+        ],
     }),
 )
 ```
@@ -421,7 +428,7 @@ Run:
 k9s -n app-intrinsic-base -c pods
 ```
 
-Select the line "artifacts-deployments-...", press Ctrl+D to delete the [pod](../glossary/general_terms.md#pod), and select Enter, then retry.
+Select the line "artifacts-deployment-...", press Ctrl+D to delete the [pod](../glossary/general_terms.md#pod), and select Enter, then retry.
 
 ## Next steps
 

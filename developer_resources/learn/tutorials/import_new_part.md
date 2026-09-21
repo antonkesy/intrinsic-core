@@ -194,7 +194,6 @@ Output:
 Name                            Asset
 [...]
 raw_stock_2x3x5                 ai.intrinsic.raw_stock_2x3x5
-raw_stock_50x50x75              ai.intrinsic.raw_stock_50x50x75
 raw_stock_logo                  ai.intrinsic.raw_stock_logo
 train_service                   ai.intrinsic.ioc_train_service
 ```

@@ -30,10 +30,10 @@ with Intrinsic Core:
 
 - The **minimal** supported version of Polyscope (UR firmware) is **5.9.4**
 - A supported robot model: UR3e, UR5e, or UR10e (see the
-  [hardware module README](../../../../incode/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots/README.md))
+  [hardware module README](../../../../intrinsic_control/intrinsic/icon/hardware_modules/universal_robots/README.md))
 - An industrial PC (IPC) with Intrinsic Core installed, with real-time tuning
   applied (see
-  [`incode/ioc/setup_realtime.sh`](../../../../incode/ioc/setup_realtime.sh))
+  [`intrinsic_runtime/setup_realtime.sh`](../../../../intrinsic_runtime/setup_realtime.sh))
   and with a spare Ethernet port for the robot
 - This guide assumes your robot is configured with the IP address
   `192.170.10.1` in the [module configuration](#configure-the-robot-ip), and
@@ -212,9 +212,9 @@ To control a UR robot you need two assets in your solution:
 
 | Robot model | Bazel target | Asset ID |
 | :--- | :--- | :--- |
-| UR3e | `@intrinsic-core//incode/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur3e_hardware_module_core` | `ai.intrinsic.ur3e_hardware_module_core` |
-| UR5e | `@intrinsic-core//incode/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur5e_hardware_module_core` | `ai.intrinsic.ur5e_hardware_module_core` |
-| UR10e | `@intrinsic-core//incode/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur10e_hardware_module_core` | `ai.intrinsic.ur10e_hardware_module_core` |
+| UR3e | `@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur3e_hardware_module_core` | `ai.intrinsic.ur3e_hardware_module_core` |
+| UR5e | `@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur5e_hardware_module_core` | `ai.intrinsic.ur5e_hardware_module_core` |
+| UR10e | `@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur10e_hardware_module_core` | `ai.intrinsic.ur10e_hardware_module_core` |
 
 Define the workcell as an `intrinsic_solution` target that lists both assets
 and their instances. A real robot always needs a custom
@@ -239,8 +239,8 @@ intrinsic_asset_instance(
 intrinsic_solution(
     name = "my_workcell",
     assets = [
-        "@intrinsic-core//incode/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur5e_hardware_module_core",
-        "@intrinsic-core//incode/intrinsic_control/intrinsic/icon/machines/common:generic_icon_mainloop_type",
+        "@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur5e_hardware_module_core",
+        "@intrinsic-core//intrinsic_control/intrinsic/icon/machines/common:generic_icon_mainloop_type",
     ],
     default_operation_mode = "real",
     instances = [
@@ -261,7 +261,7 @@ The configuration of the hardware module is an
 `intrinsic_proto.icon.HardwareModuleConfig` text proto, referenced from the
 `service_config` attribute of the instance. Start from the module's default
 configuration,
-[`default_config_with_scene_object.pbtxt`](../../../../incode/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots/default_config_with_scene_object.pbtxt),
+[`default_config_with_scene_object.pbtxt`](../../../../intrinsic_control/intrinsic/icon/hardware_modules/universal_robots/default_config_with_scene_object.pbtxt),
 and adjust `robot_ip` to the address of your robot. You can find the IP address
 of the robot on the `About` page of the UR Teach Pendant.
 
