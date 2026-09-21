@@ -77,8 +77,6 @@ cc_library(
         "//intrinsic_sdk/intrinsic/skills/cc:execute_request",
         "//intrinsic_sdk/intrinsic/skills/cc:get_footprint_context",
         "//intrinsic_sdk/intrinsic/skills/cc:get_footprint_request",
-        "//intrinsic_sdk/intrinsic/skills/cc:predict_context",
-        "//intrinsic_sdk/intrinsic/skills/cc:predict_request",
         "//intrinsic_sdk/intrinsic/skills/cc:preview_context",
         "//intrinsic_sdk/intrinsic/skills/cc:preview_request",
         "//intrinsic_sdk/intrinsic/skills/cc:skill_interface",
