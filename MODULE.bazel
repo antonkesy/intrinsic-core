@@ -455,7 +455,7 @@ bazel_dep(name = "cel-spec", version = "0.25.3", repo_name = "com_google_cel_spe
 bazel_dep(name = "ceres-solver", version = "2.2.0", repo_name = "com_google_ceres_solver")
 bazel_dep(name = "clarabel", version = "0.11.1.bcr.1")  
 bazel_dep(name = "cli11", version = "2.6.2")  
-bazel_dep(name = "coacd", version = "1.0.13")  
+bazel_dep(name = "coacd", version = "1.0.13.bcr.1")  
 bazel_dep(name = "com_github_mvukov_rules_ros2", version = "0.0.0-20260118-78d85ff")
 bazel_dep(name = "cpp-httplib", version = "0.46.0")  
 bazel_dep(name = "cppitertools", version = "2.2")  
