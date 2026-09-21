@@ -15,8 +15,16 @@
 """Bazel rules for solutions."""
 
 load("//intrinsic/assets/build_defs:asset.bzl", "AssetCatalogRefInfo", "AssetInfo", "AssetInstanceInfo", "AssetLocalInfo")
-load("//intrinsic/config:providers.bzl", "SolutionInfo")
 load("//intrinsic/util/path_resolver:paths.bzl", "WRAPPER_HEADER", "to_rlocation_path")
+
+SolutionInfo = provider(
+    "provided by the intrinsic_solution() rule",
+    fields = {
+        "asset_bundles": "asset bundle files used in the solution",
+        "instance_configs": "instance config files used in the solution",
+        "solution": "binary proto file containing a LocalSolution message",
+    },
+)
 
 def _display_name(f):
     """

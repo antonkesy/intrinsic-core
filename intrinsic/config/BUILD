@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//bazel:cc_macros.bzl", "cc_library")
 load("//bazel:go_macros.bzl", "go_library")
 load("//bazel:python.bzl", "py_library")
@@ -83,16 +82,6 @@ go_library(
     importpath = "intrinsic/config/environments",
     visibility = [
         "//visibility:public",
-    ],
-)
-
-bzl_library(
-    name = "providers_bzl",
-    srcs = ["providers.bzl"],
-    visibility = [
-        "//intrinsic/assets/build_defs:__subpackages__",
-        # The compose_world rule needs to know about ResourceSetInfo
-        "//intrinsic/world/tools:__subpackages__",
     ],
 )
 
