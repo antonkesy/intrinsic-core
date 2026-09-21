@@ -64,13 +64,14 @@ driver:
      and
      [`docker-compose.yml`](https://github.com/intrinsic-ai/icon-hwm-controller/tree/main/icon_hwm_controller_examples/ur_ros2_icon_hwm/docker/docker-compose.yml)
      to pull in your `ros2_control` driver and build/package them in a container
-   * [`BUILD`](https://github.com/intrinsic-ai/icon-hwm-controller/tree/main/icon_hwm_controller_examples/ur_ros2_icon_hwm/BUILD)
-     to configure the bazel build for the final Intrinsic assets
+   * [`.bazelversion`](https://github.com/intrinsic-ai/icon-hwm-controller/blob/main/.bazelversion),
+     [`MODULE.bazel`](https://github.com/intrinsic-ai/icon-hwm-controller/blob/main/MODULE.bazel)
+     and
+     [`BUILD`](https://github.com/intrinsic-ai/icon-hwm-controller/tree/main/icon_hwm_controller_examples/ur_ros2_icon_hwm/BUILD)
+     files to configure the bazel build for the final Intrinsic assets
 
-   * [FANUC
-     Example](https://github.com/intrinsic-ai/icon-hwm-controller/tree/main/icon_hwm_controller_examples/fanuc_ros2_icon_hwm/docker)
-
-   Note that your folder can be standalone. Your Dockerfile should depend on the
+   Note that your folder can be a separate repo from `icon-hwm-controller`. Your
+   Dockerfile should depend on the
    [`icon_hwm_base`](https://github.com/intrinsic-ai/icon-hwm-controller/tree/main/icon_hwm_controller/docker)
    image, which contains everything you need to use `icon_hwm_controller`.
 
@@ -218,20 +219,18 @@ driver:
    service asset.
 
 8. Convert your robot's description to an `.sdf` file, and use that to create an
-   Intrinsic geometry asset.
+   [`intrinsic_scene_object`](/intrinsic/assets/scene_objects/build_defs/scene_object.bzl#L115). There
+   are detailed instructions for this in the [Convert 3D models into
+   SDF](developer_resources/assets/create_new_assets/convert_3d_models.md)
+   tutorial, but you can shortcut some of the steps outlined there by converting
+   from URDF to SDF.
 
-   > [!CAUTION] This is very ["draw the rest of the
-   > owl"](https://www.reddit.com/r/funny/comments/eccj2/how_to_draw_an_owl/)
-   > for now, flesh out later
+9. Combine the service and scene object assets into a single
+   [`intrinsic_hardware_device`](/intrinsic/assets/hardware_devices/build_defs/hardware_device.bzl#L24). For
+   an example hardware device rule, look at
+   [`kr6_r900_2_fake_hardware_module`](/incode/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/BUILD#L306)
 
-9. Combine the service and geometry assets into a single Intrinsic
-   `HardwareDevice`
-
-   > [!CAUTION] Turns out there was more owl left to draw!
-
-10. Sideload your `HardwareDevice` into your Intrinsic solution.
-
-   > [!CAUTION] Owl 3: The Owlening ;____;
+10. Sideload your `HardwareDevice` into your Intrinsic solution using `inctl`.
 
 Well, I did say *relatively* easy. Ten steps is nothing to sneeze at, and some
 of these involve writing new code (although most of it is launch files, build
@@ -372,9 +371,7 @@ full content.
 
 <details> <summary><strong>CMakeLists.txt</strong></summary>
 
-```cmake
-cmake_minimum_required(VERSION 3.8)
-project(rrbot_ros2_icon_hwm)
+```cmake cmake_minimum_required(VERSION 3.8) project(rrbot_ros2_icon_hwm)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -435,8 +432,7 @@ ament_package()
 
 <details> <summary><strong>Dockerfile</strong></summary>
 
-```dockerfile
-FROM icon_hwm_base:latest
+```dockerfile FROM icon_hwm_base:latest
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -731,8 +727,10 @@ icon_hwm_controller:
       - position # This name is hard-coded in #
     https://github.com/ros-controls/ros2_control_demos/blob/master/example_1/description/urdf/rrbot.urdf.xacro#L27
     hardware_component_name: "RRBot" operational_status_topic:
-    /operational_status clear_faults_trigger_service: /clear_faults ```
-    </details>
+    /operational_status clear_faults_trigger_service: /clear_faults 
+```
+
+</details>
 
 #### Update the launch file
 
@@ -822,34 +820,32 @@ you started the launch file):
 #### Build an Intrinsic service asset from your ROS2 container
 
 To package the `rrbot_ros2_icon_hwm` docker container into an Intrinsic service
-asset, first create and populate a `MODULE.bazel` and `BUILD` files at the root
-of your directory:
+asset, first create and populate `.bazelversion`, `MODULE.bazel` and `BUILD`
+files at the root of your directory:
+
+**.bazelversion**
+
+```
+8.8.0
+```
 
 <details> <summary><strong>MODULE.bazel</strong></summary>
-
-
-> [!CAUTION]
-> The commit hash is outdated. This version of the SDK doesn't work without a
-> manual patch, which is very ugly. Once
-> https://github.com/intrinsic-ai/insrc/pull/54779 lands, we can use that.
 
 ```bazel
 module(name = "rrbot_ros2_hwm_asset")
 
 bazel_dep(name = "ai_intrinsic_sdks")
+# Download the Intrinsic SDKs from Github.
 archive_override(
     module_name = "ai_intrinsic_sdks",
-    # To pin a version change the following to, e.g.:
-    #   urls = "https://github.com/intrinsic-ai/sdk/archive/refs/tags/intrinsic.platform.20221231.RC00.tar.gz",
-    #   strip_prefix = "sdk-intrinsic.platform.20221231.RC00/"
-    # This is the exact commit that the patch below was created for.
-    strip_prefix = "sdk-9ebd695b70a594096f0bbaa6a34a81ff45c5e32d/",
-    urls = ["https://github.com/intrinsic-ai/sdk/archive/9ebd695b70a594096f0bbaa6a34a81ff45c5e32d.tar.gz"],
-    integrity = "sha256-oeyuYEHnV7pzOgpVOTuyCNflBaz4YVhh2duk9e3hkoY=",
+    strip_prefix = "sdk-a6830ad5d9d62cd9680df48b08de2f493ad119bd/",
+    urls = ["https://github.com/intrinsic-ai/sdk/archive/a6830ad5d9d62cd9680df48b08de2f493ad119bd.tar.gz"],
 )
-bazel_dep(name = "icon_hwm_controller")
+
+bazel_dep(name = "ros2_hwm_asset")
+# Use the copy of icon-hwm-controller we've already checked out earlier.
 local_path_override(
-    module_name = "icon_hwm_controller",
+    module_name = "ros2_hwm_asset",
     path = "../icon-hwm-controller",
 )
 
@@ -861,16 +857,18 @@ bazel_dep(name = "protobuf", version = "36.0.bcr.1", repo_name = "com_google_pro
 
 <details> <summary><strong>BUILD</strong></summary>
 
-```bazel
-load("@ai_intrinsic_sdks//bazel:container.bzl", "container_image", "container_import")
-load("@ai_intrinsic_sdks//bazel:python_oci_image.bzl", "python_layers")
-load("@ai_intrinsic_sdks//intrinsic/assets/services/build_defs:services.bzl", "intrinsic_service")
-load("@ai_intrinsic_sdks//intrinsic/icon/hal/bzl:resources.bzl", "hardware_module_manifest")
+```bazel load("@ai_intrinsic_sdks//bazel:container.bzl", "container_image",
+"container_import") load("@ai_intrinsic_sdks//bazel:python_oci_image.bzl",
+"python_layers")
+load("@ai_intrinsic_sdks//intrinsic/assets/services/build_defs:services.bzl",
+"intrinsic_service")
+load("@ai_intrinsic_sdks//intrinsic/icon/hal/bzl:resources.bzl",
+"hardware_module_manifest")
 
 package(default_visibility = ["//visibility:public"])
 
 container_import(
-    name = "fanuc_ros2_icon_hwm_oci",
+    name = "rrbot_ros2_icon_hwm_oci",
     # Export this image from your local docker registry using
     # docker image save rrbot_ros2_icon_hwm:latest -o icon_hwm.tar
     tarball = "icon_hwm.tar",
@@ -879,13 +877,21 @@ container_import(
 # Next, combine the ROS2 container with the Intrinsic entry point
 entrypoint_layers = python_layers(
     name = "entrypoint_layers",
-    binary = "@icon_hwm_controller//icon_hwm_controller:entrypoint_bin",
+    binary = "@ros2_hwm_asset//icon_hwm_controller:entrypoint_bin",
 )
+
 container_image(
     name = "rrbot_ros2_icon_hwm_image",
     base = ":rrbot_ros2_icon_hwm_oci",
     entrypoint = ["/icon_hwm_controller/entrypoint_bin"],
     layers = entrypoint_layers,
+    # These are necessary because the entrypoint image is from a
+    # different bazel module, so paths are prefixed
+    symlinks = {
+        "/icon_hwm_controller/entrypoint_bin.runfiles": "/ros2_hwm_asset+/icon_hwm_controller/entrypoint_bin.runfiles",
+        "/ros2_hwm_asset+/icon_hwm_controller/entrypoint_bin.runfiles/_main": "/ros2_hwm_asset+/icon_hwm_controller/entrypoint_bin.runfiles/ros2_hwm_asset+",
+        "/ros2_hwm_asset+/icon_hwm_controller/entrypoint_bin.runfiles/protobuf+/python/google/api": "/ros2_hwm_asset+/icon_hwm_controller/entrypoint_bin.runfiles/googleapis+/google/api",
+    },
 )
 
 # The manifest tells the Intrinsic platform which capabilities a service has
@@ -895,6 +901,7 @@ hardware_module_manifest(
     image_sim = ":rrbot_ros2_icon_hwm_image.tar",
     manifest = "proto/rrbot_ros2_icon_hwm_manifest.textproto",
 )
+
 intrinsic_service(
     name = "rrbot_ros2_icon_hwm_service",
     default_config = "proto/rrbot_ros2_icon_hwm_default_config.textproto",
@@ -903,9 +910,9 @@ intrinsic_service(
     ],
     manifest = ":rrbot_ros2_icon_hwm_manifest",
     deps = [
-        "@icon_hwm_controller//icon_hwm_controller:ros2_hwm_config_proto",
         "@ai_intrinsic_sdks//intrinsic/assets/services/proto/v1:service_state_proto",
-        "@ai_intrinsic_sdks//intrinsic/icon/hal:hardware_module_config_proto",
+        "@ai_intrinsic_sdks//intrinsic/icon/hal/proto:hardware_module_config_proto",
+        "@ros2_hwm_asset//icon_hwm_controller:ros2_hwm_config_proto",
     ],
 )
 ```
@@ -916,26 +923,27 @@ Next, create the two new files in the `proto` directory that the `BUILD` file
 references:
 
 The [`ServiceManifest`
-proto](/intrinsic_apis/intrinsic/assets/services/proto/service_manifest.proto#L24)
+proto](/intrinsic_apis/intrinsic/assets/services/proto/service_manifest.proto#L172)
 tells the Intrinsic platform how to run your service, and also contains metadata
 about an Intrinsic service, like the name and vendor, as well as a short
 description.
 
 In this case, you only need to manually provide the metadata, since the
 [`intrinsic_service`
-rule](/intrinsic/assets/services/build_defs/services.bzl#L117)
+rule](/intrinsic/assets/services/build_defs/services.bzl#L102)
 fills in the functional parts of the manifest. Check out the proto definition
 for `ServiceManifest` and its submessages to see some of the advanced options,
 like offering
-[gRPC](/intrinsic_apis/intrinsic/assets/services/proto/service_manifest.proto#L44)
+[gRPC](/intrinsic_apis/intrinsic/assets/services/proto/service_manifest.proto#L58)
 and
-[HTTP](/intrinsic_apis/intrinsic/assets/services/proto/service_manifest.proto#L63)
+[HTTP](/intrinsic/assets/services/proto/service_manifest.proto#L77)
 servers.
 
 <details>
 <summary><strong>rrbot_ros2_icon_hwm_manifest.textproto</strong></summary>
 
 ```textproto
+# Fill in your name below.
 metadata {
   id {
     package: "org.ros.example"
@@ -961,7 +969,7 @@ The configuration for a service is an [`Any`
 proto](https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/any.proto)
 because each service can have its own configuration message. That said, Hardware
 Modules (HWMs) all use
-[`intrinsic_proto.icon.HardwareModuleConfig`](/intrinsic_apis/intrinsic/icon/hal/proto/hardware_module_config.proto#L13)
+[`intrinsic_proto.icon.HardwareModuleConfig`](/intrinsic_apis/intrinsic/icon/hal/proto/hardware_module_config.proto#L27)
 because they share some configuration options.
 
 That proto again has an `Any` member called `module_config` for HWM-specific
@@ -1012,4 +1020,386 @@ With these files in place, you can build your service:
 
 ```bash
 bazel build rrbot_ros2_icon_hwm_service
+```
+
+You should see output that ends with something like this:
+
+```bash
+Target //:rrbot_ros2_icon_hwm_service up-to-date:
+  bazel-bin/rrbot_ros2_icon_hwm_service.bundle.tar
+INFO: Elapsed time: 90.580s, Critical Path: 89.62s
+INFO: 17 processes: 2 internal, 15 linux-sandbox.
+INFO: Build completed successfully, 17 total actions
+```
+
+#### Convert the RRbot URDF to SDF, and make an `intrinsic_scene_object`
+
+The [RRbot
+description](https://github.com/ros-controls/ros2_control_demos/blob/master/ros2_control_demo_description/rrbot/urdf/rrbot_description.urdf.xacro)
+is relatively simple, but makes heavy use of
+[`xacro`](https://github.com/ros/xacro) to generate a URDF file.
+
+If you're on a Ubuntu machine that has ROS package source set up, you can
+install `xacro` and `sdformat` like this:
+
+```bash
+sudo apt install ros-kilted-sdformat-vendor ros-kilted-xacro
+```
+
+After that, you can convert your xacro to URDF:
+
+```bash
+xacro rrbot.urdf.xacro > rrbot.urdf
+```
+
+... and then convert the URDF to SDF:
+
+```bash
+gz sdf --print rrbot.urdf > rrbot.sdf
+```
+
+For RRbot, the resulting SDF file looks like this:
+
+<details> <summary><strong>rrbot.sdf</strong></summary>
+
+```xml
+<sdf version='1.12'>
+  <model name='2dof_robot'>
+    <joint name='base_joint' type='fixed'>
+      <pose relative_to='__model__'>0 0 0 0 0 0</pose>
+      <parent>world</parent>
+      <child>base_link</child>
+    </joint>
+    <link name='base_link'>
+      <pose relative_to='base_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 1 0 0 0</pose>
+        <mass>1</mass>
+        <inertia>
+          <ixx>0.33416666666666661</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.33416666666666661</iyy>
+          <iyz>0</iyz>
+          <izz>0.001666666666666667</izz>
+        </inertia>
+      </inertial>
+      <collision name='base_link_collision'>
+        <pose>0 0 1 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10000000000000001 0.10000000000000001 2</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name='base_link_visual'>
+        <pose>0 0 1 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10000000000000001 0.10000000000000001 2</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>1 0.529411793 0.0490196086 1</diffuse>
+          <ambient>1 0.529411793 0.0490196086 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='joint1' type='revolute'>
+      <pose relative_to='base_link'>0 0.10000000000000001 1.95 0 0 0</pose>
+      <parent>base_link</parent>
+      <child>link1</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <effort>100</effort>
+          <velocity>1</velocity>
+          <lower>-inf</lower>
+          <upper>inf</upper>
+        </limit>
+        <dynamics>
+          <damping>0.69999999999999996</damping>
+          <friction>0</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='link1'>
+      <pose relative_to='joint1'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0.45000000000000001 0 0 0</pose>
+        <mass>1</mass>
+        <inertia>
+          <ixx>0.084166666666666667</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.084166666666666667</iyy>
+          <iyz>0</iyz>
+          <izz>0.001666666666666667</izz>
+        </inertia>
+      </inertial>
+      <collision name='link1_collision'>
+        <pose>0 0 0.45000000000000001 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10000000000000001 0.10000000000000001 1</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name='link1_visual'>
+        <pose>0 0 0.45000000000000001 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10000000000000001 0.10000000000000001 1</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>1 1 0 1</diffuse>
+          <ambient>1 1 0 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name='joint2' type='revolute'>
+      <pose relative_to='link1'>0 0.10000000000000001 0.90000000000000002 0 0 0</pose>
+      <parent>link1</parent>
+      <child>link2</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <effort>100</effort>
+          <velocity>1</velocity>
+          <lower>-inf</lower>
+          <upper>inf</upper>
+        </limit>
+        <dynamics>
+          <damping>0.69999999999999996</damping>
+          <friction>0</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='link2'>
+      <pose relative_to='joint2'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0.45000000000000001 0 0 0</pose>
+        <mass>1</mass>
+        <inertia>
+          <ixx>0.084166666666666667</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.084166666666666667</iyy>
+          <iyz>0</iyz>
+          <izz>0.001666666666666667</izz>
+        </inertia>
+      </inertial>
+      <collision name='link2_collision'>
+        <pose>0 0 0.45000000000000001 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10000000000000001 0.10000000000000001 1</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name='link2_visual'>
+        <pose>0 0 0.45000000000000001 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.10000000000000001 0.10000000000000001 1</size>
+          </box>
+        </geometry>
+        <material>
+          <diffuse>1 0.529411793 0.0490196086 1</diffuse>
+          <ambient>1 0.529411793 0.0490196086 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <frame name='tool_joint' attached_to='link2'>
+      <pose>0 0 1 0 0 0</pose>
+    </frame>
+    <frame name='tool_link' attached_to='tool_joint'>
+      <pose>0 0 0 0 0 0</pose>
+    </frame>
+  </model>
+</sdf>
+```
+
+</details>
+
+This already contains most of the information we need. Add the missing Intrinsic
+data:
+
+* First, remove the `base_joint`:
+
+  ```xml
+  <!-- remove this from the .sdf file>
+  <joint name='base_joint' type='fixed'>
+    <pose relative_to='__model__'>0 0 0 0 0 0</pose>
+    <parent>world</parent>
+    <child>base_link</child>
+  </joint>
+
+  <!-- and also this line from the base_link joint -->
+  <pose relative_to='base_joint'>0 0 0 0 0 0</pose>
+  ```
+* Then, make sure to set up the `intrinsic` namespace as part of the initial
+  `<sdf>` tag:
+
+  ```xml
+  <sdf version="1.12" xmlns:intrinsic="https://intrinsic.ai/">
+  ```
+* Next, attach a `flange` frame to the final link of your robot (for RRbot, this
+  is ). The Intrinsic realtime control service uses this for Cartesian control,
+  and for attaching things to the robot.
+
+  ```xml
+  <frame name="flange"
+         attached_to="tool_link"
+         intrinsic:create_attachment_entity="true">
+  </frame>
+  ```
+
+* Finally, you can (but don't have to) extend the `<limit>` tag for each joint
+  with acceleration and jerk limit values:
+
+  ```xml
+  <intrinsic:acceleration>20.79</intrinsic:acceleration>
+  <intrinsic:jerk>4747.61</intrinsic:jerk>
+  ```
+
+Now you can copy the SDF file to your bazel workspace, and add an
+[`sdf_scene_object`](/intrinsic/scene/build_defs/sdf_scene_object.bzl#L133) rule
+for it:
+
+```bazel
+load("@ai_intrinsic_sdks//intrinsic/scene/build_defs:sdf_scene_object.bzl", "sdf_scene_object")
+
+sdf_scene_object(
+    name = "rrbot_sdf_scene_object",
+    src = "rrbot.sdf",
+)
+```
+
+The RRbot SDF file doesn't have any meshes, so we do not need to do anything
+special. If your robot does use meshes, you need to list them in the
+`sdf_scene_object` rule's `sdf_assets` parameter.  Then you can import them
+using their bazel workspace path:
+
+```xml
+<geometry>
+  <mesh>
+    <!-- If your mesh is in meshes/visual 
+         (below the folder that has MODULE.bazel): -->
+    <uri>model://meshes/visual/visual_1.glb</uri>
+  </mesh>
+</geometry>
+```
+
+Next up, the
+[`intrinsic_scene_object`](/intrinsic/assets/scene_objects/build_defs/scene_object.bzl#L115)
+rule. This creates another asset that you can install and deploy on your
+cluster, or fuse with the service asset you created earlier to make an
+`intrinsic_hardware_device`.
+
+But first, we need another manifest:
+
+<details>
+<summary><strong>rrbot_scene_object_manifest.textproto</strong></summary>
+
+```textproto
+# Again, fill in your name below.
+metadata {
+  id {
+    package: "org.ros.example"
+    name: "rrbot_scene_object"
+  }
+  vendor {
+    display_name: "$YOUR_NAME"
+  }
+  documentation {
+    description: "Scene object for RRbot.\n"
+  }
+  display_name: "RRbot Scene Object"
+}
+```
+</details>
+
+Brilliant! Now add the bazel rule:
+
+
+```bazel
+load("@ai_intrinsic_sdks//intrinsic/assets/scene_objects/build_defs:scene_object.bzl", "intrinsic_scene_object")
+
+intrinsic_scene_object(
+    name = "rrbot_scene_object",
+    scene_object = ":rrbot_sdf_scene_object",
+    manifest = "proto/rrbot_scene_object_manifest.textproto",
+)
+```
+
+#### Create a HardwareDevice that combines the HWM Service and SceneObject
+
+Almost done! Create an
+[`intrinsic_hardware_device`](/intrinsic/assets/hardware_devices/build_defs/hardware_device.bzl#L119)... but
+first, you guessed it: One final manifest proto (this one is a bit more
+involved):
+
+<details>
+<summary><strong>rrbot_hardware_device_manifest.textproto</strong></summary>
+
+```textproto
+# Don't forget to fill in your name!
+metadata {
+  id {
+    package: "org.ros.example"
+    name: "rrbot_hardware_device"
+  }
+  vendor {
+    display_name: "$YOUR_NAME$"
+  }
+  documentation {
+    description: "A hardware module and scene object for the RRbot ROS example. The hardware module is a wrapped ros2_control launch file."
+  }
+  display_name: "RRbot Hardware Device"
+}
+graph {
+  nodes {
+    key: "scene_object"
+    value {
+      asset: "org.ros.example.rrbot_scene_object"
+    }
+  }
+  nodes {
+    key: "service"
+    value {
+      asset: "org.ros.example.rrbot_ros2_icon_hwm"
+    }
+  }
+}
+```
+
+</details>
+
+```bazel
+load("@ai_intrinsic_sdks//intrinsic/assets/hardware_devices/build_defs:hardware_device.bzl", "intrinsic_hardware_device")
+
+intrinsic_hardware_device(
+    name = "rrbot_hardware_device",
+    assets = [
+        ":rrbot_scene_object",
+        ":rrbot_ros2_icon_hwm_service",
+    ],
+    manifest = "proto/rrbot_hardware_device_manifest.textproto",
+)
+```
+
+#### Build and install!
+
+That's it! You can build and install your new hardware device:
+
+```bash
+bazel build :rrbot_hardware_device
+
+inctl asset install bazel-bin/rrbot_hardware_device.bundle.tar --address localhost:17080
 ```
