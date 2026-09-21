@@ -916,20 +916,20 @@ Next, create the two new files in the `proto` directory that the `BUILD` file
 references:
 
 The [`ServiceManifest`
-proto](https://github.com/intrinsic-ai/insrc/blob/5d22b301f6e213a626f0ccecf52f052fa6ae7d49/google3/intrinsic/assets/services/proto/service_manifest.proto#L24)
+proto](/intrinsic_apis/intrinsic/assets/services/proto/service_manifest.proto#L24)
 tells the Intrinsic platform how to run your service, and also contains metadata
 about an Intrinsic service, like the name and vendor, as well as a short
 description.
 
 In this case, you only need to manually provide the metadata, since the
 [`intrinsic_service`
-rule](https://github.com/intrinsic-ai/insrc/blob/5d22b301f6e213a626f0ccecf52f052fa6ae7d49/google3/intrinsic/assets/services/build_defs/services.bzl#L117)
+rule](/intrinsic/assets/services/build_defs/services.bzl#L117)
 fills in the functional parts of the manifest. Check out the proto definition
 for `ServiceManifest` and its submessages to see some of the advanced options,
 like offering
-[gRPC](https://github.com/intrinsic-ai/insrc/blob/5d22b301f6e213a626f0ccecf52f052fa6ae7d49/google3/intrinsic/assets/services/proto/service_manifest.proto#L44)
+[gRPC](/intrinsic_apis/intrinsic/assets/services/proto/service_manifest.proto#L44)
 and
-[HTTP](https://github.com/intrinsic-ai/insrc/blob/5d22b301f6e213a626f0ccecf52f052fa6ae7d49/google3/intrinsic/assets/services/proto/service_manifest.proto#L63)
+[HTTP](/intrinsic_apis/intrinsic/assets/services/proto/service_manifest.proto#L63)
 servers.
 
 <details>
@@ -961,7 +961,7 @@ The configuration for a service is an [`Any`
 proto](https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/any.proto)
 because each service can have its own configuration message. That said, Hardware
 Modules (HWMs) all use
-[`intrinsic_proto.icon.HardwareModuleConfig`](https://github.com/intrinsic-ai/insrc/blob/4e6bc4cc8427eafc6bada809049080d25fe778cc/incode/intrinsic_control/intrinsic/icon/hal/proto/hardware_module_config.proto#L13)
+[`intrinsic_proto.icon.HardwareModuleConfig`](/intrinsic_apis/intrinsic/icon/hal/proto/hardware_module_config.proto#L13)
 because they share some configuration options.
 
 That proto again has an `Any` member called `module_config` for HWM-specific

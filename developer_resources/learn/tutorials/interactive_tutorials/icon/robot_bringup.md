@@ -11,8 +11,8 @@ This tutorial guides you through deploying a physical industrial robot using Int
 > [!NOTE]
 > **Prerequisites & Workspace Setup**
 > Before starting this tutorial, ensure you have:
-> 1. **Set up your Bzlmod application workspace** (for example, `~/kuka_bringup/`), following the workspace setup in the [Open Machine Tending Solution (OMTS)](https://github.com/intrinsic-ai/intrinsic-omts/blob/main/README.md). In Intrinsic's Bzlmod architecture, cell-specific configurations (`BUILD`, `.textproto`) and custom skills live in your own standalone application repository—which declares a dependency on `intrinsic-core` under the repository name `@ioc` alongside the required root toolchain and version overrides (see the reference [`MODULE.bazel`](https://github.com/intrinsic-ai/intrinsic-omts/blob/main/MODULE.bazel) and [`.bazelrc`](https://github.com/intrinsic-ai/intrinsic-omts/blob/main/.bazelrc) in `intrinsic-omts`)—keeping your workcell code cleanly separated from the core platform repository.
-> 2. **(Optional) Configure a session-local `inctl` shell function ([`env.sh`](files/env.sh))**: In Intrinsic Core, the `inctl` CLI is executed via Bazel (`bazel run @ioc//intrinsic/tools/inctl:inctl_external -- <args>`). You are free to run `bazel run @ioc//intrinsic/tools/inctl:inctl_external -- ...` directly whenever `inctl` is referenced in this tutorial, or you can download [`env.sh`](files/env.sh) into your workspace and source it (`source ./env.sh`) to define a session-local `inctl` shell alias that persists only for your current terminal session without affecting future shells.
+> 1. **Set up your Bzlmod application workspace** (for example, `~/kuka_bringup/`), following the workspace setup in the [Open Machine Tending Solution (OMTS)](https://github.com/intrinsic-ai/intrinsic-omts/blob/main/README.md). In Intrinsic's Bzlmod architecture, cell-specific configurations (`BUILD`, `.textproto`) and custom skills live in your own standalone application repository—which declares a dependency on `intrinsic-core` under the repository name `@intrinsic-core` alongside the required root toolchain and version overrides (see the reference [`MODULE.bazel`](https://github.com/intrinsic-ai/intrinsic-omts/blob/main/MODULE.bazel) and [`.bazelrc`](https://github.com/intrinsic-ai/intrinsic-omts/blob/main/.bazelrc) in `intrinsic-omts`)—keeping your workcell code cleanly separated from the core platform repository.
+> 2. **(Optional) Configure a session-local `inctl` shell function ([`env.sh`](files/env.sh))**: In Intrinsic Core, the `inctl` CLI is executed via Bazel (`bazel run @intrinsic-core//intrinsic/tools/inctl:inctl_external -- <args>`). You are free to run `bazel run @intrinsic-core//intrinsic/tools/inctl:inctl_external -- ...` directly whenever `inctl` is referenced in this tutorial, or you can download [`env.sh`](files/env.sh) into your workspace and source it (`source ./env.sh`) to define a session-local `inctl` shell alias that persists only for your current terminal session without affecting future shells.
 > 3. **Provisioned your robot controller**: For KUKA, install the **KUKA.RobotSensorInterface** (RSI) and **KUKA.EthernetKRL** (EKI) option packages following the [Physical & Network Wiring](#physical--network-wiring) and [KUKA Controller Configuration](#kuka-controller-configuration-workvisual-rsi--eki) sections below (for Universal Robots, see the [UR PolyScope Checklist](#1-ur-controller-configuration-checklist-polyscope)).
 
 ---
@@ -37,20 +37,20 @@ All command examples in this tutorial show Enterprise syntax alongside Intrinsic
 ### Real-Time Host Configuration (Intrinsic Core Only)
 When deploying on local PC or workstation hardware using Intrinsic Core, your Linux host must be tuned for `PREEMPT_RT` scheduling priority and CPU core isolation to prevent cycle jitter.
 
-You can run the [`setup_realtime.sh`](../../../../../incode/ioc/setup_realtime.sh) script either from your Bzlmod workspace via `bazel info` or directly from a local `intrinsic-core` checkout:
+You can run the [`setup_realtime.sh`](/intrinsic_runtime/setup_realtime.sh) script either from your Bzlmod workspace via `bazel info` or directly from a local `intrinsic-core` checkout:
 
 > [!IMPORTANT]
 > **Never invoke `bazel` as `root` (`sudo bazel ...`)**. Running Bazel under `sudo` creates root-owned cache directories inside `~/.cache/bazel`, which will break subsequent non-root builds. Instead, evaluate `bazel info output_base` as your normal user and pipe the script to a root shell:
 
 * **Option 1: From your Bzlmod workspace (via `bazel info`)**
   ```bash
-  bazel fetch @ioc//...
-  cat "$(bazel info output_base)/external/insrc+/incode/ioc/setup_realtime.sh" | sudo -E bash
+  bazel fetch @intrinsic-core//...
+  cat "$(bazel info output_base)/external/intrinsic-core+/intrinsic_runtime/setup_realtime.sh" | sudo -E bash
   ```
 
 * **Option 2: From a local `intrinsic-core` git checkout**
   ```bash
-  sudo ~/intrinsic-core/incode/ioc/setup_realtime.sh
+  sudo ~/intrinsic-core/intrinsic_runtime/setup_realtime.sh
   ```
 
 **Reboot your machine (`sudo reboot`) after the script completes.** If you fail to run this script and reboot into the real-time kernel parameters, the hardware module will fail to start with:
@@ -173,48 +173,48 @@ inctl solution stop --address localhost:17080
 
 ---
 
-## Step 1: Locating KUKA Hardware Devices in `@ioc`
+## Step 1: Locating KUKA Hardware Devices in `@intrinsic-core`
 
 Intrinsic Core encapsulates robot integrations into catalog assets known as **Hardware Devices** (`intrinsic_hardware_device`). A Hardware Device bundles two complementary components into a single deployable asset:
 1. **Scene Object (`intrinsic_scene_object`)**: Contains the 3D meshes, URDF/SDFormat kinematic chains, joint limits, and inverse kinematics (IK) solver definitions.
 2. **Service (`intrinsic_service`)**: The containerized daemon that runs the low-level real-time driver communicating with the physical robot controller.
 
-All pre-configured KUKA RSI hardware devices are defined in [`incode/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/BUILD`](../../../../../incode/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/BUILD).
+All pre-configured KUKA RSI hardware devices are defined in [`intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/BUILD`](/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/BUILD).
 
-From your Bzlmod workspace (e.g., `~/kuka_bringup`), query the available KUKA hardware device targets in `@ioc` using Bazel:
+From your Bzlmod workspace (e.g., `~/kuka_bringup`), query the available KUKA hardware device targets in `@intrinsic-core` using Bazel:
 
 ```bash
-bazel query 'kind("intrinsic_hardware_device", @ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:*)'
+bazel query 'kind("intrinsic_hardware_device", @intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:*)'
 ```
 
 *Expected Output:*
 ```text
-@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr10_r1100_2_hardware_module
-@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr16_r2010_2_hardware_module
-@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr20_r1810_2_hardware_module
-@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr50_r2500_hardware_module
-@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_fake_hardware_module
-@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_hardware_module
-@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_loopback_hardware_module
+@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr10_r1100_2_hardware_module
+@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr16_r2010_2_hardware_module
+@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr20_r1810_2_hardware_module
+@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr50_r2500_hardware_module
+@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_fake_hardware_module
+@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_hardware_module
+@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_loopback_hardware_module
 ```
 
 You will find definitions for several popular KUKA robot models:
 
-| Robot Model | Hardware Device Target (`@ioc`) | Asset ID | Payload / Reach |
+| Robot Model | Hardware Device Target (`@intrinsic-core`) | Asset ID | Payload / Reach |
 | :--- | :--- | :--- | :--- |
-| **KUKA KR6 R900-2 (AGILUS)** | `@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_hardware_module` | `ai.intrinsic.kuka_kr6_hardware_module` | 6 kg / 901 mm |
-| **KUKA KR10 R1100-2 (AGILUS)** | `@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr10_r1100_2_hardware_module` | `ai.intrinsic.kuka_kr10_hardware_module` | 10 kg / 1101 mm |
-| **KUKA KR16 R2010-2 (Cybertech)** | `@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr16_r2010_2_hardware_module` | `ai.intrinsic.kuka_kr16_hardware_module` | 16 kg / 2013 mm |
-| **KUKA KR20 R1810-2 (Cybertech)** | `@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr20_r1810_2_hardware_module` | `ai.intrinsic.kuka_kr20_hardware_module` | 20 kg / 1810 mm |
-| **KUKA KR50 R2500 (IONTEC)** | `@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr50_r2500_hardware_module` | `ai.intrinsic.kuka_kr50_hardware_module` | 50 kg / 2501 mm |
+| **KUKA KR6 R900-2 (AGILUS)** | `@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_hardware_module` | `ai.intrinsic.kuka_kr6_hardware_module` | 6 kg / 901 mm |
+| **KUKA KR10 R1100-2 (AGILUS)** | `@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr10_r1100_2_hardware_module` | `ai.intrinsic.kuka_kr10_hardware_module` | 10 kg / 1101 mm |
+| **KUKA KR16 R2010-2 (Cybertech)** | `@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr16_r2010_2_hardware_module` | `ai.intrinsic.kuka_kr16_hardware_module` | 16 kg / 2013 mm |
+| **KUKA KR20 R1810-2 (Cybertech)** | `@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr20_r1810_2_hardware_module` | `ai.intrinsic.kuka_kr20_hardware_module` | 20 kg / 1810 mm |
+| **KUKA KR50 R2500 (IONTEC)** | `@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr50_r2500_hardware_module` | `ai.intrinsic.kuka_kr50_hardware_module` | 50 kg / 2501 mm |
 
-The underlying geometric models, meshes, and joint limit textprotos for these robots are located under [`incode/intrinsic_control/intrinsic/models/robot_definitions/kuka`](../../../../../incode/intrinsic_control/intrinsic/models/robot_definitions/kuka). For our target robot, the kinematic description lives in [`incode/intrinsic_control/intrinsic/models/robot_definitions/kuka/kr6_r900_2`](../../../../../incode/intrinsic_control/intrinsic/models/robot_definitions/kuka/kr6_r900_2).
+The underlying geometric models, meshes, and joint limit textprotos for these robots are located under [`intrinsic_control/intrinsic/models/robot_definitions/kuka`](/intrinsic_control/intrinsic/models/robot_definitions/kuka). For our target robot, the kinematic description lives in [`intrinsic_control/intrinsic/models/robot_definitions/kuka/kr6_r900_2`](/intrinsic_control/intrinsic/models/robot_definitions/kuka/kr6_r900_2).
 
 ---
 
 ## Step 2: Creating the KUKA Hardware Configuration (`kuka_rsi_config.textproto`)
 
-The runtime driver for KUKA RSI is parameterized via a `HardwareModuleConfig` Protocol Buffer configuration file. While the KUKA hardware module ships with a generic reference template ([`kuka_rsi_default_config.textproto`](../../../../../incode/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/kuka_rsi_default_config.textproto)) designed for default simulation and standalone service setups, bringing up a physical robot cell requires providing a cell-specific `service_config` file in your workspace so you can:
+The runtime driver for KUKA RSI is parameterized via a `HardwareModuleConfig` Protocol Buffer configuration file. While the KUKA hardware module ships with a generic reference template ([`kuka_rsi_default_config.textproto`](/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/kuka_rsi_default_config.textproto)) designed for default simulation and standalone service setups, bringing up a physical robot cell requires providing a cell-specific `service_config` file in your workspace so you can:
 1. **Match your physical cell's network topology and I/O mapping**: Configure the exact host and controller IP addresses (`local_rsi_host: "192.168.10.123"`, `eki_address: "192.168.11.122"`) and digital I/O channel names wired in your workcell.
 2. **Automatically bind to your declarative `BUILD` instance name**: By omitting the explicit module `name` override present in the standalone template, the driver automatically inherits the `intrinsic_asset_instance` name (`name = "robot"`) declared in your `BUILD` file—ensuring the hardware module, scene object, and ICON `MainConfig` (`hardware_module_names: ["robot"]`) remain seamlessly aligned.
 
@@ -268,7 +268,7 @@ In your Bzlmod workspace directory (`~/kuka_bringup/`), create `kuka_rsi_config.
 
 ## Step 3: Creating the ICON MainLoop Configuration (`kuka_icon_main_config.textproto`)
 
-When the `robot` hardware device runs, it streams raw joint positions and listens for real-time setpoints over shared memory. To execute coordinated trajectories, the hardware module must be claimed by **ICON (the realtime control service)** (`@ioc//intrinsic_control/intrinsic/icon/machines/common:generic_icon_mainloop_type`). For a deeper overview of ICON's architecture, parts, and real-time execution model, see the [ICON Introduction](icon_introduction/icon_introduction.md) tutorial.
+When the `robot` hardware device runs, it streams raw joint positions and listens for real-time setpoints over shared memory. To execute coordinated trajectories, the hardware module must be claimed by **ICON (the realtime control service)** (`@intrinsic-core//intrinsic_control/intrinsic/icon/machines/common:generic_icon_mainloop_type`). For a deeper overview of ICON's architecture, parts, and real-time execution model, see the [ICON Introduction](icon_introduction/icon_introduction.md) tutorial.
 
 In your Bzlmod workspace directory (`~/kuka_bringup/`), save the following configuration file as `kuka_icon_main_config.textproto`:
 
@@ -366,15 +366,15 @@ In your Bzlmod workspace directory (`~/kuka_bringup/`), save the following confi
 
 ## Step 4: Declaring and Deploying the Solution via `BUILD`
 
-With `kuka_rsi_config.textproto` and `kuka_icon_main_config.textproto` saved in your Bzlmod workspace (`~/kuka_bringup/`), you can now bind both configurations to their respective upstream `@ioc` assets using `intrinsic_asset_instance` and bundle them into a complete solution using `intrinsic_solution`.
+With `kuka_rsi_config.textproto` and `kuka_icon_main_config.textproto` saved in your Bzlmod workspace (`~/kuka_bringup/`), you can now bind both configurations to their respective upstream `@intrinsic-core` assets using `intrinsic_asset_instance` and bundle them into a complete solution using `intrinsic_solution`.
 
 ### 1. Create the `BUILD` File
 
 Create a `BUILD` file in `~/kuka_bringup/BUILD`:
 
 ```python
-load("@ioc//intrinsic/assets/build_defs:asset.bzl", "intrinsic_asset_instance")
-load("@ioc//intrinsic/assets/build_defs:solution.bzl", "intrinsic_solution")
+load("@intrinsic-core//intrinsic/assets/build_defs:asset.bzl", "intrinsic_asset_instance")
+load("@intrinsic-core//intrinsic/assets/build_defs:solution.bzl", "intrinsic_solution")
 
 intrinsic_asset_instance(
     name = "robot",
@@ -394,8 +394,8 @@ intrinsic_solution(
     name = "kuka_solution",
     add_compose_world_test = False,
     assets = [
-        "@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_hardware_module",
-        "@ioc//intrinsic_control/intrinsic/icon/machines/common:generic_icon_mainloop_type",
+        "@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_hardware_module",
+        "@intrinsic-core//intrinsic_control/intrinsic/icon/machines/common:generic_icon_mainloop_type",
     ],
     default_operation_mode = "real",
     instances = [
@@ -406,7 +406,7 @@ intrinsic_solution(
 ```
 
 At build time:
-* `intrinsic_solution` bundles the upstream `@ioc` asset targets listed in `assets` (`kr6_r900_2_hardware_module` and `generic_icon_mainloop_type`).
+* `intrinsic_solution` bundles the upstream `@intrinsic-core` asset targets listed in `assets` (`kr6_r900_2_hardware_module` and `generic_icon_mainloop_type`).
 * `intrinsic_asset_instance` binds your `.textproto` files (`service_config`) to their respective Asset IDs (`ai.intrinsic.kuka_kr6_hardware_module` and `ai.intrinsic.generic_realtime_control_service`) under the instance names `robot` and `icon`.
 
 ### 2. Deploy the Solution to the Cluster (`--operation_mode=real`)
@@ -484,7 +484,7 @@ Safety Status:
 
 ## Adapting This Workflow for Universal Robots (UR)
 
-Because Intrinsic provides native hardware modules across multiple robot brands, bringing up a **Universal Robots e-Series manipulator (UR3e, UR5e, or UR10e)** follows the exact same declarative `BUILD` workflow covered in Steps 0 through 4 (see [`incode/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots/BUILD`](../../../../../incode/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots/BUILD)).
+Because Intrinsic provides native hardware modules across multiple robot brands, bringing up a **Universal Robots e-Series manipulator (UR3e, UR5e, or UR10e)** follows the exact same declarative `BUILD` workflow covered in Steps 0 through 4 (see [`intrinsic_control/intrinsic/icon/hardware_modules/universal_robots/BUILD`](/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots/BUILD)).
 
 To control a UR robot, follow this tutorial while substituting the UR-specific settings and targets below:
 
@@ -492,8 +492,8 @@ To control a UR robot, follow this tutorial while substituting the UR-specific s
 | :--- | :--- | :--- |
 | **Controller Prep** | Install `IntrinsicBase` / `IntrinsicExtended` `.kop` packages & configure `virtual6` UDP interface | Configure PolyScope (Remote Control, RTDE/Dashboard services, disable Ethernet Fieldbus) — see [checklist below](#1-ur-controller-configuration-checklist-polyscope) |
 | **Real-Time Protocol** | KUKA RSI (UDP) @ **250 Hz** (4 ms cycle) | UR RTDE (TCP/IP) @ **500 Hz** (2 ms cycle) |
-| **Hardware Device Target (`@ioc`)** | `@ioc//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_hardware_module` | `@ioc//intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur5e_hardware_module_ioc` *(or `:ur3e_...` / `:ur10e_...`)* |
-| **Asset ID** | `ai.intrinsic.kuka_kr6_hardware_module` | `ai.intrinsic.ur5e_hardware_module_ioc` *(or `ur3e` / `ur10e`)* |
+| **Hardware Device Target (`@intrinsic-core`)** | `@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi:kr6_r900_2_hardware_module` | `@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur5e_hardware_module_core` *(or `:ur3e_...` / `:ur10e_...`)* |
+| **Asset ID** | `ai.intrinsic.kuka_kr6_hardware_module` | `ai.intrinsic.ur5e_hardware_module_core` *(or `ur3e` / `ur10e`)* |
 | **Driver Config (`service_config`)** | `kuka_rsi_config.textproto` (`KukaRsiModule`) | `ur_config.textproto` (`UniversalRobotsModuleConfig`) |
 | **ICON Config (`service_config`)** | `kuka_icon_main_config.textproto` (250 Hz, single I/O bank) | `ur_icon_main_config.textproto` (500 Hz, split `standard`/`configurable`/`tool` I/O banks) |
 
@@ -523,7 +523,7 @@ Before starting the UR hardware module, perform the following one-time setup on 
 
 ### 2. UR Driver Configuration (`ur_config.textproto` — Step 2)
 
-UR manipulators communicate via Universal Robots' Real-Time Data Exchange (RTDE) protocol at **500 Hz** (`control_frequency_hz: 500`). Just as with KUKA, rather than using the standalone simulation template ([`default_config_with_scene_object.pbtxt`](../../../../../incode/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots/default_config_with_scene_object.pbtxt)), create a cell-specific `ur_config.textproto` in your Bzlmod workspace so `robot_ip` matches your UR controller's IP address (`192.168.10.1`) and the module automatically inherits the `name = "robot"` instance name from your `BUILD` file:
+UR manipulators communicate via Universal Robots' Real-Time Data Exchange (RTDE) protocol at **500 Hz** (`control_frequency_hz: 500`). Just as with KUKA, rather than using the standalone simulation template ([`default_config_with_scene_object.pbtxt`](/intrinsic_control/intrinsic/icon/hardware_modules/universal_robots/default_config_with_scene_object.pbtxt)), create a cell-specific `ur_config.textproto` in your Bzlmod workspace so `robot_ip` matches your UR controller's IP address (`192.168.10.1`) and the module automatically inherits the `name = "robot"` instance name from your `BUILD` file:
 
 ```textproto
 # proto-file: intrinsic/icon/hal/proto/hardware_module_config.proto
@@ -612,12 +612,12 @@ Create `ur_icon_main_config.textproto` in your Bzlmod workspace to match the **5
 Then declare the UR solution in your `BUILD` file and deploy it via `bazel run //:ur_solution -- --address localhost:17080 --operation_mode=real` (or with `--cluster <cluster-name> --org <org@project> --operation_mode=real`):
 
 ```python
-load("@ioc//intrinsic/assets/build_defs:asset.bzl", "intrinsic_asset_instance")
-load("@ioc//intrinsic/config:def.bzl", "intrinsic_solution")
+load("@intrinsic-core//intrinsic/assets/build_defs:asset.bzl", "intrinsic_asset_instance")
+load("@intrinsic-core//intrinsic/assets/build_defs:solution.bzl", "intrinsic_solution")
 
 intrinsic_asset_instance(
     name = "robot",
-    asset = "ai.intrinsic.ur5e_hardware_module_ioc",
+    asset = "ai.intrinsic.ur5e_hardware_module_core",
     instance_name = "robot",
     service_config = ":ur_config.textproto",
 )
@@ -633,8 +633,8 @@ intrinsic_solution(
     name = "ur_solution",
     add_compose_world_test = False,
     assets = [
-        "@ioc//intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur5e_hardware_module_ioc",
-        "@ioc//intrinsic_control/intrinsic/icon/machines/common:generic_icon_mainloop_type",
+        "@intrinsic-core//intrinsic_control/intrinsic/icon/hardware_modules/universal_robots:ur5e_hardware_module_core",
+        "@intrinsic-core//intrinsic_control/intrinsic/icon/machines/common:generic_icon_mainloop_type",
     ],
     default_operation_mode = "real",
     instances = [
@@ -670,8 +670,8 @@ If the UR hardware module fails to initialize or faults during execution, inspec
 
 > [!NOTE]
 > **Internal Force-Torque Sensor & ROS 2 Integration**
-> * **Internal Force-Torque Sensor**: UR e-Series arms also include an integrated 6-axis wrist force-torque sensor (`HalForceTorqueSensorPart` bound to `force_torque_status` / `force_torque_command`). While omitted here to keep initial robot bringup focused on position and digital/analog I/O, we cover configuring and using the force-torque sensor for contact-sensitive motion in our follow-up [Client API & Move-to-Contact Tutorial](client_api/move_to_signal_tutorial.md).
-> * **ROS 2 Integration**: For UR robots—or any other manipulator supported by ROS—you can alternatively integrate via `ros2_control` using the [ROS 2 Control Bridge Tutorial](https://todo.example/ros2_control_bridge).
+> * **Internal Force-Torque Sensor**: UR e-Series arms also include an integrated 6-axis wrist force-torque sensor (`HalForceTorqueSensorPart` bound to `force_torque_status` / `force_torque_command`). While omitted here to keep initial robot bringup focused on position and digital/analog I/O, we cover configuring and using the force-torque sensor for contact-sensitive motion in our follow-up [Client API & Move-to-Contact Tutorial](client_api/move_to_contact_tutorial.md).
+> * **ROS 2 Integration**: For UR robots—or any other manipulator supported by ROS—you can alternatively integrate via `ros2_control` using the [ROS 2 Control Bridge Tutorial](ros2_bridge_tutorial.md).
 
 ---
 
@@ -680,6 +680,6 @@ If the UR hardware module fails to initialize or faults during execution, inspec
 Congratulations! You have declaratively configured and deployed a native KUKA KR6 R900-2 hardware device and ICON realtime controller in lockstep with the robot's real-time RSI clock.
 
 From here, you can:
-* Learn how to write standalone motion scripts and orchestrate trajectories using the [Client API Tutorial](client_api/move_to_signal_tutorial.md).
-* Explore connecting unsupported robot models via `ros2_control` using the [ROS 2 Control Bridge Tutorial](https://todo.example/ros2_control_bridge).
-* Implement custom actuator drivers or proprietary fieldbuses with the [Custom Hardware Modules Tutorial](https://todo.example/custom_hardware_modules).
+* Learn how to write standalone motion scripts and orchestrate trajectories using the [Client API Tutorial](client_api/move_to_contact_tutorial.md).
+* Explore connecting unsupported robot models via `ros2_control` using the [ROS 2 Control Bridge Tutorial](ros2_bridge_tutorial.md).
+* Implement custom actuator drivers or proprietary fieldbuses with the [Custom Hardware Modules Tutorial](hardware_modules/custom_hardware_modules.md).
