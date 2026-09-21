@@ -317,7 +317,7 @@
     (tracing-determine-operation-update-state-execution-span
       ?current-state ?target-state ?current-span ?target-span))
 
-  (if (eq ?target-state RUNNING) then
+  (if (eq ?target-state PREPARING) then
     (if (<> ?new-span-reference-id ?*TRACING-INVALID-SPAN-ID*) then
       (bind ?trace-id (span-get-trace-id ?new-span-reference-id))
       (bind ?trace-url "")
@@ -585,14 +585,14 @@
 
 (defrule operation-fail-on-conductor-preparation-error
   "Fails the process tree if the conductor failed to prepare."
-  ?op <- (operation-envelope (state ?op-state&RUNNING|SUSPENDING)
+  ?op <- (operation-envelope (state ?op-state&PREPARING|SUSPENDING)
                              (name ?op-name))
   ?cf <- (conductor-preparation-client-operation
            (operation-name ?op-name) (is-done TRUE) (has-error TRUE)
            (extended-status-proto-id ?conductor-es-proto-id))
  =>
   (bind ?es-proto (pb-clone ?conductor-es-proto-id))
-  (if (eq ?op-state RUNNING)
+  (if (eq ?op-state PREPARING)
    then
     (extended-status-set-message ?es-proto USER
       (str-cat "Cannot start operation " ?op-name))
@@ -645,6 +645,17 @@
   (retract ?mf)
 )
 
+(defrule operation-transition-to-running-on-conductor-preparation-done
+  "Transition from PREPARING to RUNNING when conductor preparation is done."
+  ?op <- (operation-envelope (state PREPARING) (name ?op-name))
+  (conductor-preparation-client-operation (operation-name ?op-name)
+                                          (is-done TRUE) (has-error FALSE)
+                                          (scene-id ?scene-id))
+ =>
+  (modify ?op (state RUNNING) (scene-id ?scene-id))
+  (conductor-preparation-client-operation-delete ?op-name)
+)
+
 (defrule operation-select-start-tree
   "Start the execution of the operation's start tree."
   ?op <- (operation-envelope (state RUNNING)
@@ -658,12 +669,6 @@
                              (simulation-mode ?sim-mode)
                              (span-reference-id ?execution-span))
   (behavior-tree (id ?operation-tree-id) (blackboard-scope ?bb-scope))
-  ; Wait for the conductor client operation to finish preparing backend services
-  ; before running the start tree. If an error occured, then
-  ; operation-fail-on-conductor-preparation-error will be fired instead.
-  (conductor-preparation-client-operation (operation-name ?op-name)
-                                          (scene-id ?scene-id) (is-done TRUE)
-                                          (has-error FALSE))
   ?start-tree <- (behavior-tree (id ?start-tree-id) (state ACCEPTED)
                    (start-node-id ?start-node-id)
                    (predict-generation-id ?predict-generation-id))
@@ -694,8 +699,6 @@
     (pb-remove ?es-proto)
     (pb-remove ?recovery-state-proto)
     (modify ?op (state FAILED) (recovery-state-proto 0))
-
-    (conductor-preparation-client-operation-delete ?op-name)
     (return)
   )
 
@@ -716,8 +719,6 @@
       (pb-remove ?es-proto)
       (pb-remove ?recovery-state-proto)
       (modify ?op (state FAILED) (recovery-state-proto 0))
-
-      (conductor-preparation-client-operation-delete ?op-name)
       (return)
     )
     (bind ?parameter-proto-id (result-value ?parameter-cast-result))
@@ -752,15 +753,12 @@
           (operation-attach-extended-status ?op
             (result-error ?recovery-result)))
         (modify ?op (state FAILED) (recovery-state-proto 0))
-        (conductor-preparation-client-operation-delete ?op-name)
         (behavior-tree-reset ?operation-tree-id FALSE)
         (return)
       )
   )
 
-  (modify ?op (scene-id ?scene-id) (recovery-state-proto 0))
-
-  (conductor-preparation-client-operation-delete ?op-name)
+  (modify ?op (recovery-state-proto 0))
 )
 
 (defrule operation-resume-operation-tree

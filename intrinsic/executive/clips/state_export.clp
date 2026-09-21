@@ -58,14 +58,15 @@
     (do-for-fact ((?bt behavior-tree)) (eq ?bt:id ?op-tree-id)
       (bind ?bt-log-id ?bt:log-id)
       (pb-set-field ?operation-proto "name" ?op:name)
-      (pb-set-field ?metadata-proto "behavior_tree_state" ?op:state)
-      (pb-set-field ?metadata-proto "operation_state" ?op:state)
-      (if (eq ?op:state RUNNING) then
-        (do-for-fact ((?conductor-op conductor-preparation-client-operation))
-          (eq ?conductor-op:operation-name ?op:name)
-          (pb-set-field ?metadata-proto "operation_state" PREPARING)
-        )
+      ; The DEPRECATED behavior_tree_state field (defined in behavior_tree.proto
+      ; as intrinsic_proto.executive.BehaviorTree.State) does not contain a
+      ; PREPARING enum value. Therefore, we map PREPARING to RUNNING for
+      ; backward compatibility (matching clips_executive_service.cc).
+      (if (eq ?op:state PREPARING)
+        then (pb-set-field ?metadata-proto "behavior_tree_state" RUNNING)
+        else (pb-set-field ?metadata-proto "behavior_tree_state" ?op:state)
       )
+      (pb-set-field ?metadata-proto "operation_state" ?op:state)
       (switch ?op:state
         (case SUCCEEDED then
           (pb-set-field ?operation-proto "done" TRUE)

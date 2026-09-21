@@ -24,14 +24,15 @@
 ; ----------------------------------- RULES -----------------------------------
 
 (defrule tracing-check-execution-span-while-not-running
-  "Check for an execution span outside of RUNNING, SUSPENDING, SUSPENDED, or
-  CANCELING states."
-  (operation-envelope (state ?state&~RUNNING&~SUSPENDING&~SUSPENDED&~CANCELING)
+  "Check for an execution span outside of PREPARING, RUNNING, SUSPENDING,
+  SUSPENDED, or CANCELING states."
+  (operation-envelope
+    (state ?state&~PREPARING&~RUNNING&~SUSPENDING&~SUSPENDED&~CANCELING)
     (span-reference-id ?execution-span&~0))
  =>
   (assert (error (name TRACING-CHECK-EXECUTION-SPAN-WHILE-NOT-RUNNING)
                  (type RECOVERABLE)
                  (message (str-cat "Execution span exists while the "
-                   "operation is not RUNNING, SUSPENDING, SUSPENDED, or "
-                   "CANCELING (state: " ?state ")."))))
+                   "operation is not PREPARING, RUNNING, SUSPENDING, "
+                   "SUSPENDED, or CANCELING (state: " ?state ")."))))
 )

@@ -1431,19 +1431,6 @@ ClipsExecutor::GetOperationStateNoLock(absl::string_view operation_name)
   intrinsic_proto::executive::RunMetadata::State operation_state =
       metadata_ptr->operation_state();
 
-  absl::StatusOr<clips::Fact> conductor_operation_fact =
-      clips_->GetUniqueFact("conductor-preparation-client-operation",
-                            {{"operation-name", operation_name}});
-  if (operation_state == intrinsic_proto::executive::RunMetadata::RUNNING &&
-      conductor_operation_fact.ok()) {
-    // If there is still a conductor-preparation-client-operation fact while the
-    // operation is RUNNING, it is still preparing to be run.
-    // Note: This can only be overridden in the RUNNING state as the
-    // conductor-preparation-client-operation is kept when SUSPENDED and the
-    // tree hasn't started executing, yet.
-    operation_state = intrinsic_proto::executive::RunMetadata::PREPARING;
-  }
-
   return operation_state;
 }
 
@@ -1914,7 +1901,7 @@ absl::Status ClipsExecutor::RequestToStart(absl::string_view operation_name,
           ->AssertFact(
               "operation-update-state",
               {{"operation-name", operation_name},
-               {"target-state", clips::Symbol("RUNNING")},
+               {"target-state", clips::Symbol("PREPARING")},
                {"parameter-proto", parameter_proto.value()},
                {"resources", resources},
                {"recovery-state-proto", recovery_state_proto_id.value()},

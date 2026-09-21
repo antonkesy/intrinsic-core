@@ -63,21 +63,22 @@
    retained or the ?target-span is used."
 
   (bind ?new-span-reference-id ?*TRACING-INVALID-SPAN-ID*)
-  ; Update to the new ?target-span iff transitioning to RUNNING
-  ; unless the executive is still SUSPENDING or SUSPENDED,
+  ; Update to the new ?target-span iff transitioning to PREPARING
+  ; unless the executive is already in PREPARING, SUSPENDING or SUSPENDED,
   ; then keep the old span ?current-span.
-  (if (and (eq ?target-state RUNNING)
+  (if (and (eq ?target-state PREPARING)
+           (neq ?current-state PREPARING)
            (neq ?current-state SUSPENDING)
            (neq ?current-state SUSPENDED))
     then
       (if (<> ?current-span ?*TRACING-INVALID-SPAN-ID*) then
         (bind ?error-msg (format nil
-          (str-cat "Transitioning to RUNNING state from %s had an active "
+          (str-cat "Transitioning to " ?target-state " state from %s had an active "
             "tracing span with id %d. The span will be ended by force.")
           (str-cat ?current-state) ?current-span))
         (printout error ?error-msg crlf)
         (span-end-failure ?current-span ?*TRACING-STATUS-ALREADY-EXISTS*
-          "A span was already active when switching to RUNNING.")
+          (str-cat "A span was already active when switching to " ?target-state "."))
       )
 
       (bind ?new-span-reference-id ?target-span)

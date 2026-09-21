@@ -30,7 +30,7 @@
 
   ; State of this operation depending on the behavior tree being executed.
   ; See: behavior_tree.clp
-  (slot state (type SYMBOL) (allowed-values ACCEPTED RUNNING CANCELING
+  (slot state (type SYMBOL) (allowed-values ACCEPTED PREPARING RUNNING CANCELING
                                             SUSPENDING SUSPENDED
                                             ; terminal states
                                             SUCCEEDED FAILED CANCELED)
@@ -93,7 +93,7 @@
   (slot start-tree-id (type SYMBOL))
 
   ; Recovery state proto to be applied when starting. Only valid when starting
-  ; (RUNNING) from an ACCEPTED operation.
+  ; (PREPARING) from an ACCEPTED operation.
   ; Will only be present for recovery, i.e., when recovery was requested and the
   ; process tree is not running, yet. Upon starting the process tree, this state
   ; proto will be applied instead and then the proto is discarded.
@@ -133,9 +133,9 @@
   ; the executive not progressing although it should.
   (slot running-without-active-actions-count (type INTEGER))
 
-  ; The scene ID that is associated with this operation. This is set only
-  ; once the operation transitions from ACCEPTED to RUNNING and cleared when the
-  ; operation is reset.
+  ; The scene ID that is associated with this operation. This is set only once
+  ; conductor preparation completes (transitioning to RUNNING or SUSPENDED) and
+  ; cleared when the operation is reset.
   (slot scene-id (type STRING))
 
   ; An ExtendedStatus proto created or propagated up on failure.
@@ -146,14 +146,15 @@
 )
 
 ; Requests an update to change the execution state of the operation. This is
-; used to start (RUNNING), suspend (SUSPENDING), resume (RESUME), or cancel
+; used to start (PREPARING), suspend (SUSPENDING), resume (RESUME), or cancel
 ; (CANCELING) this operation.
 (deftemplate operation-update-state
   ; Name of the operation to update. Refers an operation-envelope.
   (slot operation-name (type STRING))
 
   (slot target-state (type SYMBOL)
-                     (allowed-values RUNNING RESUME SUSPENDING CANCELING)
+                     (allowed-values PREPARING RUNNING RESUME SUSPENDING
+                                     CANCELING)
                      (default ?NONE))
   (slot resume-mode (type SYMBOL) (allowed-values NONE CONTINUE STEP NEXT))
 
@@ -165,7 +166,7 @@
   (multislot resources (type STRING))
 
   ; Recovery state proto to be applied when starting. Only valid when starting
-  ; (RUNNING) from an ACCEPTED operation.
+  ; (PREPARING) from an ACCEPTED operation.
   (slot recovery-state-proto (type INTEGER))
 
   ; The span-reference-id for the tracing span to be active in target-state.
@@ -215,4 +216,3 @@
 )
 
 ; --------------------------------- FUNCTIONS ---------------------------------
-
