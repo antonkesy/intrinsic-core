@@ -195,35 +195,6 @@ cc_library(
 )
 
 cc_library(
-    name = "wrist_offset_inverse_kinematics",
-    srcs = [
-        "wrist_offset_inverse_kinematics.cc",
-    ],
-    hdrs = [
-        "wrist_offset_inverse_kinematics.h",
-    ],
-    deps = [
-        ":inverse_kinematics_interface",
-        ":sanitize_ik",
-        "//intrinsic/util/status:status_macros",
-        "//intrinsic_control/intrinsic/icon/utils:log",
-        "//intrinsic_control/intrinsic/icon/utils:realtime_status_macro",
-        "//intrinsic_kinematics/intrinsic/kinematics",
-        "//intrinsic_kinematics/intrinsic/kinematics:group",
-        "//intrinsic_kinematics/intrinsic/kinematics:skeleton",
-        "//intrinsic_kinematics/intrinsic/kinematics:state",
-        "//intrinsic_kinematics/intrinsic/kinematics/ik_solvers:wrist_offset_geometric_ik_solver",
-        "//intrinsic_sdk/intrinsic/eigenmath",
-        "//intrinsic_sdk/intrinsic/eigenmath:pose3_utils",
-        "//intrinsic_sdk/intrinsic/math:pose3",
-        "//intrinsic_sdk/intrinsic/math:units",
-        "@abseil-cpp//absl/log",
-        "@abseil-cpp//absl/status",
-        "@abseil-cpp//absl/strings:str_format",
-    ],
-)
-
-cc_library(
     name = "inverse_kinematics_factory",
     srcs = [
         "inverse_kinematics_factory.cc",
@@ -255,7 +226,6 @@ cc_library(
         ":register_rt_calibrated_ur_inverse_kinematics",
         ":register_spherical_wrist_inverse_kinematics",
         ":register_ur_inverse_kinematics",
-        ":register_wrist_offset_inverse_kinematics",
     ] + [],
 )
 
@@ -288,16 +258,6 @@ cc_library(
     deps = [
         ":inverse_kinematics_factory",
         ":ur_inverse_kinematics",
-    ],
-    alwayslink = True,
-)
-
-cc_library(
-    name = "register_wrist_offset_inverse_kinematics",
-    srcs = ["register_wrist_offset_inverse_kinematics.cc"],
-    deps = [
-        ":inverse_kinematics_factory",
-        ":wrist_offset_inverse_kinematics",
     ],
     alwayslink = True,
 )

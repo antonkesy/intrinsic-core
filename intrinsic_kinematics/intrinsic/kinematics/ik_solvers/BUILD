@@ -17,22 +17,6 @@ load("//bazel:cc_macros.bzl", "cc_library")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "geometric_algebra_utils",
-    srcs = [
-        "geometric_algebra_utils.cc",
-    ],
-    hdrs = [
-        "geometric_algebra_utils.h",
-    ],
-    deps = [
-        "//intrinsic_sdk/intrinsic/eigenmath",
-        "@abseil-cpp//absl/log",
-        "@abseil-cpp//absl/strings",
-        "@versor//:vsr",
-    ],
-)
-
-cc_library(
     name = "ur_ik_solver",
     srcs = [
         "ur_ik_solver.cc",
@@ -55,34 +39,6 @@ cc_library(
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/types:span",
-    ],
-)
-
-cc_library(
-    name = "wrist_offset_geometric_ik_solver",
-    srcs = [
-        "wrist_offset_geometric_ik_solver.cc",
-    ],
-    hdrs = [
-        "wrist_offset_geometric_ik_solver.h",
-    ],
-    deps = [
-        ":geometric_algebra_utils",
-        "//intrinsic/util/status:status_builder",
-        "//intrinsic/util/status:status_macros",
-        "//intrinsic_control/intrinsic/icon/utils:realtime_status_macro",
-        "//intrinsic_kinematics/intrinsic/kinematics:dh_params",
-        "//intrinsic_kinematics/intrinsic/kinematics:group",
-        "//intrinsic_kinematics/intrinsic/kinematics:state",
-        "//intrinsic_kinematics/intrinsic/kinematics:state_values",
-        "//intrinsic_sdk/intrinsic/eigenmath",
-        "//intrinsic_sdk/intrinsic/math:pose3",
-        "@abseil-cpp//absl/log",
-        "@abseil-cpp//absl/log:check",
-        "@abseil-cpp//absl/status",
-        "@abseil-cpp//absl/status:statusor",
-        "@com_google_googletest//:gtest_prod",
-        "@versor//:vsr",
     ],
 )
 

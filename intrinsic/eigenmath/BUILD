@@ -17,14 +17,6 @@ load("//bazel:cc_macros.bzl", "cc_library")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "common_normal_between_lines",
-    hdrs = ["common_normal_between_lines.h"],
-    deps = [
-        "//intrinsic_sdk/intrinsic/eigenmath",
-    ],
-)
-
-cc_library(
     name = "halton_sequence",
     hdrs = [
         "halton_sequence.h",

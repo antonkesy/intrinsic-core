@@ -17,19 +17,6 @@ load("//bazel:cc_macros.bzl", "cc_library")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "dh_params",
-    srcs = ["dh_params.cc"],
-    hdrs = ["dh_params.h"],
-    deps = [
-        "//intrinsic/eigenmath:common_normal_between_lines",
-        "//intrinsic_sdk/intrinsic/eigenmath",
-        "//intrinsic_sdk/intrinsic/eigenmath:so3",
-        "//intrinsic_sdk/intrinsic/math:pose3",
-        "@abseil-cpp//absl/types:optional",
-    ],
-)
-
-cc_library(
     name = "math",
     srcs = [
         "math.cc",
