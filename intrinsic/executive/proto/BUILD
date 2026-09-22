@@ -278,6 +278,47 @@ go_proto_library(
     ],
 )
 
+proto_library(
+    name = "executive_events_proto",
+    srcs = ["executive_events.proto"],
+    deps = [
+        ":behavior_tree_proto",
+        ":run_metadata_proto",
+        "@com_google_googleapis//google/rpc:status_proto",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:timestamp_proto",
+        "@intrinsic_apis//intrinsic/executive/proto:executive_execution_mode_proto",
+        "@intrinsic_apis//intrinsic/logging/proto:context_proto",
+        "@intrinsic_apis//intrinsic/util/status:extended_status_proto",
+    ],
+)
+
+py_proto_library(
+    name = "executive_events_py_pb2",
+    deps = [":executive_events_proto"],
+)
+
+cc_proto_library(
+    name = "executive_events_cc_proto",
+    deps = [":executive_events_proto"],
+)
+
+go_proto_library(
+    name = "executive_events_go_proto",
+    importpath = "intrinsic/executive/proto/executive_events_go_proto",
+    protos = [":executive_events_proto"],
+    deps = [
+        ":behavior_tree_go_proto",
+        ":run_metadata_go_proto",
+        "@intrinsic_apis//intrinsic/executive/proto:executive_execution_mode_go_proto",
+        "@intrinsic_apis//intrinsic/logging/proto:context_go_proto",
+        "@intrinsic_apis//intrinsic/util/status:extended_status_go_proto",
+        "@org_golang_google_genproto_googleapis_rpc//status",
+        "@org_golang_google_protobuf//types/known/anypb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
 # behavior tree
 proto_library(
     name = "behavior_tree_proto",
