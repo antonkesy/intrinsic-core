@@ -1110,7 +1110,9 @@ class StructuredLogs:
 
   @error_handling.retry_on_grpc_transient_errors
   def sync_and_rotate_logs(
-      self, event_sources: list[str] | None = None
+      self,
+      event_sources: list[str] | None = None,
+      wait_for_flush: bool = False,
   ) -> logger_service_pb2.SyncResponse:
     """Syncs remaining logs to GCS and rotates log files.
 
@@ -1118,11 +1120,14 @@ class StructuredLogs:
 
     Args:
       event_sources: event sources to sync, as a list of regex patterns.
+      wait_for_flush: If true, the RPC will wait for background flushes to
+        complete before returning the response.
 
     Returns:
       A SyncAndRotateLogsResponse instance representing the response.
     """
     sync_request = logger_service_pb2.SyncRequest()
+    sync_request.wait_for_flush = wait_for_flush
     if event_sources is None:
       sync_request.sync_all = True
     else:
