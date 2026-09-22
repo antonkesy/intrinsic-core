@@ -272,7 +272,7 @@ that must meet the real-time requirements of the robots it controls. On
 An open-source reference [solution](#solution) built on
 [Intrinsic Core](#intrinsic-core)
 ([`intrinsic-omts`](https://github.com/intrinsic-ai/intrinsic-omts)) that
-demonstrates an end-to-end CNC machine tending application using pre-configured
+demonstrates a CNC machine tending application using pre-configured
 [asset](#asset)s, [skill](#skill)s, 6-DoF pose estimation, motion planning, and
 real-time force-controlled manipulation.
 
