@@ -15,6 +15,7 @@
 #include "intrinsic/world/collision/coal_collision_checker.h"
 
 #include <algorithm>
+#include <optional>
 #include <sstream>
 #include <utility>
 #include <variant>
@@ -97,8 +98,16 @@ class CoalGeoCache {
       const Geometry& geo, const eigenmath::Vector3d& requested_scale);
 
   std::string DebugString() const;
-  void Clear() { intr_to_coal_map_.clear(); }
+  // Empties cached geometry objects while preserving cumulative telemetry
+  // counters (cache_hits_, cache_misses_) across clears, ensuring monotonic
+  // metrics for production diagnostics and monitoring.
+  void Clear() {
+    absl::MutexLock lock(&mutex_);
+    intr_to_coal_map_.clear();
+  }
+
   CoalCollisionChecker::GeoCacheStats GetStats() const {
+    absl::MutexLock lock(&mutex_);
     return CoalCollisionChecker::GeoCacheStats{
         .hits = cache_hits_,
         .misses = cache_misses_,
@@ -108,13 +117,13 @@ class CoalGeoCache {
 
  private:
   using CoalGeoLru = LruCache<GeoKey, std::vector<ScaledCoalGeo>>;
-  CoalGeoLru intr_to_coal_map_;
-  int cache_hits_ = 0;
-  int cache_misses_ = 0;
+  mutable absl::Mutex mutex_;
+  CoalGeoLru intr_to_coal_map_ ABSL_GUARDED_BY(mutex_);
+  int cache_hits_ ABSL_GUARDED_BY(mutex_) = 0;
+  int cache_misses_ ABSL_GUARDED_BY(mutex_) = 0;
 };
 
-absl::Mutex geo_cache_mutex;
-CoalGeoCache global_geo_cache ABSL_GUARDED_BY(geo_cache_mutex);
+CoalGeoCache global_geo_cache;
 
 coal::Transform3s ToCoalTransform(const Pose3d& pose) {
   coal::Transform3s t;
@@ -255,8 +264,7 @@ absl::StatusOr<CoalCollider> MakeColliderFromIntrPrimitive(
 
 absl::Status AddCollidersFromTransformedGeometry(
     const TransformedGeometry& t_geo, const PhysicalEntityId entity_id,
-    std::vector<CoalCollider>& colliders)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(geo_cache_mutex) {
+    std::vector<CoalCollider>& colliders) {
   const ExactGeometry& exact_geo = t_geo.shape().GetExactGeometry();
   if (!exact_geo.GetPrimitiveShapes().empty()) {
     std::vector<CoalCollider> primitive_colliders;
@@ -296,8 +304,7 @@ absl::Status AddCollidersFromTransformedGeometry(
 
 absl::StatusOr<std::vector<CoalCollider>> GenerateCoalCollidersFromEntityIds(
     const CollisionCheckerWorld& world,
-    const std::vector<PhysicalEntityId>& entity_ids)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(geo_cache_mutex) {
+    const std::vector<PhysicalEntityId>& entity_ids) {
   std::vector<CoalCollider> colliders;
   for (const PhysicalEntityId entity_id : entity_ids) {
     const NamedGeometrySet geo_set =
@@ -353,8 +360,8 @@ bool AreCollidersInCollision(const std::vector<CoalCollider>& colliders_1,
 bool AreSetsInCollisionImpl(const NamedGeometrySet& left_tree,
                             const NamedGeometrySet& right_tree,
                             const Pose3d& left_t_right, double margin,
-                            PhysicalEntityId left_id, PhysicalEntityId right_id)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(geo_cache_mutex) {
+                            PhysicalEntityId left_id,
+                            PhysicalEntityId right_id) {
   std::vector<CoalCollider> colliders_1;
   std::vector<CoalCollider> colliders_2;
   for (const auto& [name, t_geo] : left_tree) {
@@ -641,37 +648,71 @@ CoalGeoCache::GetOrComputeCoalGeo(const Geometry& geo,
   if (std::holds_alternative<std::monostate>(key)) {
     return absl::InvalidArgumentError("Unexpected ExactGeometry type!");
   }
-  auto lookup =
-      std::make_unique<CoalGeoLru::ScopedLookup>(&intr_to_coal_map_, key);
-  if (!lookup->found()) {
-    intr_to_coal_map_.insert(key, new std::vector<ScaledCoalGeo>(),
-                             /*units=*/0);
-    lookup =
-        std::make_unique<CoalGeoLru::ScopedLookup>(&intr_to_coal_map_, key);
-  }
-  INTR_RET_CHECK(lookup->found());
 
-  std::vector<ScaledCoalGeo>& scaled_coal_geos = *lookup->value();
+  const auto find_matching_coal_geo =
+      [&](const std::vector<ScaledCoalGeo>& scaled_geos)
+      -> std::shared_ptr<coal::CollisionGeometry> {
+    for (const ScaledCoalGeo& scaled_coal_geo : scaled_geos) {
+      if (requested_scale.isApprox(scaled_coal_geo.scale,
+                                   kScaleEqualityThreshold)) {
+        return scaled_coal_geo.coal_geo;
+      }
+    }
+    return nullptr;
+  };
 
-  for (const ScaledCoalGeo& scaled_coal_geo : scaled_coal_geos) {
-    if (requested_scale.isApprox(scaled_coal_geo.scale,
-                                 kScaleEqualityThreshold)) {
-      ++cache_hits_;
-      return scaled_coal_geo.coal_geo;
+  // Fast path: check if the geometry at the requested scale is already cached.
+  {
+    absl::MutexLock lock(&mutex_);
+    CoalGeoLru::ScopedLookup lookup(&intr_to_coal_map_, key);
+    if (lookup.found()) {
+      if (std::shared_ptr<coal::CollisionGeometry> coal_geo =
+              find_matching_coal_geo(*lookup.value());
+          coal_geo != nullptr) {
+        ++cache_hits_;
+        return coal_geo;
+      }
     }
   }
 
-  ++cache_misses_;
+  // Expensive conversion: construct the Coal representation (e.g. BVH tree or
+  // Octree) without holding any lock, allowing concurrent construction across
+  // multiple geometries on different threads.
   INTR_ASSIGN_OR_RETURN(const ScaledCoalGeo new_scaled_geo,
                         ComputeScaledCoalGeoFromKey(key, requested_scale));
 
-  scaled_coal_geos.push_back(new_scaled_geo);
+  // Insert newly computed geometry into the cache under lock, handling
+  // potential race conditions where another thread computed the same geometry
+  // concurrently.
+  absl::MutexLock lock(&mutex_);
+  CoalGeoLru::ScopedLookup lookup(&intr_to_coal_map_, key);
+  if (lookup.found()) {
+    if (std::shared_ptr<coal::CollisionGeometry> coal_geo =
+            find_matching_coal_geo(*lookup.value());
+        coal_geo != nullptr) {
+      // Another thread computed and inserted this geometry while this thread
+      // was converting. Count this as a cache miss because this thread
+      // experienced a cold miss in the fast path and performed redundant
+      // conversion work. Return the winning thread's geometry.
+      ++cache_misses_;
+      return coal_geo;
+    }
+    // Key exists for another scale; append the newly scaled geometry.
+    ++cache_misses_;
+    lookup.value()->push_back(new_scaled_geo);
 
-  std::size_t geo_bytes = 0;
-  for (const ScaledCoalGeo& g : scaled_coal_geos) {
-    geo_bytes += g.mem_usage_bytes;
+    std::size_t geo_bytes = 0;
+    for (const ScaledCoalGeo& g : *lookup.value()) {
+      geo_bytes += g.mem_usage_bytes;
+    }
+    intr_to_coal_map_.updateSize(key, lookup.value(), geo_bytes);
+  } else {
+    // Key does not exist; insert vector directly with its calculated size.
+    ++cache_misses_;
+    auto* scaled_coal_geos = new std::vector<ScaledCoalGeo>{new_scaled_geo};
+    intr_to_coal_map_.insert(key, scaled_coal_geos,
+                             new_scaled_geo.mem_usage_bytes);
   }
-  intr_to_coal_map_.updateSize(key, &scaled_coal_geos, geo_bytes);
 
   const double cache_usage = static_cast<double>(intr_to_coal_map_.size()) /
                              static_cast<double>(intr_to_coal_map_.maxSize());
@@ -685,6 +726,7 @@ CoalGeoCache::GetOrComputeCoalGeo(const Geometry& geo,
 }
 
 std::string CoalGeoCache::DebugString() const {
+  absl::MutexLock lock(&mutex_);
   return absl::StrCat("Cache hits / misses: ", cache_hits_, " / ",
                       cache_misses_, "\n",
                       "Current cache size: ", intr_to_coal_map_.size(), " B");
@@ -717,7 +759,6 @@ bool AreGeometrySetsInCollision(PhysicalEntityId object_id,
       [&](CollisionCheckCacheValue&& starting_value)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(cached_checks.mutex_) {
             cache_hit = false;
-            absl::MutexLock lock(&geo_cache_mutex);
             is_in_collision = AreSetsInCollisionImpl(
                 object_spatial_tree, other_spatial_tree, object_t_other_object,
                 margin, object_id, other_object_id);
@@ -790,18 +831,15 @@ CoalCollisionChecker::CoalCollisionChecker(const CollisionCheckerWorld* world)
 CoalCollisionChecker::~CoalCollisionChecker() = default;
 
 void CoalCollisionChecker::ClearGlobalGeoCacheForTesting() {
-  absl::MutexLock lock(&geo_cache_mutex);
   global_geo_cache.Clear();
 }
 
 std::string CoalCollisionChecker::GetGlobalGeoCacheDebugStringForTesting() {
-  absl::MutexLock lock(&geo_cache_mutex);
   return global_geo_cache.DebugString();
 }
 
 CoalCollisionChecker::GeoCacheStats
 CoalCollisionChecker::GetGlobalGeoCacheStatsForTesting() {
-  absl::MutexLock lock(&geo_cache_mutex);
   return global_geo_cache.GetStats();
 }
 
@@ -860,20 +898,17 @@ CoalCollisionChecker::CreateImpl(
               dynamic_object_ids_sorted.end());
     std::sort(static_object_ids_sorted.begin(), static_object_ids_sorted.end());
 
-    {
-      absl::MutexLock lock(&geo_cache_mutex);
-      INTR_ASSIGN_OR_RETURN(checker->dynamic_coal_colliders_,
-                            GenerateCoalCollidersFromEntityIds(
-                                checker->world_, dynamic_object_ids_sorted));
-      INTR_ASSIGN_OR_RETURN(checker->static_coal_colliders_,
-                            GenerateCoalCollidersFromEntityIds(
-                                checker->world_, static_object_ids_sorted));
+    INTR_ASSIGN_OR_RETURN(checker->dynamic_coal_colliders_,
+                          GenerateCoalCollidersFromEntityIds(
+                              checker->world_, dynamic_object_ids_sorted));
+    INTR_ASSIGN_OR_RETURN(checker->static_coal_colliders_,
+                          GenerateCoalCollidersFromEntityIds(
+                              checker->world_, static_object_ids_sorted));
 
-      const absl::Duration geo_conversion_duration = absl::Now() - last_t;
-      VLOG(1) << "Coal geo conversion time: "
-              << absl::ToDoubleSeconds(geo_conversion_duration) << " s";
-      VLOG(2) << global_geo_cache.DebugString();
-    }
+    const absl::Duration geo_conversion_duration = absl::Now() - last_t;
+    VLOG(1) << "Coal geo conversion time: "
+            << absl::ToDoubleSeconds(geo_conversion_duration) << " s";
+    VLOG(2) << global_geo_cache.DebugString();
   }
 
   // Create ColliderUserData structures and set the Coal objects to point to
@@ -1133,13 +1168,10 @@ bool AreGeometriesInCollision(const TransformedGeometry& left,
                               const TransformedGeometry& right) {
   std::vector<CoalCollider> colliders_1;
   std::vector<CoalCollider> colliders_2;
-  {
-    absl::MutexLock lock(&geo_cache_mutex);
-    CHECK_OK(AddCollidersFromTransformedGeometry(
-        left, PhysicalEntityId(kInvalidEntityId), colliders_1));
-    CHECK_OK(AddCollidersFromTransformedGeometry(
-        right, PhysicalEntityId(kInvalidEntityId), colliders_2));
-  }
+  CHECK_OK(AddCollidersFromTransformedGeometry(
+      left, PhysicalEntityId(kInvalidEntityId), colliders_1));
+  CHECK_OK(AddCollidersFromTransformedGeometry(
+      right, PhysicalEntityId(kInvalidEntityId), colliders_2));
   for (CoalCollider& collider : colliders_1) {
     collider.coal_obj.setTransform(ToCoalTransform(collider.entity_t_collider));
   }
