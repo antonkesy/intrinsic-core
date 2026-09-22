@@ -107,7 +107,7 @@ inctl world reset --address localhost:17080
 
 This gif is sped up 2x.
 
-## 3. Grasp planning on *raw_stock_50x50x75*
+## 3. Grasp planning on *raw_stock_2x3x5*
 
 ![MoveIt Grasp Planning 1](../../img/learn/tutorials/moveit_grasp_planning_1.png)
 ![MoveIt Grasp Planning 2](../../img/learn/tutorials/moveit_grasp_planning_2.png)
@@ -116,16 +116,16 @@ We can run the *moveit_plan_and_move* to plan for each object and optionally mov
 
 ```bash
 cd ~/omts-moveit
-# Dry run: plan a grasp on raw_stock_50x50x75 without moving the arm
+# Dry run: plan a grasp on raw_stock_2x3x5 without moving the arm
 bazel run //third_party/intrinsic_moveit/tools:moveit_plan_grasp_and_move -- \
   --address=localhost:17080 \
-  --target_object=raw_stock_50x50x75 \
+  --target_object=raw_stock_2x3x5 \
   --plan_only \
   --surfaces=0,1,4,5
 # Plan and approach the pre-grasp on the table surface
 bazel run //third_party/intrinsic_moveit/tools:moveit_plan_grasp_and_move -- \
   --address=localhost:17080 \
-  --target_object=raw_stock_50x50x75 \
+  --target_object=raw_stock_2x3x5 \
   --surfaces=0,1,4,5
 # Optionally, reset the scene such that the trajectory to the CNC Vice is shorter
 # inctl world reset --address localhost:17080
@@ -138,7 +138,7 @@ bazel run //tools/world:apply_scene_updates -- \
 # world has not been reset
 bazel run //third_party/intrinsic_moveit/tools:moveit_plan_grasp_and_move -- \
   --address=localhost:17080 \
-  --target_object=raw_stock_50x50x75 \
+  --target_object=raw_stock_2x3x5 \
   --surfaces=0,1,4,5
 ```
 
