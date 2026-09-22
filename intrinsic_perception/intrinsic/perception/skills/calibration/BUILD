@@ -226,7 +226,6 @@ cc_library(
         "@intrinsic_apis//intrinsic/motion_planning/proto/v1:geometric_constraints_cc_proto",
         "@intrinsic_apis//intrinsic/perception/proto/v1:calibration_service_cc_grpc_proto",
         "@intrinsic_apis//intrinsic/perception/proto/v1:calibration_service_cc_proto",
-        "@intrinsic_apis//intrinsic/perception/proto/v1:camera_to_robot_calibration_cc_proto",
         "@intrinsic_apis//intrinsic/resources/proto:resource_handle_cc_proto",
         "@intrinsic_apis//intrinsic/skills/proto:footprint_cc_proto",
         "@intrinsic_apis//intrinsic/world/proto:collision_settings_cc_proto",

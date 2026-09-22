@@ -42,9 +42,9 @@ message CollectCalibrationDataParams {
     skill_annotations: { always_provide_connection_info: true }
   }];
 
-  // The type of camera-to-robot calibration.
+  // Deprecated: No longer used.
   intrinsic_proto.perception.v1.CameraToRobotCalibrationType calibration_type =
-      2;
+      2 [deprecated = true];
 
   // Uniquely identifies the object used for calibration. Typically a
   // calibration pattern, but - with an appropriate pose estimator - all kinds

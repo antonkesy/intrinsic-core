@@ -47,7 +47,6 @@
 #include "intrinsic/motion_planning/service/motion_planner_service_asset_utils.h"
 #include "intrinsic/perception/proto/v1/calibration_service.grpc.pb.h"
 #include "intrinsic/perception/proto/v1/calibration_service.pb.h"
-#include "intrinsic/perception/proto/v1/camera_to_robot_calibration.pb.h"
 #include "intrinsic/perception/skills/calibration/calibration_robot_motion_utils.h"
 #include "intrinsic/perception/skills/calibration/collect_calibration_data.pb.h"
 #include "intrinsic/resources/proto/resource_handle.pb.h"
@@ -74,8 +73,6 @@ struct CollectCalibrationData::InputParameters {
   world::Frame flange;
   world::WorldObject calibration_object;
   intrinsic_proto::world::ObjectReference calibration_object_reference;
-  intrinsic_proto::perception::v1::CameraToRobotCalibrationType
-      calibration_type;
   bool skip_return_to_base_between_waypoints;
   CalibrationRobotMotionConfig motion_config;
 };
@@ -89,16 +86,8 @@ namespace {
 
 constexpr absl::Duration kCaptureDataTimeout = absl::Seconds(600);
 
-using intrinsic_proto::perception::v1::
-    CAMERA_TO_ROBOT_CALIBRATION_TYPE_UNSPECIFIED;
-
 absl::Status ValidateParams(
     const intrinsic_proto::skills::CollectCalibrationDataParams& params) {
-  if (params.calibration_type() ==
-      CAMERA_TO_ROBOT_CALIBRATION_TYPE_UNSPECIFIED) {
-    return absl::InvalidArgumentError("Invalid CameraToRobotCalibrationType.");
-  }
-
   if (IsEmptyObjectReference(params.calibration_object())) {
     return absl::InvalidArgumentError("calibration_object cannot be empty.");
   }
@@ -280,7 +269,6 @@ CollectCalibrationData::Execute(const ExecuteRequest& request,
       .robot = robot,
       .flange = flange,
       .calibration_object = calibration_object,
-      .calibration_type = params.calibration_type(),
       .skip_return_to_base_between_waypoints =
           params.skip_return_to_base_between_waypoints(),
       .motion_config =
