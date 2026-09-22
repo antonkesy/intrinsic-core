@@ -204,8 +204,8 @@ service SolutionVersionService {
 
   // Resolves and returns FileDescriptorSets for a requested list of asset
   // version IDs.
-  rpc BatchGetFileDescriptorSets(BatchGetFileDescriptorSetsRequest)
-      returns (BatchGetFileDescriptorSetsResponse) {}
+  rpc BatchGetAssetFileDescriptorSets(BatchGetAssetFileDescriptorSetsRequest)
+      returns (BatchGetAssetFileDescriptorSetsResponse) {}
 
   // Performs a directional, three-way comparison to generate a pre-merge
   // analysis (preview) of merging a source snapshot into a destination branch.
@@ -684,26 +684,30 @@ message DiffAndOverlayRequest {
   SnapshotSource target = 2;
 }
 
-message BatchGetFileDescriptorSetsRequest {
-  // The asset version IDs to resolve, formatted as
+message BatchGetAssetFileDescriptorSetsRequest {
+  // The asset ID versions to resolve, formatted as
   // "<package>.<name>.<version>".
-  repeated string asset_version_ids = 1;
+  repeated string asset_id_versions = 1;
 }
 
-message BatchGetFileDescriptorSetsResponse {
+message BatchGetAssetFileDescriptorSetsResponse {
   message FileDescriptorSetResult {
+    // The resolved asset ID version, formatted as
+    // "<package>.<name>.<version>".
+    string asset_id_version = 1;
+
     oneof result {
       // The resolved FileDescriptorSet, populated if the resolution was
       // successful.
-      google.protobuf.FileDescriptorSet file_descriptor_set = 1;
+      google.protobuf.FileDescriptorSet file_descriptor_set = 2;
 
       // The error status, populated if the resolution failed.
-      google.rpc.Status error_status = 2;
+      google.rpc.Status error_status = 3;
     }
   }
 
-  // Map from the requested asset version ID to its resolution result.
-  map<string, FileDescriptorSetResult> results = 1;
+  // List of the requested asset version IDs and their resolution result.
+  repeated FileDescriptorSetResult results = 1;
 }
 
 message PreviewMergeRequest {
