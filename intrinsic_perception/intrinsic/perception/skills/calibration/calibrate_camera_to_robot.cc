@@ -29,7 +29,7 @@
 #include "intrinsic/connect/cc/grpc/channel.h"
 #include "intrinsic/perception/proto/v1/calibration_service.grpc.pb.h"
 #include "intrinsic/perception/proto/v1/calibration_service.pb.h"
-#include "intrinsic/perception/proto/v1/camera_to_robot_calibration.pb.h"
+#include "intrinsic/perception/proto/v1/camera_setup.pb.h"
 #include "intrinsic/perception/skills/calibration/calibrate_camera_to_robot.pb.h"
 #include "intrinsic/skills/cc/skill_interface.h"
 #include "intrinsic/skills/proto/footprint.pb.h"
@@ -43,8 +43,7 @@ char kCalibrationInterface[] =
     "grpc://intrinsic_proto.perception.v1.CalibrationService";
 namespace {
 
-using intrinsic_proto::perception::v1::
-    CAMERA_TO_ROBOT_CALIBRATION_TYPE_UNSPECIFIED;
+using intrinsic_proto::perception::v1::CAMERA_SETUP_UNSPECIFIED;
 
 absl::Status IsCalibrationErrorWithinThresholds(
     const intrinsic_proto::perception::v1::CameraToRobotCalibrationResult&
@@ -86,9 +85,8 @@ CalibrateCameraToRobot::Execute(const ExecuteRequest& request,
   INTR_ASSIGN_OR_RETURN(
       auto input_params,
       request.params<intrinsic_proto::skills::CalibrateCameraToRobotParams>());
-  if (input_params.calibration_type() ==
-      CAMERA_TO_ROBOT_CALIBRATION_TYPE_UNSPECIFIED) {
-    return absl::InvalidArgumentError("Invalid CameraToRobotCalibrationType.");
+  if (input_params.calibration_type() == CAMERA_SETUP_UNSPECIFIED) {
+    return absl::InvalidArgumentError("Invalid CameraSetup.");
   }
 
   // Connect to the Calibration service.

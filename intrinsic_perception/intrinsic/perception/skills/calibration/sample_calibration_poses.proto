@@ -19,7 +19,7 @@ package intrinsic_proto.skills;
 import "intrinsic/assets/proto/field_metadata.proto";
 import "intrinsic/assets/proto/v1/resolved_dependency.proto";
 import "intrinsic/motion_planning/proto/v1/geometric_constraints.proto";
-import "intrinsic/perception/proto/v1/camera_to_robot_calibration.proto";
+import "intrinsic/perception/proto/v1/camera_setup.proto";
 import "intrinsic/skills/proto/skills.proto";
 import "intrinsic/world/proto/object_world_refs.proto";
 
@@ -73,9 +73,11 @@ message SampleCalibrationPosesParams {
     skill_annotations: { always_provide_connection_info: true }
   }];
 
-  // The type of camera-to-robot calibration.
-  intrinsic_proto.perception.v1.CameraToRobotCalibrationType calibration_type =
-      1;
+  // Specifies whether the camera is stationary in the workcell (while the
+  // robot moves the calibration object) or mounted on the robot's flange
+  // (while the calibration object is stationary). Used for all robot-assisted
+  // calibrations (intrinsic, camera-to-camera, and camera-to-robot).
+  intrinsic_proto.perception.v1.CameraSetup calibration_type = 1;
 
   // Uniquely identifies the object used for calibration. Typically a
   // calibration pattern, but - with an appropriate detector - all kinds of
@@ -83,8 +85,8 @@ message SampleCalibrationPosesParams {
   intrinsic_proto.world.ObjectReference calibration_object = 2;
 
   // Minimum margin between the moving object (calibration pattern for the
-  // `STATIONARY_CAMERA` case, and camera for the `MOVING_CAMERA` case) and all
-  // other world objects.
+  // `CAMERA_SETUP_STATIONARY` case, and camera for the `CAMERA_SETUP_MOVING`
+  // case) and all other world objects.
   //
   // Set this parameter to a higher value if you are unsure about the exact
   // positions of the objects in your world.

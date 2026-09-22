@@ -69,6 +69,7 @@
 #include "intrinsic/perception/core/post_processing.h"
 #include "intrinsic/perception/core/range_tools.h"
 #include "intrinsic/perception/proto/v1/camera_params.pb.h"
+#include "intrinsic/perception/proto/v1/camera_setup.pb.h"
 #include "intrinsic/perception/proto/v1/camera_to_robot_calibration.pb.h"
 #include "intrinsic/perception/proto_conversion/v1/camera_params.h"
 #include "intrinsic/perception/proto_conversion/v1/capture_result.h"
@@ -987,7 +988,7 @@ CalibrationServiceImpl::GetCameraParamsFromCachedResultsOrData(
 absl::StatusOr<std::vector<
     intrinsic_proto::perception::v1::CameraToRobotCalibrationRequest>>
 CalibrationServiceImpl::CreateCameraToRobotCalibrationRequests(
-    intrinsic_proto::perception::v1::CameraToRobotCalibrationType type,
+    intrinsic_proto::perception::v1::CameraSetup type,
     absl::Span<const CalibrationDataPoint> calibration_data) {
   std::vector<Pose3d> camera_t_sensors;
   camera_t_sensors.reserve(camera_info_.size());
@@ -1428,8 +1429,7 @@ absl::Status CalibrationServiceImpl::ValidateCameraToRobot(
 
     intrinsic_proto::Pose result_pose;
     if (requests[i].type() ==
-        intrinsic_proto::perception::v1::
-            CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+        intrinsic_proto::perception::v1::CAMERA_SETUP_MOVING) {
       INTR_ASSIGN_OR_RETURN(const Pose3d flange_t_camera,
                             object_world_client.GetTransform(
                                 robot_flange_.value(), camera_frame));

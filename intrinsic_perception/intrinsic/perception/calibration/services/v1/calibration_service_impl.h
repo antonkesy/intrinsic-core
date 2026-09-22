@@ -44,6 +44,7 @@
 #include "intrinsic/perception/core/single_thread_executor.h"
 #include "intrinsic/perception/proto/v1/calibration_service.grpc.pb.h"
 #include "intrinsic/perception/proto/v1/calibration_service.pb.h"
+#include "intrinsic/perception/proto/v1/camera_setup.pb.h"
 #include "intrinsic/perception/proto/v1/pattern_detection_config.pb.h"
 #include "intrinsic/perception/proto/v1/pattern_detection_result.pb.h"
 #include "intrinsic/platform/pubsub/pubsub.h"
@@ -191,7 +192,7 @@ class CalibrationServiceImpl final
   absl::StatusOr<std::vector<
       intrinsic_proto::perception::v1::CameraToRobotCalibrationRequest>>
   CreateCameraToRobotCalibrationRequests(
-      intrinsic_proto::perception::v1::CameraToRobotCalibrationType type,
+      intrinsic_proto::perception::v1::CameraSetup type,
       absl::Span<const CalibrationDataPoint> calibration_data)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   absl::StatusOr<std::vector<CameraParams>>

@@ -52,7 +52,7 @@
 #include "intrinsic/motion_planning/service/motion_planner_service_asset_utils.h"
 #include "intrinsic/motion_planning/skills/motion_planning_util.h"
 #include "intrinsic/perception/calibration/pose_sampling.h"
-#include "intrinsic/perception/proto/v1/camera_to_robot_calibration.pb.h"
+#include "intrinsic/perception/proto/v1/camera_setup.pb.h"
 #include "intrinsic/perception/skills/calibration/sample_calibration_poses.pb.h"
 #include "intrinsic/resources/proto/resource_handle.pb.h"
 #include "intrinsic/skills/cc/equipment_pack.h"
@@ -81,8 +81,7 @@ std::unique_ptr<SkillInterface> SampleCalibrationPoses::CreateSkill() {
 
 namespace {
 
-using intrinsic_proto::perception::v1::
-    CAMERA_TO_ROBOT_CALIBRATION_TYPE_UNSPECIFIED;
+using intrinsic_proto::perception::v1::CAMERA_SETUP_UNSPECIFIED;
 
 constexpr int kNumTriedPosesPerRequestedSample = 10;
 
@@ -145,9 +144,8 @@ absl::Status ValidateParams(
                         params.minimum_margin()));
   }
 
-  if (params.calibration_type() ==
-      CAMERA_TO_ROBOT_CALIBRATION_TYPE_UNSPECIFIED) {
-    return absl::InvalidArgumentError("Invalid CameraToRobotCalibrationType.");
+  if (params.calibration_type() == CAMERA_SETUP_UNSPECIFIED) {
+    return absl::InvalidArgumentError("Invalid CameraSetup.");
   }
 
   if (params.has_pre_calibration_params()) {
@@ -318,8 +316,7 @@ template <typename URBG>
 absl::StatusOr<std::vector<PoseWithJointConfiguration>> SampleRandomWaypoints(
     const Pose3d& base_t_flange, const world::ObjectWorldClient& world,
     const intrinsic_proto::world::ObjectReference& robot_ref,
-    intrinsic_proto::perception::v1::CameraToRobotCalibrationType
-        calibration_type,
+    intrinsic_proto::perception::v1::CameraSetup calibration_type,
     const world::KinematicObject& robot,
     const world::WorldObject& calibration_object,
     const world::Frame& camera_frame, const world::Frame& flange,
@@ -334,8 +331,7 @@ absl::StatusOr<std::vector<PoseWithJointConfiguration>> SampleRandomWaypoints(
   // on the calibration case. In both cases it is attached to the robot flange.
   Pose3d flange_t_attached_object;
   if (calibration_type ==
-      intrinsic_proto::perception::v1::
-          CAMERA_TO_ROBOT_CALIBRATION_TYPE_STATIONARY_CAMERA) {
+      intrinsic_proto::perception::v1::CAMERA_SETUP_STATIONARY) {
     // Camera is the center.
     INTR_ASSIGN_OR_RETURN(base_t_stationary_object,
                           world.GetTransform(robot, camera_frame));

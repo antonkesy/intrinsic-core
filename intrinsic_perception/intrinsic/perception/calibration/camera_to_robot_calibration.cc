@@ -37,6 +37,7 @@
 #include "intrinsic/perception/calibration/metrics.h"
 #include "intrinsic/perception/core/eigen_types.h"
 #include "intrinsic/perception/core/opencv_wrapper.h"
+#include "intrinsic/perception/proto/v1/camera_setup.pb.h"
 #include "intrinsic/perception/proto/v1/camera_to_robot_calibration.pb.h"
 #include "intrinsic/perception/proto_conversion/eigen_conversions.h"
 #include "intrinsic/util/status/status_macros.h"
@@ -50,8 +51,8 @@ namespace intrinsic::perception {
 
 namespace {
 
-using intrinsic_proto::perception::v1::
-    CAMERA_TO_ROBOT_CALIBRATION_TYPE_UNSPECIFIED;
+using intrinsic_proto::perception::v1::CAMERA_SETUP_MOVING;
+using intrinsic_proto::perception::v1::CAMERA_SETUP_UNSPECIFIED;
 using intrinsic_proto::perception::v1::CameraToRobotCalibrationRequest;
 using intrinsic_proto::perception::v1::CameraToRobotCalibrationResult;
 
@@ -132,8 +133,7 @@ absl::StatusOr<CameraToRobotCalibrationResult> NonLinearOptimization(
   Pose3d base_t_camera;
   Pose3d flange_t_object;
 
-  if (request.type() == intrinsic_proto::perception::v1::
-                            CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+  if (request.type() == CAMERA_SETUP_MOVING) {
     INTR_ASSIGN_OR_RETURN(
         base_t_camera,
         FromProto(
@@ -162,8 +162,7 @@ absl::StatusOr<CameraToRobotCalibrationResult> NonLinearOptimization(
     base_t_flanges.emplace_back(base_t_flange);
     INTR_ASSIGN_OR_RETURN(Pose3d camera_t_object,
                           FromProto(pose_pair.camera_t_object()));
-    if (request.type() == intrinsic_proto::perception::v1::
-                              CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+    if (request.type() == CAMERA_SETUP_MOVING) {
       camera_t_object = camera_t_object.inverse();
     }
     camera_t_objects.push_back(camera_t_object);
@@ -219,8 +218,7 @@ absl::StatusOr<CameraToRobotCalibrationResult> NonLinearOptimization(
   ceres::Solve(options, &problem, &summary);
 
   CameraToRobotCalibrationResult result;
-  if (request.type() == intrinsic_proto::perception::v1::
-                            CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+  if (request.type() == CAMERA_SETUP_MOVING) {
     auto* result_poses = result.mutable_moving_camera_result_poses();
     *result_poses->mutable_flange_t_camera() = ToProto(flange_t_object);
     *result_poses->mutable_base_t_object() = ToProto(base_t_camera);
@@ -264,8 +262,7 @@ RunCalibrateRobotWorldCameraToRobot(
     flange_t_base_translations.emplace_back(
         ToCVTranslation(flange_t_base.translation()));
 
-    if (request.type() == intrinsic_proto::perception::v1::
-                              CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+    if (request.type() == CAMERA_SETUP_MOVING) {
       camera_t_object_rotations.emplace_back(
           ToCVRotation(camera_t_object.rotation()));
       camera_t_object_translations.emplace_back(
@@ -308,8 +305,7 @@ RunCalibrateRobotWorldCameraToRobot(
       FromCVPose(camera_t_flange_rotation, camera_t_flange_translation));
 
   CameraToRobotCalibrationResult result;
-  if (request.type() == intrinsic_proto::perception::v1::
-                            CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+  if (request.type() == CAMERA_SETUP_MOVING) {
     auto* result_poses = result.mutable_moving_camera_result_poses();
     *result_poses->mutable_flange_t_camera() =
         ToProto(camera_t_flange.inverse());
@@ -347,8 +343,7 @@ absl::StatusOr<CameraToRobotCalibrationResult> RunCalibrateCameraToRobot(
         ToCVRotation(camera_t_object.rotation()));
     camera_t_object_translations.emplace_back(
         ToCVTranslation(camera_t_object.translation()));
-    if (request.type() == intrinsic_proto::perception::v1::
-                              CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+    if (request.type() == CAMERA_SETUP_MOVING) {
       Eigen::Isometry3d base_t_flange = ToEigen(pose_pair.base_t_flange());
       base_t_flange_rotations.emplace_back(
           ToCVRotation(base_t_flange.rotation()));
@@ -400,8 +395,7 @@ absl::StatusOr<CameraToRobotCalibrationResult> RunCalibrateCameraToRobot(
       const Pose3d base_t_flange,
       intrinsic_proto::FromProto(request.input_pose_pairs(0).base_t_flange()));
   CameraToRobotCalibrationResult result;
-  if (request.type() == intrinsic_proto::perception::v1::
-                            CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+  if (request.type() == CAMERA_SETUP_MOVING) {
     auto* result_poses = result.mutable_moving_camera_result_poses();
     *result_poses->mutable_flange_t_camera() = ToProto(resulting_pose);
   } else {
@@ -415,8 +409,8 @@ absl::StatusOr<CameraToRobotCalibrationResult> RunCalibrateCameraToRobot(
 
 absl::StatusOr<CameraToRobotCalibrationResult> CalibrateCameraToRobot(
     const CameraToRobotCalibrationRequest& request) {
-  if (request.type() == CAMERA_TO_ROBOT_CALIBRATION_TYPE_UNSPECIFIED) {
-    return absl::InvalidArgumentError("Invalid CameraToRobotCalibrationType.");
+  if (request.type() == CAMERA_SETUP_UNSPECIFIED) {
+    return absl::InvalidArgumentError("Invalid CameraSetup.");
   }
   if (request.input_pose_pairs_size() < 3) {
     return absl::InvalidArgumentError(

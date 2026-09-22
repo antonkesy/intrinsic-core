@@ -91,6 +91,7 @@ cc_library(
         "@intrinsic_apis//intrinsic/perception/proto/v1:calibration_service_cc_grpc_proto",
         "@intrinsic_apis//intrinsic/perception/proto/v1:calibration_service_cc_proto",
         "@intrinsic_apis//intrinsic/perception/proto/v1:camera_params_cc_proto",
+        "@intrinsic_apis//intrinsic/perception/proto/v1:camera_setup_cc_proto",
         "@intrinsic_apis//intrinsic/perception/proto/v1:camera_to_robot_calibration_cc_proto",
         "@intrinsic_apis//intrinsic/perception/proto/v1:pattern_detection_config_cc_proto",
         "@intrinsic_apis//intrinsic/perception/proto/v1:pattern_detection_result_cc_proto",

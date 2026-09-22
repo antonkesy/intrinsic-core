@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package intrinsic_proto.skills;
 
+import "intrinsic/perception/proto/v1/camera_setup.proto";
 import "intrinsic/perception/proto/v1/camera_to_robot_calibration.proto";
 import "intrinsic/assets/proto/v1/resolved_dependency.proto";
 import "intrinsic/assets/proto/field_metadata.proto";
@@ -24,9 +25,8 @@ option go_package = "intrinsic/perception/skills/calibration/calibrate_camera_to
 
 // Next ID: 5
 message CalibrateCameraToRobotParams {
-  // The type of camera-to-robot calibration.
-  intrinsic_proto.perception.v1.CameraToRobotCalibrationType calibration_type =
-      1;
+  // The camera setup for camera-to-robot calibration.
+  intrinsic_proto.perception.v1.CameraSetup calibration_type = 1;
 
   // Threshold on the translation error in meters (computed as the root of the
   // mean square error). If the calibration error is greater than the threshold,

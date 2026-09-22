@@ -19,7 +19,7 @@ package intrinsic_proto.skills;
 import "intrinsic/assets/proto/field_metadata.proto";
 import "intrinsic/assets/proto/v1/resolved_dependency.proto";
 import "intrinsic/motion_planning/proto/v1/geometric_constraints.proto";
-import "intrinsic/perception/proto/v1/camera_to_robot_calibration.proto";
+import "intrinsic/perception/proto/v1/camera_setup.proto";
 import "intrinsic/skills/proto/skill_parameter_metadata.proto";
 import "intrinsic/world/proto/object_world_refs.proto";
 
@@ -43,8 +43,8 @@ message CollectCalibrationDataParams {
   }];
 
   // Deprecated: No longer used.
-  intrinsic_proto.perception.v1.CameraToRobotCalibrationType calibration_type =
-      2 [deprecated = true];
+  intrinsic_proto.perception.v1.CameraSetup calibration_type = 2
+      [deprecated = true];
 
   // Uniquely identifies the object used for calibration. Typically a
   // calibration pattern, but - with an appropriate pose estimator - all kinds

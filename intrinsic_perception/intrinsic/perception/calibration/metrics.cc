@@ -24,6 +24,7 @@
 #include "intrinsic/eigenmath/types.h"
 #include "intrinsic/perception/core/math_utils.h"
 #include "intrinsic/perception/core/pose_utils.h"
+#include "intrinsic/perception/proto/v1/camera_setup.pb.h"
 #include "intrinsic/perception/proto/v1/camera_to_robot_calibration.pb.h"
 #include "intrinsic/perception/proto_conversion/eigen_conversions.h"
 
@@ -31,22 +32,20 @@ namespace intrinsic::perception {
 
 namespace {
 
-using ::intrinsic_proto::perception::v1::
-    CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA;
-using ::intrinsic_proto::perception::v1::
-    CAMERA_TO_ROBOT_CALIBRATION_TYPE_UNSPECIFIED;
+using ::intrinsic_proto::perception::v1::CAMERA_SETUP_MOVING;
+using ::intrinsic_proto::perception::v1::CAMERA_SETUP_UNSPECIFIED;
+using ::intrinsic_proto::perception::v1::CameraSetup;
 using ::intrinsic_proto::perception::v1::CameraToRobotCalibrationRequest;
 using ::intrinsic_proto::perception::v1::CameraToRobotCalibrationResult;
-using ::intrinsic_proto::perception::v1::CameraToRobotCalibrationType;
 
 Eigen::Isometry3d ComputedEstimatePose(
     const CameraToRobotCalibrationRequest::InputPosePair& pose_pair,
-    const CameraToRobotCalibrationType& type, const Eigen::Isometry3d& pose) {
+    const CameraSetup& type, const Eigen::Isometry3d& pose) {
   const Eigen::Isometry3d camera_t_object =
       ToEigen(pose_pair.camera_t_object());
   const Eigen::Isometry3d base_t_flange = ToEigen(pose_pair.base_t_flange());
 
-  if (type == CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+  if (type == CAMERA_SETUP_MOVING) {
     return base_t_flange * pose * camera_t_object;
   }
   return base_t_flange.inverse() * pose * camera_t_object;
@@ -62,7 +61,7 @@ CameraToRobotCalibrationResult ComputeErrorMetricsForRelativePoses(
   double rotation_max_err = std::numeric_limits<double>::lowest();
 
   Eigen::Isometry3d result_pose;
-  if (request.type() == CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+  if (request.type() == CAMERA_SETUP_MOVING) {
     result_pose =
         ToEigen(result.moving_camera_result_poses().flange_t_camera());
   } else {
@@ -115,7 +114,7 @@ CameraToRobotCalibrationResult ComputeErrorMetrics(
 
   Eigen::Isometry3d base_t_stationary;
   Eigen::Isometry3d flange_t_moving;
-  if (request.type() == CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+  if (request.type() == CAMERA_SETUP_MOVING) {
     base_t_stationary =
         ToEigen(result.moving_camera_result_poses().base_t_object());
     flange_t_moving =
@@ -133,7 +132,7 @@ CameraToRobotCalibrationResult ComputeErrorMetrics(
     const Eigen::Isometry3d base_t_flange = ToEigen(pose_pair.base_t_flange());
 
     Eigen::Isometry3d camera_t_object_est;
-    if (request.type() == CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+    if (request.type() == CAMERA_SETUP_MOVING) {
       camera_t_object_est = flange_t_moving.inverse() *
                             base_t_flange.inverse() * base_t_stationary;
     } else {
@@ -198,8 +197,8 @@ absl::StatusOr<CameraToRobotCalibrationResult>
 ComputeCameraToRobotCalibrationErrorMetrics(
     const CameraToRobotCalibrationRequest& request,
     const CameraToRobotCalibrationResult& result) {
-  if (request.type() == CAMERA_TO_ROBOT_CALIBRATION_TYPE_UNSPECIFIED) {
-    return absl::InvalidArgumentError("Invalid CameraToRobotCalibrationType.");
+  if (request.type() == CAMERA_SETUP_UNSPECIFIED) {
+    return absl::InvalidArgumentError("Invalid CameraSetup.");
   }
 
   if (result.has_moving_camera_result_poses() &&
@@ -224,7 +223,7 @@ ComputeCameraToRobotValidationMetrics(
         request,
     const intrinsic_proto::Pose& pose) {
   intrinsic_proto::perception::v1::CameraToRobotCalibrationResult dummy_result;
-  if (request.type() == CAMERA_TO_ROBOT_CALIBRATION_TYPE_MOVING_CAMERA) {
+  if (request.type() == CAMERA_SETUP_MOVING) {
     *dummy_result.mutable_moving_camera_result_poses()
          ->mutable_flange_t_camera() = pose;
   } else {
