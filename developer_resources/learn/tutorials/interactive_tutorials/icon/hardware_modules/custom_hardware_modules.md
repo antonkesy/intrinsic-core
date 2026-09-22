@@ -1,7 +1,7 @@
 # ICON custom hardware module guide
 
 <a name="introduction-hardware"></a>
-## Introduction to the hardware abstraction layer
+## Introduction to hardware modules
 
 ICON's hardware abstraction layer ("HAL") is responsible for translating
 commands from [ICON's real-time control layer ("RTCL")](/developer_resources/learn/tutorials/interactive_tutorials/icon/icon_introduction/icon_introduction.md) into hardware-specific
@@ -24,25 +24,17 @@ with flatbuffers.
 <a name="prerequisites"></a>
 ## Prerequisites
 
-Before you can start the development of your *custom hardware module* this guide expects the following:
+Before you develop a *custom hardware module*, make sure that you have the following:
 
-- You are familiar with the [ICON real-time control service](/developer_resources/learn/tutorials/interactive_tutorials/icon/icon_introduction/icon_introduction.md)
-
-- The hardware you want to control is physically connected to an IPC that has been configured [with k3s](/intrinsic_runtime/setup_k3s.sh) and [real-time execution](/intrinsic_runtime/setup_realtime.sh)
-- Your development machine has a direct Ethernet connection to the IPC (same network as the IPC's uplink port)
-
-The next step is to set up the [development environment](#development-environment) on your development machine.
-
-<a name="development-environment"></a>
-## Development environment
-
-This section explains how to set up the local development environment.
-
-<a name="install-requirements"></a>
-### Installation requirements
-
-The guide and repo use the [*bazel*](https://bazel.build/about/intro) build tool.
-We recommend following this [installation guide](https://github.com/bazelbuild/bazelisk#installation).
+- **Knowledge of ICON**: You understand the [ICON real-time control service](/developer_resources/learn/tutorials/interactive_tutorials/icon/icon_introduction/icon_introduction.md).
+- **Target hardware and IPC**: The hardware you want to control is connected to an IPC configured [with k3s](/intrinsic_runtime/setup_k3s.sh) and [real-time execution](/intrinsic_runtime/setup_realtime.sh).
+- **Network connection**: Your development computer has a direct Ethernet connection to the IPC (on the same subnet as the IPC uplink port).
+- **Repository checkout**: Clone the repository to your development computer. A shallow clone is sufficient:
+  ```bash
+  git clone --depth 1 https://github.com/intrinsic-ai/...
+  cd ...
+  ```
+- **Build tool**: Install [*Bazel*](https://bazel.build/about/intro). We recommend [Bazelisk](https://github.com/bazelbuild/bazelisk#installation).
 
 
 <a name="build-and-deploy"></a>
@@ -76,9 +68,9 @@ To deploy a hardware module to a target cluster, we recommend bundling it as an 
 Here we use the KUKA KR6 R900-2 loopback hardware module (`kr6_r900_2_loopback_hardware_module`) as an example (you can similarly use `kr6_r900_2_fake_hardware_module`).
 These are `intrinsic_hardware_device`s that bundle a loopback, or fake, hardware module service with a scene object of a KUKA KR6 R900-2.
 
-It's helpful to create a minimal application that contains a fully configured realtime control service and hardware module as explained in the 
+It is helpful to create a minimal solution that contains a fully configured realtime control service and hardware module as explained in the 
 [robot bringup tutorial](/developer_resources/learn/tutorials/interactive_tutorials/icon/robot_bringup.md).
-But fully restarting that application every time you make a change to your hardware module will take a bit of time. You can iterate faster if you start the application once, and then build and deploy just your hardware device asset, as described below.
+Fully restarting that solution every time you change your hardware module takes time. You can iterate faster if you start the solution once, and then build and deploy only your hardware device asset, as described below.
 
 #### 1. Build the Asset Bundle
 Using Bazel, build the `kr6_r900_2_loopback_hardware_module` target:
@@ -106,13 +98,33 @@ Alternatively, you can replace the `inctl` calls below with `bazel run //intrins
 
 > [!IMPORTANT]
 > **Operation Mode: Real vs. Simulation**
-> Hardware modules only run their code in **real mode**. In simulation mode, the Gazebo simulation server exposes the respective shared memory interfaces instead of the physical hardware module.
 >
-> If you execute `inctl service add` on a cluster where no solution is running, the command will fail with:
-> ```text
-> Error: failed to add "<name>": code:2 message:"operation mode unspecified"
-> ```
-> Hardware devices require an active Solution context (which specifies whether the workcell is in simulation or physical hardware mode). Ensure that you have created and started an active Solution on the cluster before adding the hardware device.
+> Follow this tutorial in **real mode** (`--operation_mode=real`).
+> In real mode, your hardware module executes its code on physical hardware or in a loopback setup. In simulation mode (`--operation_mode=sim`), Gazebo exposes the shared-memory interfaces and your hardware module is not executed.
+
+To check if a solution is running and view its operation mode, run:
+
+```bash
+inctl solution list --address localhost:17080
+```
+
+To switch between simulation and real mode, stop the active solution and deploy it again:
+
+```bash
+inctl solution stop --address localhost:17080
+bazel run //:my_solution -- --address localhost:17080 --operation_mode=real
+```
+
+> [!NOTE]
+> **Active Solution Context Requirement**
+>
+> Adding a service with `inctl service add` requires an active solution context. Make sure that you have created and started an active solution on the cluster before you add the hardware device.
+
+If you execute `inctl service add` when no solution is running, the command fails with:
+
+```text
+Error: failed to add "<name>": code:2 message:"operation mode unspecified"
+```
 
 Upload and register the bundle into the cluster's asset catalog:
 
@@ -139,7 +151,7 @@ ai.intrinsic.loopback_hardware_module
 ```
 
 #### 3. Add the Hardware Device Service Instance
-Instantiate the hardware device into your active Solution under the name `kuka_rsi_hal_module`:
+Instantiate the hardware device into your active solution under the name `kuka_rsi_hal_module`:
 
 ```bash
 inctl service add ai.intrinsic.loopback_hardware_module --name=kuka_rsi_hal_module \
@@ -274,7 +286,7 @@ hardware_module_image(
 This section provides information for developers who want to develop their own
 hardware module.
 
-The [`HardwareModuleInterface `](/intrinsic_control/intrinsic/icon/hal/hardware_module_interface.h) class defines non-real-time methods for lifecycle and fault handling, and real-time methods for the control loop.
+The [`HardwareModuleInterface`](/intrinsic_control/intrinsic/icon/hal/hardware_module_interface.h) class defines non-real-time methods for lifecycle and fault handling, and real-time methods for the control loop.
 
 This guide only provides complementary information to the detailed documentation of the hardware module interface provided in [`hardware_module_interface.h`](/intrinsic_control/intrinsic/icon/hal/hardware_module_interface.h). 
 Before you implement a custom hardware module, please thoroughly read this documentation.
@@ -302,6 +314,12 @@ The [`HardwareModuleInterface`](/intrinsic_control/intrinsic/icon/hal/hardware_m
    * block to wait for resources
    * allocate and free heap memory
    * run non-deterministic algorithms that take an unknown number of iterations to finish
+
+Real-time and non-real-time methods can run in parallel. Do not use blocking locks in real-time methods. Synchronize shared data with `std::atomic` or lock-free utilities like:
+* [`AsyncBuffer`](/intrinsic_control/intrinsic/icon/utils/async_buffer.h): A triple-buffered single-producer/single-consumer container for lock-free data sharing.
+* [`AsyncRequest`](/intrinsic_control/intrinsic/icon/utils/async_request.h): A request and response channel between non-real-time and real-time threads.
+* [`RealtimeQueue`](/intrinsic_sdk/intrinsic/platform/common/buffers/rt_queue.h): A lock-free fixed-size queue for message passing.
+* [`RealtimePromise` / `RealtimeFuture`](/intrinsic_sdk/intrinsic/platform/common/buffers/rt_promise.h): A real-time safe promise and future pair for asynchronous notifications.
 
 A custom hardware module runs in a dedicated process and communicates with the ICON server process via inter-process communication (IPC) and shared-memory hardware interfaces.
 
@@ -343,63 +361,129 @@ Once in the `kActivated` state, the module enters the motion control state machi
 
 ```mermaid
 stateDiagram-v2
-    direction TB
-    state "kActivated (Disabled)" as kActivatedDisabled
-    state "kMotionEnabling" as kMotionEnabling
-    state "kMotionEnabled" as kMotionEnabled
-    state "kMotionDisabling" as kMotionDisabling
-    state "kFaulted" as kFaulted
-    state "kClearingFaults" as kClearingFaults
+    direction LR
 
-    [*] --> kActivatedDisabled: Activate()
+    state "Motion Control" as MotionControl {
+        direction TB
+        state "kActivated (Disabled)" as kActivatedDisabled
+        state "kMotionEnabling" as kMotionEnabling
+        state "kMotionEnabled" as kMotionEnabled
+        state "kMotionDisabling" as kMotionDisabling
 
-    kActivatedDisabled --> kMotionEnabling: EnableMotion()
-    kActivatedDisabled --> kFaulted: ReadStatus() error
+        [*] --> kActivatedDisabled: Activate()
+        kActivatedDisabled --> kMotionEnabling: EnableMotion()
+        kMotionEnabling --> kMotionEnabled
+        kMotionEnabled --> kMotionDisabling: DisableMotion()
+        kMotionDisabling --> kActivatedDisabled
+    }
 
-    kMotionEnabling --> kMotionEnabled: Enabled() [1st cycle]
-    kMotionEnabling --> kFaulted: Error / Abort
+    state "Fault Recovery" as FaultRecovery {
+        direction TB
+        state "kFaulted" as kFaulted
+        state "kClearingFaults" as kClearingFaults
 
-    kMotionEnabled --> kMotionDisabling: Disabled() [1st cycle]
-    kMotionEnabled --> kFaulted: ReadStatus() or ApplyCommand() error
+        kFaulted --> kClearingFaults: ClearFaults()
+        kClearingFaults --> kFaulted
+    }
 
-    kMotionDisabling --> kActivatedDisabled: DisableMotion() complete
-    kMotionDisabling --> kFaulted: Error / Abort
+    kActivatedDisabled --> kFaulted
+    kMotionEnabling --> kFaulted
+    kMotionEnabled --> kFaulted
+    kMotionDisabling --> kFaulted
 
-    kFaulted --> kClearingFaults: ClearFaults()
-    kClearingFaults --> kActivatedDisabled: Success
-    kClearingFaults --> kFaulted: Failure
+    kClearingFaults --> kActivatedDisabled
 ```
+
+##### Transition callbacks (`Enabled()` and `Disabled()`)
+
+- When the module enters `kMotionEnabled`, `HardwareModuleRuntime` calls `Enabled()` on the first real-time cycle. If `Enabled()` returns an error, the runtime transitions to `kFaulted`.
+- When the module leaves `kMotionEnabled`, `HardwareModuleRuntime` calls `Disabled()` on the first real-time cycle. This call occurs after a call to `DisableMotion()`, or after an error in `ReadStatus()` or `ApplyCommand()`. The call tells the module that motion stopped and `ApplyCommand()` will not be called anymore.
 
 #### Fault Handling (`kFaulted` vs. `kFatallyFaulted`)
 
 - If any lifecycle or real-time method (`ReadStatus`, `ApplyCommand`, etc.) returns an error, the module transitions to `kFaulted` and motion is disabled. Recover using `ClearFaults()`.
 - If a method returns `absl::StatusCode::kAborted`, the module enters `kFatallyFaulted`, which cannot be cleared and requires a process restart.
 
-#### Lifecycle and Fault-Handling Methods
+#### Lifecycle and fault-handling methods
 
-Given the robot-specific requirements, implementations will vary, but here we provide some general suggestions on what code to place in particular methods of the implementation:
+Robot-specific requirements vary, but the following sections describe what code to implement in each method.
 
-| Method | Timing | Description |
-| :--- | :--- | :--- |
-| `Init` | Non-RT | First method used to initialize the hardware module, receive configuration via `HardwareModuleInitContext`, and advertise hardware interfaces. Failures are fatal (non-recoverable) and require a complete service restart. Validate configuration here, but defer operations that may fail without requiring reconfiguration into `Prepare`. |
-| `Prepare` | Non-RT | Called after `Init` to prepare for real-time operation (e.g., creating real-time threads, binding communication sockets, connecting to the robot's status/telemetry stream). Once finished, the module must be ready to report valid hardware status in `ReadStatus()`. Failures are fatal (non-recoverable) and require a complete service restart. Defer operations that engage physical motion or can fail due to external conditions (e.g. powering drives, releasing brakes) to `EnableMotion()` so failures can be recovered via `ClearFaults()`. |
-| `Activate` | RT | Signals the start of real-time cyclical communication between ICON and the hardware module. If clock-driving, the module must begin ticking the clock immediately after this call. ICON begins calling `ReadStatus` every cycle after activation. |
-| `EnableMotion` | Non-RT | Transitions the module to a state where ICON can actively control the hardware using `ApplyCommand`. May block. This is where operations that engage physical motion, or may fail due to external conditions, should be attempted (e.g. powering on drives, releasing brakes, verifying remote control mode, or starting vendor real-time motion sessions). If an error is returned, the module enters `kFaulted` (recoverable via `ClearFaults()`). Once it returns successfully, the module must be ready to receive `Enabled`. |
-| `Enabled` | RT | Signals that ICON starts controlling the module using `ApplyCommand`. Immediately precedes `ReadStatus` and `ApplyCommand` in the first cycle where commands are applied. Must return without blocking. |
-| `Disabled` | RT | Signals that ICON is no longer sending commands to the module and that the module should take over control. Immediately precedes `ReadStatus` in the first cycle where `ApplyCommand` is omitted. Must return without blocking. |
-| `DisableMotion` | Non-RT | Transitions the module to a state where ICON no longer controls it. Called asynchronously after `Disabled` and may block. |
-| `Deactivate` | RT | Called before ICON stops controlling the module. Signals that cyclic calls to `ReadStatus()` and `ApplyCommand()` have ceased. The module transitions to `kDeactivated` and remains alive; subsequent re-activation re-enters through `Prepare()` followed by `Activate()` (without repeating `Init()`). |
-| `Shutdown` | Non-RT | Terminal lifecycle state invoked when the module process terminates. Must stop background threads and unblock or cancel any ongoing blocking calls to allow clean process exit. No further state transitions are possible within this process. |
-| `ClearFaults` | Non-RT | Recovers from non-fatal faults. Can block. After a successful call, the module expects calls to `ReadStatus` to succeed. Called for recovering from a fault through the Flowstate frontend or `inctl icon clear-faults`. The state after recovery is `kActivated` (Disabled), so recovery does not re-invoke `Prepare()` or `Activate()`. |
-| `ProvideInspectionData` | Non-RT | Periodically called by the runtime to populate telemetry/diagnostic data in an `intrinsic_proto::icon::v1::HardwareModuleInspectionData` message, including custom module data via `hardware_specific_data`. |
+##### Non-real-time methods
+
+These methods return `absl::Status` and can block to wait for resources, allocate memory, or perform file and network I/O.
+
+###### `Init`
+`HardwareModuleRuntime` calls `Init()` immediately when the module process starts.
+- Use `Init()` to receive configuration from `HardwareModuleInitContext` and advertise hardware interfaces.
+- Validate configuration parameters here.
+- Defer operations that may fail without requiring reconfiguration to `Prepare()` or `EnableMotion()`.
+- Failures in `Init()` are fatal and require a service restart.
+
+###### `Prepare`
+`HardwareModuleRuntime` calls `Prepare()` after `Init()` to prepare for real-time operation.
+- Use `Prepare()` to allocate resources, spawn real-time threads, bind sockets, and connect to the robot's telemetry stream.
+- When `Prepare()` finishes, the module must be ready to report valid hardware status in `ReadStatus()`.
+- Defer operations that engage physical motion (such as powering drives or releasing brakes) to `EnableMotion()`.
+- Failures in `Prepare()` are fatal and require a service restart.
+
+###### `EnableMotion`
+`EnableMotion()` Transitions the module to a state where ICON can actively control the hardware using `ApplyCommand`.
+- Use `EnableMotion()` for operations that engage physical motion or can fail due to external conditions (such as powering on drives, releasing brakes, verifying remote control mode, or starting vendor real-time motion sessions).
+- If `EnableMotion()` returns an error, the module transitions to `kFaulted`. You can recover from this state using `ClearFaults()`.
+- When `EnableMotion()` succeeds, the module must be ready to receive `Enabled()`.
+
+###### `DisableMotion`
+`HardwareModuleRuntime` calls `DisableMotion()` asynchronously after `Disabled()`.
+- Use `DisableMotion()` to stop robot motion safely, engage brakes, or close vendor motion sessions.
+
+###### `ClearFaults`
+`ClearFaults()` is called when a user, or client, clears faults (for example, through Flowstate or `inctl icon clear-faults`).
+- Use `ClearFaults()` to reset error flags, clear controller alarms, and re-establish communication.
+- After a successful call to `ClearFaults()`, `ReadStatus()` must succeed.
+- Recovery transitions the module to `kActivated` (Disabled); it does not re-invoke `Prepare()` or `Activate()`.
+
+###### `Shutdown`
+`HardwareModuleRuntime` calls `Shutdown()` when the module process terminates.
+- Use `Shutdown()` to stop background threads and cancel blocking calls for a clean process exit.
+- No further state transitions occur after `Shutdown()`.
+
+###### `ProvideInspectionData`
+`HardwareModuleRuntime` periodically calls `ProvideInspectionData()` to collect telemetry and diagnostic data.
+- Use this method to populate an `intrinsic_proto::icon::v1::HardwareModuleInspectionData` message, including custom diagnostics in `hardware_specific_data`.
+
+##### Real-time methods
+
+These methods return `RealtimeStatus`. They run in the real-time control thread and must be [real-time compatible](#real-time-methods) and return without blocking.
+
+###### `Activate`
+`HardwareModuleRuntime` calls `Activate()` to signal the start of cyclic real-time communication with the ICON service.
+- If the hardware module drives the control clock, [start ticking the clock](#real-time-clock) immediately after this call.
+- After `Activate()` succeeds, ICON calls `ReadStatus()` every control cycle.
+
+###### `Enabled`
+`HardwareModuleRuntime` calls `Enabled()` on the first control cycle after `EnableMotion()` completes.
+- This call signals that ICON begins controlling the hardware using `ApplyCommand()` and will call `ReadStatus()` and `ApplyCommand()` in this cycle.
+
+###### `Disabled`
+`HardwareModuleRuntime` calls `Disabled()` on the first control cycle after leaving `kMotionEnabled`.
+- This call signals that ICON will not send any more commands using `ApplyCommand()` to the module and that the module must take over control (for example, hold position).
+
+###### `Deactivate`
+`HardwareModuleRuntime` calls `Deactivate()` before stopping the real-time loop.
+- This call signals that cyclic calls to `ReadStatus()` and `ApplyCommand()` stop.
+- If the hardware module drives the control clock, [stop ticking the clock](#real-time-clock) immediately after this call.
+- The module transitions back to `kDeactivated`. Subsequent re-activation calls `Prepare()` followed by `Activate()`.
 
 
 <a name="hardware-interface"></a>
 ### Advertising hardware interfaces
 
-Hardware interfaces are used to communicate and exchange data with the RTCL.
-*Mutable hardware interfaces* are used to report hardware status to the RTCL.
-*Read-only hardware interfaces* are used to receive commands from the RTCL.
+The hardware module uses hardware interfaces to exchange data with the RTCL.
+The module writes to *mutable hardware interfaces* to report hardware status to the RTCL.
+The module reads from *read-only hardware interfaces* to receive commands from the RTCL.
+
+> [!NOTE]
+> Mutability is not a property of the underlying shared-memory socket. A hardware module advertises an interface as mutable to write status data into shared memory. The ICON service opens that same interface as read-only to read the status data. In the same way, the ICON service opens command interfaces as mutable to write commands, while the hardware module opens them as read-only to read commands.
 
 A hardware module must advertise each of its hardware interfaces during initialization.
 Doing so creates a flatbuffer object in shared memory and returns a `HardwareInterfaceHandle` to
@@ -527,7 +611,7 @@ When the hardware module process starts, [`HardwareModuleRuntime`](/intrinsic_co
 
 Once the realtime controller process connects, it initiates lifecycle transitions via shared-memory triggers on `HardwareModuleRuntime`.
 
-After `absl::Status Prepare()` and `RealtimeStatus Activate()` both processes are in lockstep and `ReadStatus()` will be called cyclically. 
+After `Prepare()` and `Activate()` succeed, both processes run in lockstep, and ICON calls `ReadStatus()` cyclically every control cycle.
 If the module drives the clock, it must begin ticking the clock immediately after a call to `Activate`. Equivalently, before stopping or reconfiguring, the realtime controller requests deactivation, prompting `HardwareModuleRuntime` to call `Deactivate()`. After deactivation, the module transitions back to `kDeactivated`. Subsequent re-connection invokes `Prepare()` followed by `Activate()`.
 
 The ICON server runs a real-time control loop. In the motion-disabled state (`kActivated`), every control cycle performs the following steps:
@@ -599,9 +683,7 @@ never writes to a command interface while `ApplyCommand()` is running.
 > - **Gate motion-specific validation**: Only validate signal consistency or packet loss once motion is enabled.
 > - **Dual-channel status example**: If your robot's high-rate motion protocol is only active during motion, use a secondary status channel (e.g. PLC, EKI, or dashboard stream) to populate joint positions in `ReadStatus()` while disabled. See [`RealtimeKukaRsiClient::GetTelemetry()`](/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/kuka_rsi_client.cc#L260) and [`KukaRsiHwModule::ReadStatus()`](/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/kuka_rsi_hardware_module.cc#L217), which queries `kuka_system_status_->CurrentPosition()` before RSI is started in `EnableMotion()`.
 
-The hardware module's `ApplyCommand` method is invoked at the end of every
-control cycle when motion is enabled. The implementation should read from the read-only hardware
-interfaces and apply the appropriate commands to hardware.
+When motion is enabled, ICON calls `ApplyCommand()` at the end of every control cycle. In your implementation, read commands from the read-only hardware interfaces and apply them to the hardware.
 
 <a name="real-time-clock"></a>
 ### Ticking the real-time clock
