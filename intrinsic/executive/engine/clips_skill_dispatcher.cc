@@ -65,7 +65,6 @@
 #include "intrinsic/stats/scoped_span.h"
 #include "intrinsic/stats/tracing_utils.h"
 #include "intrinsic/util/grpc/grpc.h"
-#include "intrinsic/util/proto/merge.h"
 #include "intrinsic/util/proto/type_url.h"
 #include "intrinsic/util/proto_time.h"
 #include "intrinsic/util/status/return.h"
@@ -1028,13 +1027,6 @@ void ClipsSkillDispatcher::StartSkillExecution(
         const stats::ScopedSpan span(StartSkillSpan(
             behavior_call_proto.skill_id(), parent_context, skill_action));
 
-        // TODO(b/505320520): Remove once we no longer analyze merging impact.
-        // This merging is meant to be here temporarily (a few months) to allow
-        // us to quantify how much the current default parameter merging
-        // behavior impacts users.
-        PrintIfMergingChangesParameters(behavior_call_proto,
-                                        descriptor_pool_id);
-
         // Get Skill info, also creates client, hence do within bundle
         INTR_ASSIGN_OR_RETURN(
             SkillInstance skill_instance_to_move,
@@ -1698,89 +1690,6 @@ absl::Status ValidateFootprintVolumeReservations(const Footprint& footprint,
     }
   }
   return absl::OkStatus();
-}
-
-absl::StatusOr<std::string> CheckIfMergingChangesParameters(
-    const google::protobuf::Any& user_parameters,
-    const google::protobuf::Any& default_parameters,
-    const clips::ProtobufManager::DescriptorPoolInfo& pool_info,
-    absl::string_view parameter_message_full_name) {
-  INTR_ASSIGN_OR_RETURN(
-      std::unique_ptr<google::protobuf::Message> user_params,
-      clips::ProtobufManager::CastFromAnyWithPool(user_parameters, pool_info,
-                                                  parameter_message_full_name),
-      _ << "Failed to unpack user parameters");
-
-  INTR_ASSIGN_OR_RETURN(
-      std::unique_ptr<google::protobuf::Message> default_params,
-      clips::ProtobufManager::CastFromAnyWithPool(default_parameters, pool_info,
-                                                  parameter_message_full_name),
-      _ << "Failed to unpack default parameters");
-
-  std::unique_ptr<google::protobuf::Message> merged_params(user_params->New());
-  merged_params->CopyFrom(*user_params);
-
-  INTR_RETURN_IF_ERROR(::intrinsic::MergeUnset(*default_params, *merged_params))
-      .With(intrinsic::ExtraMessage() << "Failed to merge defaults");
-
-  std::string differences;
-  google::protobuf::util::MessageDifferencer differ;
-  differ.ReportDifferencesToString(&differences);
-  if (differ.Compare(*user_params, *merged_params)) {
-    differences.clear();
-  }
-  return differences;
-}
-
-void ClipsSkillDispatcher::PrintIfMergingChangesParameters(
-    const intrinsic_proto::executive::BehaviorCall& behavior_call,
-    clips::DescriptorPoolId descriptor_pool_id) {
-  if (!behavior_call.has_parameters()) {
-    return;
-  }
-
-  absl::StatusOr<SkillClientGenerator::SkillRegistration> registration =
-      skill_client_generator_->GetSkillRegistration(behavior_call.skill_id());
-  if (!registration.ok()) {
-    LOG(WARNING)
-        << "[Parameter Merge Check] Failed to get skill registration for "
-        << behavior_call.skill_id() << ": " << registration.status();
-    return;
-  }
-
-  if (!registration->default_parameter_value.has_value()) {
-    return;
-  }
-
-  absl::StatusOr<clips::ProtobufManager::DescriptorPoolInfo> pool_info =
-      proto_manager_->GetDescriptorPool(descriptor_pool_id);
-  if (!pool_info.ok()) {
-    LOG(WARNING) << "[Parameter Merge Check] Failed to get descriptor pool "
-                 << descriptor_pool_id << " for skill "
-                 << behavior_call.skill_id() << ": " << pool_info.status();
-    return;
-  }
-
-  absl::StatusOr<std::string> differences = CheckIfMergingChangesParameters(
-      behavior_call.parameters(), *registration->default_parameter_value,
-      *pool_info, registration->parameter_message_full_name);
-
-  if (!differences.ok()) {
-    std::optional<intrinsic_proto::status::ExtendedStatus> es =
-        GetExtendedStatus(differences);
-    LOG(WARNING) << "[Parameter Merge Check] Failed to check if merging "
-                    "changes parameters for skill "
-                 << behavior_call.skill_id() << ". ExtendedStatus: "
-                 << (es.has_value() ? es->ShortDebugString() : "<not set>");
-    return;
-  }
-
-  if (!differences->empty()) {
-    LOG(INFO) << "[b/505320520] Parameters for skill '"
-              << behavior_call.skill_id()
-              << "' were modified by merging defaults. "
-              << "Differences: " << *differences;
-  }
 }
 
 absl::Status ClipsSkillDispatcher::ResetSkillInstanceIds() {

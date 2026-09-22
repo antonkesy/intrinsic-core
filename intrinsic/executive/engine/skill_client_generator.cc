@@ -164,11 +164,6 @@ SkillClientGenerator::ProcessSkillProtoToSkillRegistration(
           skill_proto.parameter_description().parameter_message_full_name(),
       .return_value_message_full_name = skill_proto.return_value_description()
                                             .return_value_message_full_name(),
-      .default_parameter_value =
-          skill_proto.parameter_description().has_default_value()
-              ? std::make_optional(
-                    skill_proto.parameter_description().default_value())
-              : std::nullopt,
       .behavior_tree = std::move(behavior_tree),
       .required_equipment_keys = std::move(required_equipment_keys),
       .source = source,
@@ -299,10 +294,6 @@ SkillClientGenerator::ListAllSkillAssets() {
               details.parameter().message_full_name(),
           .return_value_message_full_name =
               details.execute_result().message_full_name(),
-          .default_parameter_value =
-              details.parameter().has_default_value()
-                  ? std::make_optional(details.parameter().default_value())
-                  : std::nullopt,
           .required_equipment_keys = std::move(required_equipment_keys),
           .source =
               SkillRegistrationInternal::SkillSource::INSTALLED_ASSETS_SERVICE,
@@ -548,7 +539,6 @@ SkillClientGenerator::GetSkillRegistration(absl::string_view skill_id) const
       .is_process = skill_entry->second.is_process,
       .parameter_message_full_name =
           skill_entry->second.parameter_message_full_name,
-      .default_parameter_value = skill_entry->second.default_parameter_value,
   };
 }
 

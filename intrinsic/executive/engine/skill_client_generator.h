@@ -55,7 +55,6 @@ class SkillClientGenerator {
   struct SkillRegistration {
     bool is_process;
     std::string parameter_message_full_name;
-    std::optional<google::protobuf::Any> default_parameter_value;
   };
 
   SkillClientGenerator(
@@ -121,7 +120,6 @@ class SkillClientGenerator {
         parameter_file_descriptor_set;
     std::optional<google::protobuf::FileDescriptorSet>
         return_value_file_descriptor_set;
-    std::optional<google::protobuf::Any> default_parameter_value;
 
     // Behavior tree (if this registration represents a process AND the behavior
     // tree has already been fetched).

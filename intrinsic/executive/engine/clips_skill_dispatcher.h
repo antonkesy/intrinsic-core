@@ -48,12 +48,6 @@
 namespace intrinsic {
 namespace executive {
 
-absl::StatusOr<std::string> CheckIfMergingChangesParameters(
-    const google::protobuf::Any& user_parameters,
-    const google::protobuf::Any& default_parameters,
-    const clips::ProtobufManager::DescriptorPoolInfo& pool_info,
-    absl::string_view parameter_message_full_name);
-
 // Validates that footprint volume reservations do not contain inline triangle
 // meshes or point clouds.
 absl::Status ValidateFootprintVolumeReservations(
@@ -229,10 +223,6 @@ class ClipsSkillDispatcher {
       const intrinsic_proto::executive::BehaviorCall& behavior_call,
       const std::optional<absl::Duration>& execute_timeout,
       const intrinsic_proto::data_logger::Context& context);
-
-  void PrintIfMergingChangesParameters(
-      const intrinsic_proto::executive::BehaviorCall& behavior_call,
-      clips::DescriptorPoolId descriptor_pool_id);
 
   clips::EnvironmentAssertFacade* assert_facade_;  // externally owned.
   clips::ProtobufManager* proto_manager_;          // externally owned.

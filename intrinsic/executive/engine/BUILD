@@ -291,7 +291,6 @@ cc_library(
         "//intrinsic/stats:tracing_utils",
         "//intrinsic/util:proto_time",
         "//intrinsic/util/grpc",
-        "//intrinsic/util/proto:merge",
         "//intrinsic/util/proto:type_url",
         "//intrinsic/util/status:return",
         "//intrinsic/util/status:status_builder",
