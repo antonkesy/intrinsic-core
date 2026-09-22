@@ -504,7 +504,7 @@ bazel_dep(name = "gz-transport", version = "15.1.0")
 bazel_dep(name = "intrinsic-clips", version = "0.1.0")  
 bazel_dep(name = "jq.bzl", version = "0.6.2")  
 bazel_dep(name = "jwt-cpp", version = "0.7.0.bcr.1", repo_name = "jwt-cpp")  
-bazel_dep(name = "libarchive", version = "3.8.1.bcr.2", repo_name = "com_github_libarchive")  
+bazel_dep(name = "libarchive", version = "3.8.1.bcr.3", repo_name = "com_github_libarchive")  
 bazel_dep(name = "libmodbus", version = "3.1.12")  
 bazel_dep(name = "libxml2-go", version = "0.0.0-20250331-c934e3f.bcr.1")
 bazel_dep(name = "libxml2", version = "2.14.4.bcr.1")  # TODO(b/441702501): Remove when aravis updates this transitive dependency to 2.14 to support clang 21
