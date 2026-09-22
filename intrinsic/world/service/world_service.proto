@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package intrinsic_proto.world.internal;
 
-import "intrinsic/geometry/proto/geometry_service_types.proto";
 import "intrinsic/math/proto/pose.proto";
 import "intrinsic/world/proto/collections_component.proto";
 import "intrinsic/world/proto/world_entity.proto";
@@ -34,9 +33,6 @@ option go_package = "intrinsic/world/service/world_service_go_proto";
 // object world service.
 service WorldService {
   /// World management APIs
-
-  // Adds a new World to be managed by the service.
-  rpc CreateWorld(CreateWorldRequest) returns (WorldWithMetadata) {}
 
   // Gets the World data for a specific World object.
   rpc GetWorld(GetWorldRequest) returns (WorldWithMetadata) {}
@@ -68,19 +64,6 @@ message WorldWithMetadata {
 
   // Arbitrary user tag.
   optional string user_tag = 7;
-}
-
-// Request message for adding a new World into the service.
-message CreateWorldRequest {
-  // The World object to add as a managed world. The world_id field is ignored.
-  // If world_data is unset, an empty world is created.
-  WorldWithMetadata world = 1;
-
-  // The Geometry associated with the new world object.
-  repeated intrinsic_proto.geometry.GeometryWithMetadata geometries = 2;
-
-  // Arbitrary user tag that is passed to WorldWithMetadata.
-  optional string user_tag = 3;
 }
 
 // Request message for getting the data from a specific world managed by the

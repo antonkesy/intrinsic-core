@@ -57,11 +57,6 @@ class WorldServiceImpl final
   WorldServiceImpl(const WorldServiceImpl&) = delete;
   const WorldServiceImpl& operator=(const WorldServiceImpl&) = delete;
 
-  grpc::Status CreateWorld(
-      grpc::ServerContext* context,
-      const intrinsic_proto::world::internal::CreateWorldRequest* request,
-      intrinsic_proto::world::internal::WorldWithMetadata* response) override;
-
   grpc::Status GetWorld(
       grpc::ServerContext* context,
       const intrinsic_proto::world::internal::GetWorldRequest* request,

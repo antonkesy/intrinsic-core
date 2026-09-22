@@ -35,11 +35,7 @@
 #include "intrinsic/eigenmath/types.h"
 #include "intrinsic/geometry/api/geometry.h"
 #include "intrinsic/geometry/api/io.h"
-#include "intrinsic/geometry/api/renderable_generation.h"
-#include "intrinsic/geometry/compatibility/io.h"
-#include "intrinsic/geometry/proto/geometry_service_types.pb.h"
 #include "intrinsic/geometry/storage/geometry_library.h"
-#include "intrinsic/geometry/storage/in_memory_storage.h"
 #include "intrinsic/math/pose3.h"
 #include "intrinsic/math/proto_conversion.h"
 #include "intrinsic/stats/scoped_span.h"
@@ -48,7 +44,6 @@
 #include "intrinsic/util/status/status_conversion_grpc.h"
 #include "intrinsic/util/status/status_macros.h"
 #include "intrinsic/util/status/status_macros_grpc.h"
-#include "intrinsic/util/unique_id.h"
 #include "intrinsic/world/cartesian_kinematic_view.h"
 #include "intrinsic/world/component/ppr_component.h"
 #include "intrinsic/world/dof_kinematic_view.h"
@@ -64,78 +59,11 @@ namespace intrinsic {
 
 using ::intrinsic_proto::world::EntitySearchCriteria;
 using PPRComponentProto = ::intrinsic_proto::world::PPRComponent;
-using ::intrinsic_proto::world::internal::CreateWorldRequest;
 using ::intrinsic_proto::world::internal::EntityWithMetadata;
 using ::intrinsic_proto::world::internal::GetIkSolutionRequest;
 using ::intrinsic_proto::world::internal::GetWorldRequest;
 using ::intrinsic_proto::world::internal::SingleIKSolution;
 using ::intrinsic_proto::world::internal::WorldWithMetadata;
-
-namespace {
-
-// Creates a MapGeometryLibrary from an iterable collection of
-// GeometryWithMetadata protos.
-template <typename GeometryProtos>
-absl::StatusOr<std::unique_ptr<MapGeometryLibrary>> CreateMapGeometryLibrary(
-    const GeometryProtos& geometry_protos) {
-  MapGeometryLibrary::RawMaps geo_maps;
-  for (const auto& geo_proto : geometry_protos) {
-    if (geo_proto.has_geometry_storage_refs_v0()) {
-      const std::string& geo_id =
-          geo_proto.geometry_storage_refs_v0().fingerprint();
-      if (geo_id.empty()) {
-        return absl::InvalidArgumentError(
-            "Encountered Geometry without fingerprint");
-      }
-      if (geo_maps.geometry_map.contains(geo_id)) {
-        return absl::InvalidArgumentError(
-            absl::StrCat("Found duplicate geometry ids: ", geo_id));
-      }
-      INTR_ASSIGN_OR_RETURN(
-          geo_maps.geometry_map[geo_id],
-          geometry_compatibility::ToGeometry(geo_proto.geometry_v0()));
-    }
-    if (geo_proto.has_geometry_storage_refs()) {
-      if (!geo_proto.has_inline_geometry()) {
-        return absl::InvalidArgumentError(
-            "Encountered Geometry with v1 storage refs but without "
-            "inline geometry. We expect the inline geometry to be "
-            "populated to store geometries for the corresponding v1 "
-            "storage refs.");
-      }
-      INTR_ASSIGN_OR_RETURN(const Geometry geo,
-                            ToGeometry(geo_proto.inline_geometry()));
-
-      const std::string& exact_ref =
-          geo_proto.geometry_storage_refs().exact_geometry_ref();
-      if (exact_ref.empty()) {
-        return absl::InvalidArgumentError(
-            "Encountered Geometry without exact geometry ref");
-      }
-      if (geo_maps.exact_geometry_map.contains(exact_ref)) {
-        return absl::InvalidArgumentError(
-            absl::StrCat("Found duplicate exact geometry refs: ", exact_ref));
-      }
-      geo_maps.exact_geometry_map.try_emplace(exact_ref,
-                                              geo.GetExactGeometry());
-
-      const std::string& renderable_ref =
-          geo_proto.geometry_storage_refs().renderable_ref();
-      if (!renderable_ref.empty()) {
-        if (geo_maps.renderable_map.contains(renderable_ref)) {
-          return absl::InvalidArgumentError(absl::StrCat(
-              "Found duplicate renderable refs: ", renderable_ref));
-        }
-        INTR_ASSIGN_OR_RETURN(geo_maps.renderable_map[renderable_ref],
-                              GetOrGenerateRenderable(geo));
-      }
-    }
-  }
-
-  return GetMapGeometryLibrary(std::move(geo_maps));
-}
-
-}  // namespace
 
 absl::StatusOr<std::unique_ptr<WorldServiceImpl>>
 WorldServiceImpl::CreateService(
@@ -176,82 +104,6 @@ GeometryLibrary* WorldServiceImpl::GeoLib() {
     CHECK(geo_lib_ != nullptr) << "GeometryLibrary future returned nullptr";
   }
   return geo_lib_;
-}
-
-grpc::Status WorldServiceImpl::CreateWorld(
-    grpc::ServerContext* context,
-    const intrinsic_proto::world::internal::CreateWorldRequest* request,
-    intrinsic_proto::world::internal::WorldWithMetadata* response) {
-  const stats::ScopedSpan span("WorldService/CreateWorld", context);
-
-  const std::string world_id = absl::StrCat("World_", WebSafeUuid());
-
-  std::shared_ptr<WorldAndMutex> world_ptr;
-
-  if (request->has_world() && request->world().has_world_data()) {
-    INTR_ASSIGN_OR_RETURN_GRPC(
-        World world, World::Deserialize(request->world().world_data()));
-
-    // If we provide geometry then reserialize them with the default geolib.
-    if (!request->geometries().empty()) {
-      INTR_ASSIGN_OR_RETURN_GRPC(
-          std::unique_ptr<GeometryLibrary> geolib,
-          CreateMapGeometryLibrary(request->geometries()));
-
-      for (const GeometryEntityId entity_id :
-           world.GetTypedEntityIds<GeometryEntityId>()) {
-        INTR_ASSIGN_OR_RETURN_GRPC(
-            GeometryComponent * geo_component,
-            world.GetComponentByEntityId<GeometryComponent>(entity_id));
-
-        // Reserialize geometries into our GeoLib().
-        for (const std::string& geo_set_name :
-             geo_component->GetGeometryNames()) {
-          INTR_ASSIGN_OR_RETURN_GRPC(
-              NamedGeometrySet geos,
-              geo_component->GetGeometry(geo_set_name, geolib->Deserializer()));
-
-          NamedGeometryProtoSet geo_protos;
-          for (const auto& [geo_name, geo] : geos) {
-            INTR_ASSIGN_OR_RETURN_GRPC(geo_protos[geo_name],
-                                       ToProto(geo, &GeoLib()->Serializer()));
-          }
-
-          geo_component->SetGeometry(geo_set_name, geo_protos);
-        }
-      }
-    }
-
-    INTR_ASSIGN_OR_RETURN_GRPC(
-        world_ptr, WorldStore()->AddWorld(world_id, std::move(world),
-                                          /*skip_compat_check=*/false));
-  } else if (!request->geometries().empty()) {
-    return InvalidArgumentErrorBuilderGrpc().LogError()
-           << "No world was specified but geometry was specified";
-  } else {
-    // If we didn't have world data and we don't have geometry we are in the
-    // default empty world case.
-    INTR_ASSIGN_OR_RETURN_GRPC(
-        world_ptr, WorldStore()->AddWorld(world_id, World::CreateEmptyWorld(),
-                                          /*skip_compat_check=*/true));
-  }
-
-  if (!request->user_tag().empty()) {
-    absl::WriterMutexLock lock(*world_ptr->mtx);
-    world_ptr->user_tag = request->user_tag();
-  }
-
-  {
-    absl::ReaderMutexLock created_world_lock(*world_ptr->mtx);
-    const World& world = world_ptr->world;
-    INTR_RET_CHECK_GRPC(!world_ptr->world_structure_hash.empty());
-    // Should not need to load since we just constructed with a pointer.
-    INTR_ASSIGN_OR_RETURN_GRPC(
-        *response, WorldToProto(world_id, world_ptr->world_structure_hash,
-                                world_ptr->user_tag, world));
-  }
-
-  return grpc::Status::OK;
 }
 
 grpc::Status WorldServiceImpl::GetWorld(
