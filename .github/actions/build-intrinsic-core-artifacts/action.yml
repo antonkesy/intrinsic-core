@@ -47,6 +47,7 @@ runs:
         CANDIDATE_NAME="${{ inputs.checkout-ref }}"
         echo "build --stamp" >> .bazelrc
         echo "build --workspace_status_command=\"echo STABLE_INTRINSIC_CORE_VERSION ${CANDIDATE_NAME}\"" >> .bazelrc
+        echo "build --embed_label=\"${CANDIDATE_NAME}\"" >> .bazelrc
 
     - name: Build binaries
       shell: bash
