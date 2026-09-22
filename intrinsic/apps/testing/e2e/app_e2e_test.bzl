@@ -200,6 +200,11 @@ app_e2e_test = macro(
     To run the test locally for debugging and developing use:
         bazel test --config=intrinsic --test_output streamed --test_env CLUSTER_NAME=vmkube \
         //<path_to_test>:<test_name>
+
+    Additional command line parameters are forwarded to all tests (in addition to
+    'binary_params'), e.g.:
+        bazel run --config=intrinsic --test_env CLUSTER_NAME=vmkube \
+        //<path_to_test>:<test_name> -- --my_flag=my_value
     """,
     attrs = {
         # Note: Most attributes require configurable=False such that we can access their

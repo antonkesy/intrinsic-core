@@ -26,6 +26,10 @@ readonly OPERATION_MODE="{{.OperationMode}}"
 {{- end}}
 
 function main() {
+  # Additional parameters given on the command line (e.g. via
+  # `bazel run //path/to:test -- --my_flag`) are forwarded to every test.
+  local extra_params=("$@")
+
   setup_all_tests
   trap 'teardown_all_tests' EXIT
 
@@ -37,7 +41,7 @@ function main() {
   echo "Testing {{.TestType}} {{.TestFile}}"
   echo "========================================"
   test_file="$(rlocation "{{.TestFile}}")"
-  if ! test_{{.TestType}} "${test_file}"{{if .TestParams}} {{template "join_quoted_escaped" .TestParams}}{{end}}; then
+  if ! test_{{.TestType}} "${test_file}"{{if .TestParams}} {{template "join_quoted_escaped" .TestParams}}{{end}} ${extra_params[@]+"${extra_params[@]}"}; then
     echo "ERROR: Test failed: {{.TestType}} {{.TestFile}}" >&2
     failures=$((failures + 1))
   fi
