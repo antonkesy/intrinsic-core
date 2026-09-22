@@ -1377,27 +1377,6 @@ TEST_P(MoveRobotFixtureTest, FootprintCachesPlanInSkillData) {
                          *execute_context, &return_value));
 }
 
-TEST_P(MoveRobotFixtureTest, ComputePlanWorksWithLoggingIdReturnValue) {
-  intrinsic_proto::skills::MoveRobotParams params = CreateJointTargetParams();
-  eigenmath::VectorNd initial(6);
-  initial << -0.10, 0.48, -1.36, -0.77, 0.83, -1.0;
-  ASSERT_OK_AND_ASSIGN(auto internal_data_proto,
-                       ComputePlanMoveRobotTest(params, initial));
-  // Check that the logging id is set and is not empty.
-  ASSERT_FALSE(internal_data_proto.logging_id().empty());
-}
-
-TEST_P(MoveRobotFixtureTest, ExecuteWorksWithLoggingIdReturnValueOnReplan) {
-  const intrinsic_proto::skills::MoveRobotParams params =
-      CreateJointTargetParams();
-  eigenmath::VectorNd initial(6);
-  initial << -0.10, 0.48, -1.36, -0.77, 0.83, -1.0;
-  ASSERT_OK_AND_ASSIGN(
-      const intrinsic_proto::skills::MoveRobotReturnValue return_value,
-      ExecuteMoveRobotTest(params, initial));
-  EXPECT_FALSE(return_value.logging_id().empty());
-}
-
 TEST_P(MoveRobotFixtureTest, ExecuteClearsStaleLockMotionIdOnReplan) {
   const intrinsic_proto::skills::MoveRobotParams params =
       CreateJointTargetParams();
@@ -1425,8 +1404,6 @@ TEST_P(MoveRobotFixtureTest, ExecuteClearsStaleLockMotionIdOnReplan) {
       ExecuteMoveRobotTest(params, initial, MoveRobotTestParams(),
                            /*expect_success=*/true,
                            internal_data_proto.SerializeAsString()));
-  EXPECT_FALSE(return_value.logging_id().empty());
-  EXPECT_NE(return_value.logging_id(), internal_data_proto.logging_id());
   EXPECT_FALSE(return_value.has_lock_motion_id());
 }
 TEST_P(MoveRobotFixtureTest, ComputePlanWorksWithSmallJointLimitViolation) {

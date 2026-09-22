@@ -605,10 +605,6 @@ MoveRobot::InternalComputePlan(
             << " s.";
   LOG(INFO) << "Planned trajectory of size "
             << trajectory_result.trajectory.state_size();
-  span.AddAttribute("logging_id", trajectory_result.logging_id);
-  LOG(INFO) << "Motion planning logging id: " << trajectory_result.logging_id;
-  logger.AttachTop("logging_id", trajectory_result.logging_id);
-
   intrinsic_proto::skills::MoveRobotExecutionPlan::RobotSpecifications
       robot_specification_proto;
   *robot_specification_proto.mutable_application_limits() =
@@ -620,12 +616,10 @@ MoveRobot::InternalComputePlan(
   *execution_plan_result.mutable_robot_specifications() =
       robot_specification_proto;
   intrinsic_proto::skills::MoveRobotInternalData internal_data;
-  internal_data.set_logging_id(trajectory_result.logging_id);
   *internal_data.mutable_execution_plan() = execution_plan_result;
   if (trajectory_result.lock_motion_id.has_value()) {
     internal_data.set_lock_motion_id(trajectory_result.lock_motion_id.value());
   }
-  internal_data.set_logging_id(trajectory_result.logging_id);
   return internal_data;
 }
 
@@ -858,8 +852,6 @@ absl::StatusOr<std::unique_ptr<google::protobuf::Message>> MoveRobot::Execute(
       return_value->set_lock_motion_id(
           internal_data_proto.value().lock_motion_id());
     }
-    return_value->set_logging_id(internal_data_proto.value().logging_id());
-    logger.AttachTop("logging_id", internal_data_proto.value().logging_id());
   }
 
   if (!preplanned_solution.has_value()) {
@@ -900,11 +892,9 @@ absl::StatusOr<std::unique_ptr<google::protobuf::Message>> MoveRobot::Execute(
     LOG(INFO) << "Motion planning took " << path_planning_duration_seconds
               << " s.";
 
-    logger.AttachTop("logging_id", trajectory_result.logging_id);
     // Populate `return_value` with metadata from the newly planned trajectory.
     // Explicitly clear `lock_motion_id` if the replanned trajectory does not
     // have one to avoid retaining stale IDs from an invalidated preplan.
-    return_value->set_logging_id(trajectory_result.logging_id);
     if (trajectory_result.lock_motion_id.has_value()) {
       return_value->set_lock_motion_id(
           trajectory_result.lock_motion_id.value());
@@ -1009,7 +999,6 @@ absl::StatusOr<std::unique_ptr<::google::protobuf::Message>> MoveRobot::Preview(
   if (internal_data.has_lock_motion_id()) {
     return_value->set_lock_motion_id(internal_data.lock_motion_id());
   }
-  return_value->set_logging_id(internal_data.logging_id());
   return return_value;
 }
 

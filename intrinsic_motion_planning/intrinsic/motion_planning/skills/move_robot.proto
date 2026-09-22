@@ -267,8 +267,6 @@ message MoveRobotParams {
 message MoveRobotInternalData {
   MoveRobotExecutionPlan execution_plan = 1;
   optional string lock_motion_id = 2;
-  // Id of the motion planning request that generated the execution plan.
-  string logging_id = 3;
 }
 // Pre-planned solutions
 message MoveRobotExecutionPlan {
@@ -289,6 +287,4 @@ message MoveRobotReturnValue {
   // for loading later. Note this field is not set if this response is from
   // loading a locked motion.
   optional string lock_motion_id = 2;
-  // Logging id of the motion planning request
-  optional string logging_id = 3;
 }

@@ -476,25 +476,12 @@ absl::Status GetMotionPlanningExtendedStatusErrorMessage(
       motion_pipeline_error;
   status.ForEachPayload([&](absl::string_view type_url,
                             const absl::Cord& payload) {
-    std::string logging_id_string;
     if (absl::StrContains(type_url, "MotionPipelineError")) {
       motion_pipeline_error.ParseFromString(payload);
       motion_planning_error =
           motion_pipeline_error.motion_planning_error().at(0);
-      logging_id_string =
-          motion_pipeline_error.logging_id().empty()
-              ? "\n\nNo motion planning logging ID is available."
-              : absl::StrFormat(
-                    "\n\nMotion planning logging ID : %s. \nPlease note it may "
-                    "take 5-10 minutes for the log to be available in the "
-                    "cloud. You can then use the Motion Planning Inspector to "
-                    "view the log.",
-                    motion_pipeline_error.logging_id());
     } else if (absl::StrContains(type_url, "MotionPlanningError")) {
       motion_planning_error.ParseFromString(payload);
-      logging_id_string =
-          "\n\nMotionPipelineError is not specified, so motion planning "
-          "logging ID is not available.";
     } else {
       return;
     }
@@ -551,9 +538,10 @@ absl::Status GetMotionPlanningExtendedStatusErrorMessage(
       LOG(INFO) << "Unable to create pretty message, returning to original "
                    "status";
     } else {
-      user_message =
-          absl::StrCat(prepend_segment_id, status_or_error_message.value(),
-                       logging_id_string);
+      user_message = absl::StrCat(
+          prepend_segment_id,
+          status_or_error_message.value()
+      );
     }
   });
 

@@ -1638,19 +1638,6 @@ TEST_P(MotionPlannerServiceWithoutLoggerTest, ClearTrajectoryCacheWorks) {
                                               .joint_position()
                                               .joints()));
 }
-TEST_P(MotionPlannerServiceWithoutLoggerTest, LoggingIdInErrorMessages) {
-  intrinsic_proto::motion_planning::v1::MotionPlanningRequest request =
-      motion_planning_request_;
-  *request.mutable_robot_specification()->mutable_start_configuration() =
-      ParseTextProtoOrDie(
-          R"pb(
-            joints: [ -5.187e-06, -0.554, 0.193, -0.008, 4.212e-05, 0.008 ]
-          )pb");
-
-  auto result = PlanTrajectory(request);
-  EXPECT_THAT(result.status(), StatusIs(absl::StatusCode::kInvalidArgument,
-                                        HasSubstr("Motion planning id")));
-}
 INSTANTIATE_TEST_SUITE_P(
     MotionPlannerServiceWithoutLoggerTests,
     MotionPlannerServiceWithoutLoggerTest,

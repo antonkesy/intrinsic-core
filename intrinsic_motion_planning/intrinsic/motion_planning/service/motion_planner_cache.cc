@@ -644,8 +644,8 @@ absl::StatusOr<MotionPlanningRequestCacheKey>
 MotionPlanningRequestCacheKey::Create(
     const intrinsic_proto::world::internal::World& world_proto,
     const object_world::ObjectWorld& object_world,
-    const intrinsic_proto::motion_planning::v1::MotionPlanningRequest& request,
-    absl::string_view motion_planning_logging_id) {
+    const intrinsic_proto::motion_planning::v1::MotionPlanningRequest& request
+) {
   // Make a copy of motion specification so we can modify it.
   intrinsic_proto::motion_planning::v1::MotionSpecification
       motion_specification(request.motion_specification());
@@ -889,9 +889,7 @@ MotionPlanningRequestCacheKey::Create(
       .serialized_geometry_ref_t_shape_aff =
           std::move(serialized_geometry_ref_t_shape_aff),
       .other_kinematic_object_ids = std::move(kinematic_object_ids),
-      .motion_planning_logging_id = std::string(motion_planning_logging_id),
-      .uuid = absl::StrFormat("%s/%s", caller_id,
-                              std::string(motion_planning_logging_id)),
+       .uuid = caller_id,
   };
 }
 

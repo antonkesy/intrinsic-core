@@ -395,7 +395,8 @@ EXECUTE_COMPARE_AND_RETURN_RPC_RESPONSE_SPECIFIED_FIELD_ORDER_IGNORE(
 
 EXECUTE_COMPARE_AND_RETURN_RPC_RESPONSE_SPECIFIED_FIELD_IGNORE(
     ComputeIk, IkRequest, IkResponse,
-    std::initializer_list<std::string>({"logging_id"}));
+    std::initializer_list<std::string>({
+    }));
 
 EXECUTE_COMPARE_AND_RETURN_RPC_RESPONSE_SPECIFIED_FIELD_IGNORE(
     ComputeFk, FkRequest, FkResponse, std::initializer_list<std::string>({}));

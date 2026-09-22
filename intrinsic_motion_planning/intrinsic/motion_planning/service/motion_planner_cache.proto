@@ -75,10 +75,6 @@ message MotionPlanningRequestCacheKey {
       14;
   // UUID used for logging only.
   string uuid = 10;
-  // The logging id for the motion planning request that generated this cache
-  // key.
-  string motion_planning_logging_id = 13;
-
   reserved "geometry_ids", "serialized_geometry_refs";
   reserved 9, 11;
 }

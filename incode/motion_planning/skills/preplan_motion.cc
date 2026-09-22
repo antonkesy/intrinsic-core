@@ -95,7 +95,6 @@ absl::Status Preplan(const intrinsic_proto::skills::PreplanMotionParams& params,
           auto result, MoveRobot::PlanTrajectory(robot_object, motion_planner,
                                                  skill.move_robot(),
                                                  std::nullopt, span_name));
-      logger.Attach("logging_id", result.logging_id);
       if (result.trajectory.state().empty()) {
         return absl::InternalError("Expected trajectory to be filled.");
       }

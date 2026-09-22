@@ -119,10 +119,6 @@
 
 namespace intrinsic {
 namespace {
-
-constexpr absl::Duration kAutomatedRecordingTimeWindow = absl::Seconds(30);
-constexpr absl::Duration kAutomatedRecordingRateLimit = absl::Seconds(10);
-
 static const auto* const kConfigFormatString =
     new absl::ParsedFormat<'s', 's', 'f'>(
         "Cache <%s> and <%s> has a max starting robot configuration "
@@ -539,92 +535,21 @@ MotionPlannerService::MotionPlannerService(
           }
         });
   }
-
-  if (logger_client != nullptr) {
-    recording_trigger_thread_ =
-        std::make_unique<Thread>([this](StopToken stop_token) {
-          ProcessAutomatedRecordings(std::move(stop_token));
-        });
-  }
-}
-
-void MotionPlannerService::ProcessAutomatedRecordings(StopToken stop_token) {
-  absl::Time last_recording_time = absl::InfinitePast();
-
-  while (!stop_token.stop_requested()) {
-    std::vector<std::string> batched_logging_ids;
-    {
-      absl::MutexLock lock(&recording_mutex_);
-      recording_cv_.WaitWithTimeout(&recording_mutex_, absl::Milliseconds(100));
-      if (stop_token.stop_requested()) break;
-      if (pending_recordings_.empty()) continue;
-
-      // Drain the queue to batch rapid requests together. A single recording
-      // captures all motion plans that occurred in this burst.
-      while (!pending_recordings_.empty()) {
-        batched_logging_ids.push_back(pending_recordings_.front());
-        pending_recordings_.pop();
-      }
-    }
-
-    // The DataLogger strictly throttles CreateLocalRecording RPCs to 1 per 10s.
-    // Enforce a local rate limit to prevent RESOURCE_EXHAUSTED errors.
-    absl::Duration time_since_last = absl::Now() - last_recording_time;
-    if (time_since_last < kAutomatedRecordingRateLimit) {
-      absl::Duration sleep_time =
-          kAutomatedRecordingRateLimit - time_since_last;
-      int sleep_chunks = sleep_time / absl::Milliseconds(100);
-      for (int i = 0; i < sleep_chunks && !stop_token.stop_requested(); ++i) {
-        absl::SleepFor(absl::Milliseconds(100));
-      }
-    }
-    if (stop_token.stop_requested()) break;
-
-    // Wait an additional 1s to allow async logs to flush to TimescaleDB
-    // Data is dispatched to the logging pipeline asynchronously to avoid
-    // blocking the main gRPC thread.The 1-second delay is a heuristic buffer
-    // to ensure the payload has been fully flushed and ingested by the
-    // database before we request the bag.
-    for (int i = 0; i < 10 && !stop_token.stop_requested(); ++i) {
-      absl::SleepFor(absl::Milliseconds(100));
-    }
-    if (stop_token.stop_requested()) break;
-    std::string joined_ids = absl::StrJoin(batched_logging_ids, ", ");
-    auto record_result = logger_client_->CreateLocalRecording(
-        absl::Now() - kAutomatedRecordingTimeWindow, absl::Now(),
-        absl::StrCat("Automated recording for IDs: ", joined_ids),
-        {"motion_planner_service.PlanTrajectory.debug_data",
-         "motion_planner_service.ComputeIk.debug_data",
-         "motion_planner_service.PlanPath.debug_data"});
-    if (!record_result.ok()) {
-      LOG(ERROR) << "Automated CreateLocalRecording failed: "
-                 << record_result.status();
-    } else {
-      std::vector<std::string> prefixed_ids;
-      for (const auto& id : batched_logging_ids) {
-        prefixed_ids.push_back(absl::StrCat(record_result->bag_id(), "_", id));
-      }
-      std::string joined_prefixed_ids = absl::StrJoin(prefixed_ids, ", ");
-      LOG(INFO) << "Automated recording created successfully. Bag ID: "
-                << record_result->bag_id()
-                << " Logging IDs: " << joined_prefixed_ids;
-      last_recording_time = absl::Now();
-    }
-  }
 }
 absl::Status
 MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
     const MotionPlanner::PlanTrajectoryResult& plan_trajectory_result,
     const MotionPlanningRequest& request, const World& initial_world,
-    absl::string_view logging_id, absl::string_view cache_hit,
-    bool enable_collision_stats, const object_world::KinematicObject& robot,
+    absl::string_view cache_hit, bool enable_collision_stats,
+    const object_world::KinematicObject& robot,
     intrinsic_proto::motion_planning::v1::TrajectoryPlanningResponse& response
 ) {
   // Fill-out the response path. We explicitly allow empty trajectories,
   // for cases in which we already are at the desired location.
   INTR_ASSIGN_OR_RETURN(
-      const auto trajectory_proto, ToProto(plan_trajectory_result.trajectory),
-      _.LogError() << "\n Motion planning logging id: " << logging_id);
+      const auto trajectory_proto,
+      ToProto(plan_trajectory_result.trajectory)
+  );
   *response.mutable_discretized() = trajectory_proto;
   INTR_LOG_IF_ERROR(absl::LogSeverity::kError,
                     planned_trajectory_publisher_.Publish(trajectory_proto));
@@ -672,10 +597,6 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
       GetInitialWorldFromWorldService(request->world_id()), _.LogError());
 
   LOG(INFO) << "World download complete!";
-
-  // Generate the logging id for the motion planning request and log request at
-  // earliest point.
-  std::string logging_id = GenerateLoggingId();
   // Create the object world view and robot.
   INTR_ASSIGN_OR_RETURN_GRPC(
       std::unique_ptr<object_world::ObjectWorld> object_world,
@@ -694,16 +615,12 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
   logger.Attach("cache_hit_type", "no");
   INTR_ASSIGN_OR_RETURN_GRPC(
       MotionPlanningRequestCacheKey cache_key,
-      MotionPlanningRequestCacheKey::Create(initial_world_and_proto.world_proto,
-                                            *object_world, *request,
-                                            logging_id),
-      _.LogError() << "\n Motion planning logging id: " << logging_id);
+      MotionPlanningRequestCacheKey::Create(
+          initial_world_and_proto.world_proto, *object_world,
+          *request
+          )
+  );
   logger.Attach("cache_key_id", cache_key.uuid);
-  logger.AttachTop("logging_id", logging_id);
-
-  // Set logging id in the response.
-  response->set_logging_id(logging_id);
-
   bool runtime_enabled_distance_check_statistics =
       run_time_flags.has_value()
           ? run_time_flags->enable_distance_check_statistics
@@ -722,18 +639,17 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
       LoadMotionFromNonvolatileCacheIfRequested(
           *motion_planner_, plan_trajectory_nonvolatile_cache_.get(),
           *object_world, *request, collision_check_spacing,
-          optional_mps_asset_major_version),
-      _.LogError() << "\n Motion planning logging id: " << logging_id);
+          optional_mps_asset_major_version)
+  );
 
   if (plan_trajectory_result.has_value()) {
     INTR_RETURN_IF_ERROR_GRPC(
         ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
             plan_trajectory_result.value(), *request,
-            initial_world_and_proto.world, logging_id, cache_hit,
-            enable_collision_stats, *robot,
+            initial_world_and_proto.world, cache_hit, enable_collision_stats,
+            *robot,
             *response
             ));
-    TriggerAutomatedRecording(logging_id, /*is_error=*/false);
     return grpc::Status::OK;
   }
 
@@ -756,8 +672,8 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
               /*allow_fuzzy_check=*/
               mps_config_.enable_motion_planner_service_caching_fuzzy_check &&
                   !request->motion_planner_config().skip_fuzzy_cache_check(),
-              collision_check_spacing),
-          _.LogError() << "\n Motion planning logging id: " << logging_id);
+              collision_check_spacing)
+      );
 
       if (valid_trajectory) {
         // Log the cache hit and increase the cache hit count.
@@ -772,7 +688,7 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
         INTR_RETURN_IF_ERROR_GRPC(
             ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
                 lookup_result.cached_entry.result, *request,
-                initial_world_and_proto.world, logging_id, cache_hit,
+                initial_world_and_proto.world, cache_hit,
                 enable_collision_stats, *robot,
                 *response
                 ));
@@ -782,12 +698,11 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
             SaveMotionToNonvolatileCacheIfRequested(
                 plan_trajectory_nonvolatile_cache_.get(), *object_world,
                 *request, lookup_result.cached_entry.result,
-                optional_mps_asset_major_version),
-            _.LogError() << "\n Motion planning logging id: " << logging_id);
+                optional_mps_asset_major_version)
+        );
         if (lock_motion_id.has_value()) {
           response->set_lock_motion_id(lock_motion_id.value());
         }
-        TriggerAutomatedRecording(logging_id, /*is_error=*/false);
         // We only cache successful planning results.
         return grpc::Status::OK;
       } else {
@@ -801,7 +716,6 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
   }
 
   logger.Start("planning");
-  logger.Attach("logging_id", logging_id);
   absl::StatusOr<MotionPlanner::PlanTrajectoryResult> result =
       motion_planner_->PlanTrajectory(
           *object_world, request->robot_specification(),
@@ -815,28 +729,30 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
   if (result.ok()) {
     absl::Status status =
         ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
-            result.value(), *request, initial_world_and_proto.world, logging_id,
-            cache_hit, enable_collision_stats, *robot,
+            result.value(), *request, initial_world_and_proto.world, cache_hit,
+            enable_collision_stats, *robot,
             *response
         );
     if (!status.ok()) {
-      TriggerAutomatedRecording(logging_id, /*is_error=*/true);
-      return ToGrpcStatus(UpdateStatusWithLoggingID(status, logging_id));
+      return ToGrpcStatus(
+          status
+      );
     };
 
     INTR_ASSIGN_OR_RETURN_GRPC(
         std::optional<std::string> lock_motion_id,
         SaveMotionToNonvolatileCacheIfRequested(
             plan_trajectory_nonvolatile_cache_.get(), *object_world, *request,
-            result.value(), optional_mps_asset_major_version),
-        _.LogError() << "\n Motion planning logging id: " << logging_id);
+            result.value(), optional_mps_asset_major_version)
+    );
     if (lock_motion_id.has_value()) {
       response->set_lock_motion_id(lock_motion_id.value());
     }
   }
 
-  TriggerAutomatedRecording(logging_id, /*is_error=*/!result.ok());
-  return ToGrpcStatus(UpdateStatusWithLoggingID(result.status(), logging_id));
+  return ToGrpcStatus(
+      result.status()
+  );
 }
 
 ::grpc::Status MotionPlannerService::PlanTrajectory(
@@ -868,13 +784,6 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
   INTR_ASSIGN_OR_RETURN_GRPC(
       WorldAndProto initial_world_and_proto,
       GetInitialWorldFromWorldService(request->world_id()), _.LogError());
-
-  // Generate the logging id for the motion planning request and log request at
-  // earliest point.
-  std::string logging_id = GenerateLoggingId();
-  response->set_logging_id(logging_id);
-  logger.AttachTop("logging_id", logging_id);
-
   // Create the object world view and robot.
   INTR_ASSIGN_OR_RETURN_GRPC(
       std::unique_ptr<object_world::ObjectWorld> object_world,
@@ -905,7 +814,6 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
   }
 
   logger.Start("planning");
-  logger.Attach("logging_id", logging_id);
   absl::StatusOr<MotionPlanner::PlanPathResult> result =
       motion_planner_->PlanPath(*object_world, request->robot_specification(),
                                 request->motion_specification(),
@@ -929,7 +837,9 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
     }
   }
 
-  return ToGrpcStatus(UpdateStatusWithLoggingID(result.status(), logging_id));
+  return ToGrpcStatus(
+      result.status()
+  );
 }
 
 ::grpc::Status MotionPlannerService::ComputeIk(
@@ -952,9 +862,6 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
   INTR_ASSIGN_OR_RETURN_GRPC(
       WorldAndProto initial_world_and_proto,
       GetInitialWorldFromWorldService(request->world_id()));
-
-  const std::string logging_id =
-      request->disable_logging() ? "" : GenerateLoggingId();
 
   INTR_ASSIGN_OR_RETURN_GRPC(
       std::unique_ptr<object_world::ObjectWorld> object_world,
@@ -1010,7 +917,6 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
       &ik_debug_info);
 
   if (!request_result.ok()) {
-    TriggerAutomatedRecording(logging_id, /*is_error=*/true);
     return ToGrpcStatus(AddTypeUrlPrefixToPayload(request_result.status()));
   }
   std::vector<eigenmath::VectorXd> ik_solutions = request_result.value();
@@ -1129,58 +1035,4 @@ MotionPlannerService::ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
   }
   return grpc::Status::OK;
 }
-
-// Generates a unique logging ID for the motion planner service. The logging ID
-// is a combination of the organization ID, workcell name, a randomly generated
-// string, and the current time.
-// The logging ID is in the format of
-// <org_id>_<workcell_name>_<unique_id>_<timestamp>.
-std::string MotionPlannerService::GenerateLoggingId() {
-  std::string org_id;
-  std::string workcell_name;
-  {
-    absl::ReaderMutexLock lock(&context_mutex_);
-    org_id = organization_id_;
-    workcell_name = workcell_name_;
-  }
-  if (workcell_name.empty() || org_id.empty()) {
-    return "";
-  }
-  // Create a 10 character long alpha-numeric logging id.
-  const std::string CHARACTERS =
-      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-  std::string unique_id;
-
-  for (std::size_t i = 0; i < 15; ++i) {
-    const std::size_t random_index =
-        absl::Uniform<std::size_t>(rng_, 0, CHARACTERS.size());
-    unique_id += CHARACTERS.at(random_index);
-  }
-
-  // Append id with time.
-  auto time_str = absl::FormatTime(absl::Now());
-  std::string logging_id =
-      absl::StrCat(org_id, "_", workcell_name, "_", unique_id, "_", time_str);
-
-  return logging_id;
-}
-
-void MotionPlannerService::TriggerAutomatedRecording(
-    const std::string& logging_id, bool is_error) {
-  // If the user did not request to log all recordings, and this is NOT an
-  // error, skip.
-  if (!is_error && !mps_config_.log_all_recordings) {
-    return;
-  }
-
-  if (logging_id.empty() || logger_client_ == nullptr) {
-    return;
-  }
-
-  absl::MutexLock lock(&recording_mutex_);
-  pending_recordings_.push(logging_id);
-  recording_cv_.Signal();
-}
-
 }  // namespace intrinsic

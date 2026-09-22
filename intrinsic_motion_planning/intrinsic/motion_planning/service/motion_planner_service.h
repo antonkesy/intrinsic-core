@@ -211,32 +211,17 @@ class MotionPlannerService : public intrinsic_proto::motion_planning::v1::
           response,
       std::optional<RunTimeMotionPlannerFlags> run_time_flags);
 
-  // Given `request`, `initial_world`, `request_received_time`, `logging_id`,
-  // `cache_hit`, `enable_collision_stats`, and `robot`, this function converts
-  // `plan_trajectory_result` into
-  // `response` and
-  // `debug_data`.
+  // Given `request`, `initial_world`, `cache_hit`, `enable_collision_stats`,
+  // and `robot`, this function converts `plan_trajectory_result` into
+  // `response`.
   absl::Status ConvertPlanTrajectoryResultToTrajectoryPlanningResponse(
       const MotionPlanner::PlanTrajectoryResult& plan_trajectory_result,
       const intrinsic_proto::motion_planning::v1::MotionPlanningRequest&
           request,
-      const World& initial_world, absl::string_view logging_id,
-      absl::string_view cache_hit, bool enable_collision_stats,
-      const object_world::KinematicObject& robot,
+      const World& initial_world, absl::string_view cache_hit,
+      bool enable_collision_stats, const object_world::KinematicObject& robot,
       intrinsic_proto::motion_planning::v1::TrajectoryPlanningResponse& response
   );
-
-  // Generates a unique logging ID for the motion planner service. The ID is in
-  // the format of <org_id>_<workcell_name>_<unique_id>_<timestamp>.
-  std::string GenerateLoggingId();
-
-  // Triggers an automated local recording if the config conditions are met.
-  void TriggerAutomatedRecording(const std::string& logging_id, bool is_error);
-
-  // Background thread function that consumes the pending_recordings_ queue and
-  // batches requests to create local recordings while respecting rate limits.
-  void ProcessAutomatedRecordings(StopToken stop_token);
-
   intrinsic_proto::world::ObjectWorldService::StubInterface*
       object_world_service_;           // Not owned.
   GeometryLibrary* geometry_library_;  // Not owned.
@@ -264,17 +249,6 @@ class MotionPlannerService : public intrinsic_proto::motion_planning::v1::
   std::string organization_id_ ABSL_GUARDED_BY(context_mutex_);
   std::string workcell_name_ ABSL_GUARDED_BY(context_mutex_);
   std::unique_ptr<Thread> context_fetcher_thread_;
-
-  mutable absl::Mutex recording_mutex_;
-  absl::CondVar recording_cv_;
-  std::queue<std::string> pending_recordings_ ABSL_GUARDED_BY(recording_mutex_);
-  // Note: recording_trigger_thread_ must remain the last declared member of
-  // this class. In C++, class members are destroyed in the reverse order of
-  // their declaration. This thread accesses other members (e.g. the mutex, cv,
-  // and queue) during its execution and shutdown. By being declared last, it
-  // is destroyed (and thus joined/stopped) first, preventing use-after-free
-  // bugs when the class is destructed.
-  std::unique_ptr<Thread> recording_trigger_thread_;
 };
 
 }  // namespace intrinsic

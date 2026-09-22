@@ -117,9 +117,6 @@ struct MotionPlanningRequestCacheKey {
   // check if the kinematic objects in the world have changed.
   const absl::flat_hash_map<std::string, eigenmath::VectorXd>
       other_kinematic_object_ids;
-  // The logging id for the motion planning request that generated this cache
-  // key.
-  const std::string motion_planning_logging_id;
   // UUID used for logging only.
   const std::string uuid;
 
@@ -128,9 +125,8 @@ struct MotionPlanningRequestCacheKey {
   static absl::StatusOr<MotionPlanningRequestCacheKey> Create(
       const intrinsic_proto::world::internal::World& world_proto,
       const object_world::ObjectWorld& object_world,
-      const intrinsic_proto::motion_planning::v1::MotionPlanningRequest&
-          request,
-      absl::string_view motion_planning_logging_id);
+      const intrinsic_proto::motion_planning::v1::MotionPlanningRequest& request
+  );
 
   intrinsic_proto::motion_planning::MotionPlanningRequestCacheKey ToProto()
       const;

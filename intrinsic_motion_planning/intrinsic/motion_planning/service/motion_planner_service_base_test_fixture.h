@@ -60,11 +60,11 @@ inline constexpr std::string_view kOtherMotionPlannerServiceAssetVersion =
     "1.20270427.1-RC31";
 
 inline const std::initializer_list<std::string> kSaveLoadMotionFieldIgnoreList =
-    {"swept_volume.geometry_storage_refs.fingerprint", "logging_id",
+    {"swept_volume.geometry_storage_refs.fingerprint",
      "lock_motion_id"};
 inline const std::initializer_list<std::string>
-    kSaveLoadMotionRepeatedFieldOrderingIgnoreList = {"logging_id",
-                                                      "lock_motion_id"};
+    kSaveLoadMotionRepeatedFieldOrderingIgnoreList = {
+        "lock_motion_id"};
 
 // If the flag `set_infinite_jerk_limits` is true, this function sets the jerk
 // limits to infinite for all motion segments in the motion planning request.
@@ -110,17 +110,23 @@ class MotionPlannerServiceBaseTest : public MotionPlannerServiceBaseTestHelper {
       const intrinsic_proto::motion_planning::v1::MotionPlanningRequest&
           request,
       const std::initializer_list<std::string>& field_ignore_list =
-          {"swept_volume.geometry_storage_refs.fingerprint", "logging_id"},
+          {
+              "swept_volume.geometry_storage_refs.fingerprint"
+          },
       const std::initializer_list<std::string>&
-          repeated_field_ordering_ignore_list = {"logging_id"});
+          repeated_field_ordering_ignore_list = {
+          });
 
   absl::StatusOr<intrinsic_proto::motion_planning::v1::PathPlanningResponse>
   PlanPath(const intrinsic_proto::motion_planning::v1::MotionPlanningRequest&
                request,
            const std::initializer_list<std::string>& field_ignore_list =
-               {"swept_volume.geometry_storage_refs.fingerprint", "logging_id"},
+               {
+                   "swept_volume.geometry_storage_refs.fingerprint"
+               },
            const std::initializer_list<std::string>&
-               repeated_field_ordering_ignore_list = {"logging_id"});
+               repeated_field_ordering_ignore_list = {
+               });
   absl::StatusOr<intrinsic_proto::motion_planning::v1::IkResponse> ComputeIk(
       const intrinsic_proto::motion_planning::v1::IkRequest& request,
       bool compare_against_mps_proxy = true);

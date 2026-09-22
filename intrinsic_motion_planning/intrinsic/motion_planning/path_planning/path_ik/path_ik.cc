@@ -129,9 +129,9 @@ absl::Status ValidateIkSolutionForFinePathIk(
   constexpr absl::string_view kPrefixErrorMessageForFirstIkSolution =
       "FinePathIK Error: The initial solution does not match the provided hint "
       "joint configuration, although expected. Likely cause: Internal error in "
-      "the underlying Inverse Kinematics (IK) solver. Please file a bug along "
-      "with the corresponding Motion Planning Logging ID to help with this "
-      "issue's reproductions during the debugging.";
+      "the underlying Inverse Kinematics (IK) solver. ";
+  std::string prefix_error_message_for_first_ik_solution =
+      std::string(kPrefixErrorMessageForFirstIkSolution);
   constexpr absl::string_view kPrefixErrorMessageForRemainingIkSolution =
       "Could not solve FinePathIK without excessive change in joint config. "
       "This might happen when planning close to joint limits or singular "
@@ -158,7 +158,7 @@ absl::Status ValidateIkSolutionForFinePathIk(
                                : kMaxJointLimitStep;
 
   std::string error_message(path_ik_solutions_so_far.empty()
-                                ? kPrefixErrorMessageForFirstIkSolution
+                                ? prefix_error_message_for_first_ik_solution
                                 : kPrefixErrorMessageForRemainingIkSolution);
 
   // We are measuring the maximum absolute joint configuration error across

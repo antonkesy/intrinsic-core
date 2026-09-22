@@ -219,32 +219,6 @@ absl::Status AssignConstraintForIKError(
   }
   return status;
 };
-
-// Update the logging id of a Motion Planning Error for a given status.
-absl::Status UpdateStatusWithLoggingID(absl::Status status,
-                                       absl::string_view logging_id) {
-  absl::Status updated_status = AnnotateError(
-      status,
-      absl::StrFormat("Motion planning id %s", std::string(logging_id)));
-  intrinsic_proto::motion_planning::v1::MotionPipelineError
-      motion_pipeline_error;
-  updated_status.ForEachPayload(
-      [&](absl::string_view type_url, const absl::Cord& payload) {
-        if (absl::StrContains(type_url, "MotionPipelineError")) {
-          motion_pipeline_error.ParseFromString(payload);
-          *motion_pipeline_error.mutable_logging_id() = std::string(logging_id);
-          std::string new_type_url = std::string(type_url);
-          if (!type_url.starts_with("type.googleapis.com/")) {
-            new_type_url = absl::StrCat("type.googleapis.com/", new_type_url);
-          }
-          updated_status.ErasePayload(type_url);
-          updated_status.SetPayload(new_type_url,
-                                    motion_pipeline_error.SerializeAsCord());
-        }
-      });
-  return updated_status;
-};
-
 intrinsic_proto::motion_planning::v1::FinePathIKError CreateFinePathIKError(
     absl::string_view error_message,
     const eigenmath::VectorNd& prev_ik_solution,

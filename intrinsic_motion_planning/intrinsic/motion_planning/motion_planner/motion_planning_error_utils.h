@@ -156,11 +156,6 @@ absl::Status CreateStatusWithFinePathIKError(
     const Pose3d& base_t_tip_desired, const JointLimits& joint_limits,
     absl::string_view message_url_suffix,
     const ErrorContext::Type& error_context, absl::StatusCode error_type);
-
-// Update existing error proto in status with a logging id.
-absl::Status UpdateStatusWithLoggingID(absl::Status status,
-                                       absl::string_view logging_id);
-
 // Returns true if the status has a payload that contains a MotionPlanningError
 bool HasMotionPlanningErrorPayload(const absl::Status& s);
 
