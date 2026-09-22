@@ -73,7 +73,8 @@ AttachObjectToRobotSkill::ExecuteImpl(
   INTR_ASSIGN_OR_RETURN(world::WorldObject object,
                         world.GetObject(params.object_entity()));
 
-  INTR_RETURN_IF_ERROR(world.ReparentObject(object, gripper));
+  INTR_RETURN_IF_ERROR(world.ReparentObject(
+      object, gripper, world::ObjectEntityFilter().IncludeFinalEntity()));
   INTR_RETURN_IF_ERROR(world.DisableCollisions(object, gripper));
 
   if (params.has_gripper_t_object()) {
@@ -120,7 +121,7 @@ AttachObjectToRobotSkill::Preview(const PreviewRequest& request,
   *reparent_object->mutable_object() = object.ObjectReference();
   *reparent_object->mutable_new_parent() =
       gripper.ObjectReferenceWithEntityFilter(
-          world::ObjectEntityFilter().IncludeBaseEntity());
+          world::ObjectEntityFilter().IncludeFinalEntity());
   INTR_RETURN_IF_ERROR(context.RecordWorldUpdate(
       reparent_update, absl::ZeroDuration(), absl::ZeroDuration()));
 
