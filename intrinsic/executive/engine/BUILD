@@ -581,7 +581,6 @@ cc_library(
         "//third_party/imported/cpp_libraries/clock",
         "//intrinsic_sdk/intrinsic/util/thread",
         "//intrinsic_sdk/intrinsic/util/thread:concurrent_queue",
-        "//intrinsic_sdk/intrinsic/util/thread:stop_token",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/base:nullability",
         "@abseil-cpp//absl/container:flat_hash_map",

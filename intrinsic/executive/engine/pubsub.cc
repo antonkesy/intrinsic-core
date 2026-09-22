@@ -45,7 +45,6 @@
 #include "intrinsic/util/status/return.h"
 #include "intrinsic/util/status/status_macros.h"
 #include "intrinsic/util/thread/concurrent_queue.h"
-#include "intrinsic/util/thread/stop_token.h"
 #include "intrinsic/util/thread/thread.h"
 #include "third_party/imported/cpp_libraries/clock/clock.h"
 
@@ -132,8 +131,11 @@ size_t ClipsPubSub::GetNumPublishers() const {
 }
 
 absl::Status ClipsPubSub::TearDown() {
+  // Closing the queue causes the worker thread to stop.
+  if (publish_queue_.has_value()) {
+    publish_queue_->Close();
+  }
   if (publish_worker_.joinable()) {
-    publish_worker_.request_stop();
     publish_worker_.join();
   }
   return absl::OkStatus();
@@ -153,13 +155,16 @@ absl::Status ClipsPubSub::PublishProto(absl::string_view topic_name,
                                  absl::ZeroDuration());
 }
 
-void ClipsPubSub::PublishThreadReader(StopToken stop_token,
-                                      ConcurrentQueue<PublishRequest>& queue) {
-  while (!stop_token.stop_requested() || !queue.IsEmpty()) {
+void ClipsPubSub::PublishThreadReader(ConcurrentQueue<PublishRequest>& queue) {
+  while (true) {
     absl::StatusOr<PublishRequest> request =
         queue.Dequeue(absl::Milliseconds(500));
+    if (absl::IsUnavailable(request.status())) {
+      // Queue is empty and closed, stop this thread.
+      return;
+    }
     if (!request.ok()) {
-      // Queue is empty, try again later and check if a stop has been requested.
+      // Queue is empty, wait and try again.
       continue;
     }
 

@@ -36,7 +36,6 @@
 #include "intrinsic/platform/pubsub/publisher.h"
 #include "intrinsic/platform/pubsub/pubsub.h"
 #include "intrinsic/util/thread/concurrent_queue.h"
-#include "intrinsic/util/thread/stop_token.h"
 #include "intrinsic/util/thread/thread.h"
 #include "third_party/imported/cpp_libraries/clock/clock.h"
 
@@ -121,8 +120,7 @@ class ClipsPubSub {
 
     PublishRequest(std::string_view topic, google::protobuf::Any&& msg);
   };
-  void PublishThreadReader(StopToken stop_token,
-                           ConcurrentQueue<PublishRequest>& queue);
+  void PublishThreadReader(ConcurrentQueue<PublishRequest>& queue);
 
   // Updates the publishers, so that:
   // - publishers_ only containers ClipsPublishers that have recently published

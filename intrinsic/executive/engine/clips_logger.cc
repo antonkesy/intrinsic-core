@@ -295,6 +295,10 @@ absl::Status ClipsLogger::Init(clips::EnvironmentFunctionFacade* facade) {
 }
 
 absl::Status ClipsLogger::TearDown() {
+  // Closing the queue causes the worker thread to stop.
+  if (log_req_channel_.has_value()) {
+    log_req_channel_->Close();
+  }
   if (worker_.joinable()) {
     worker_.request_stop();
     worker_.join();
@@ -340,10 +344,14 @@ absl::Status ClipsLogger::AddLogRequest(
 
 void ClipsLogger::LogQueueReader(StopToken stop_token,
                                  ConcurrentQueue<LogRequest>& queue) {
-  while (!stop_token.stop_requested() || !queue.IsEmpty()) {
+  while (true) {
     absl::StatusOr<LogRequest> request = queue.Dequeue(absl::Milliseconds(500));
+    if (absl::IsUnavailable(request.status())) {
+      // Queue is empty and closed, stop this thread.
+      return;
+    }
     if (!request.ok()) {
-      // Queue is empty, try again later and check if a stop has been requested.
+      // Queue is empty, wait and try again.
       continue;
     }
 
