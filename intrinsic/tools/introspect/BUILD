@@ -26,6 +26,7 @@ proto_source_code_info_transitive_descriptor_set(
 proto_source_code_info_transitive_descriptor_set(
     name = "intrinsic_descriptor_set",
     deps = [
+        "//intrinsic/executive/proto:executive_events_proto",
         "//intrinsic/logging/proto:log_item_proto",
         "//intrinsic/ml/rl/proto/v1:spacemouse_proto",
         "@intrinsic_apis//intrinsic/icon/proto:part_status_proto",
