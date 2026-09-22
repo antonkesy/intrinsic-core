@@ -438,3 +438,32 @@
                                    ?operation-name)
   (modify ?op (run-metadata-proto-simulation-mode ?simulation-mode))
 )
+
+(defrule run-metadata-proto-update-start-tree-and-node
+  (declare (salience ?*SALIENCE-HIGHER*))
+  (behavior-tree (id ?start-tree-id)
+                 (start-node-id ?start-node-id)
+                 (root ?root-node-id))
+  (or
+    ?op <- (operation-envelope (name ?operation-name)
+                               (operation-tree-id ?op-tree-id)
+                               (start-tree-id ?start-tree-id)
+                               (run-metadata-proto-start-tree-id ~?start-tree-id))
+    ?op <- (operation-envelope (name ?operation-name)
+                               (operation-tree-id ?op-tree-id)
+                               (start-tree-id ?start-tree-id)
+                               (run-metadata-proto-start-node-id ~?start-node-id))
+  )
+ =>
+  (if (and (eq ?start-tree-id ?op-tree-id)
+           (eq ?start-node-id ?root-node-id))
+   then
+    (run-metadata-proto-clear-field "start_tree_id" ?operation-name)
+    (run-metadata-proto-clear-field "start_node_id" ?operation-name)
+   else
+    (run-metadata-proto-update-field "start_tree_id" ?start-tree-id ?operation-name)
+    (run-metadata-proto-update-field "start_node_id" ?start-node-id ?operation-name)
+  )
+  (modify ?op (run-metadata-proto-start-tree-id ?start-tree-id)
+              (run-metadata-proto-start-node-id ?start-node-id))
+)

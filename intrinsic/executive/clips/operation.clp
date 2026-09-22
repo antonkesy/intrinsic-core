@@ -111,6 +111,11 @@
   ; determined by this tree.
   (slot start-tree-id (type SYMBOL))
 
+  ; Tracks the state of start-tree-id and the start tree's start-node-id in the
+  ; metadata proto so we can keep them up-to-date.
+  (slot run-metadata-proto-start-tree-id (type SYMBOL) (default nil))
+  (slot run-metadata-proto-start-node-id (type INTEGER) (default 0))
+
   ; Recovery state proto to be applied when starting. Only valid when starting
   ; (PREPARING) from an ACCEPTED operation.
   ; Will only be present for recovery, i.e., when recovery was requested and the
