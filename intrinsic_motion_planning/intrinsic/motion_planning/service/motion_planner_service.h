@@ -242,8 +242,6 @@ class MotionPlannerService : public intrinsic_proto::motion_planning::v1::
   std::optional<std::string> mps_asset_version_;
   std::string mps_asset_id_name_;
 
-  const StructuredLoggingClient* logger_client_;
-
   absl::BitGen rng_;
   mutable absl::Mutex context_mutex_;
   std::string organization_id_ ABSL_GUARDED_BY(context_mutex_);

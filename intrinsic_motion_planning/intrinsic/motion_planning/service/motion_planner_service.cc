@@ -505,7 +505,6 @@ MotionPlannerService::MotionPlannerService(
               .value()),
       mps_asset_version_(mps_asset_version),
       mps_asset_id_name_(std::string(mps_asset_id_name)),
-      logger_client_(logger_client),
       organization_id_(mps_config.organization_id),
       workcell_name_(mps_config.workcell_name) {
   LOG(INFO) << "enable_motion_planner_service_caching_fuzzy_check: "
