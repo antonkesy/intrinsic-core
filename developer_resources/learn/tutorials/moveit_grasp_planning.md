@@ -34,7 +34,7 @@ Users will then need to start the OMTS [simulation](../glossary/general_terms.md
 # Until it gets merged onto main, we need to use the feature branch
 cd ~
 gh repo clone intrinsic-ai/intrinsic-omts omts-moveit -- \
-  --revision=ac/grasp-planning-demo
+  --revision=moveit-integration
 # Note that this is a different directory from the original omts directory
 cd ~/omts-moveit
 bazel run //:omts_solution -c opt -- \
@@ -98,7 +98,7 @@ bazel run //tools/jogging:jog_interactive -- \
 # Updating the scene, see tutorial "Cell customization"
 bazel run //tools/world:apply_scene_updates -- \
   --address localhost:17080 \
-  --files configs/raw_stock_in_vice.updates.pbtxt
+  --files configs/raw_stock_in_vise.updates.pbtxt
 # Resetting the scene, see tutorial "Cell customization"
 inctl world reset --address localhost:17080
 ```
@@ -132,7 +132,7 @@ bazel run //third_party/intrinsic_moveit/tools:moveit_plan_grasp_and_move -- \
 # Relocate Workpiece to the CNC Vice
 bazel run //tools/world:apply_scene_updates -- \
   --address=localhost:17080 \
-  --files configs/raw_stock_in_vice.updates.pbtxt
+  --files configs/raw_stock_in_vise.updates.pbtxt
 # Plan again to grasp the workpiece that is in the vice now
 # This planning step may take longer due to the lenght of the trajectory if the
 # world has not been reset
