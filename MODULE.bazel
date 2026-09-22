@@ -136,7 +136,6 @@ use_repo(
     "com_github_prometheus_client_golang",  
     "com_github_prometheus_otlptranslator",  
     "com_github_protocolbuffers_txtpbfmt",
-    "com_github_rhysd_actionlint",  
     "com_github_rivo_tview",  
     "com_github_robfig_cron_v3",
     "com_github_rs_cors",  
@@ -204,7 +203,6 @@ use_repo(
     "org_golang_google_genproto_googleapis_api",
     "org_golang_google_genproto_googleapis_rpc",
     "org_golang_google_grpc",
-    "org_golang_google_grpc_cmd_protoc_gen_go_grpc",  
     "org_golang_google_protobuf",
     "org_golang_x_crypto",  
     "org_golang_x_exp",
@@ -467,8 +465,7 @@ bazel_dep(name = "eigen", version = "5.0.1.bcr.2", repo_name = "com_gitlab_libei
 bazel_dep(name = "etherlab-ethercat", version = "1.6.7.bcr.1")
 bazel_dep(name = "ffmpeg", version = "7.1.1.bcr.beta.10")  
 bazel_dep(name = "flatbuffers", version = "25.12.19", repo_name = "com_github_google_flatbuffers")
-bazel_dep(name = "fmt", version = "12.2.0")  # TODO(b/441702501) Remove when com_github_mvukov_rules_ros2 updates this transitive dependency to include https://github.com/fmtlib/fmt/commit/f4345467fce7edbc6b36c3fa1cf197a67be617e2 to support clang 21
-bazel_dep(name = "freeimage", version = "3.19.10.bcr.6")  
+bazel_dep(name = "fmt", version = "12.2.0")  
 bazel_dep(name = "fuzztest", version = "20250805.0", repo_name = "com_google_fuzztest")
 bazel_dep(name = "glib", version = "2.82.2.bcr.9")  
 
@@ -508,7 +505,6 @@ bazel_dep(name = "intrinsic-clips", version = "0.1.0")
 bazel_dep(name = "jq.bzl", version = "0.6.2")  
 bazel_dep(name = "jwt-cpp", version = "0.7.0.bcr.1", repo_name = "jwt-cpp")  
 bazel_dep(name = "libarchive", version = "3.8.1.bcr.2", repo_name = "com_github_libarchive")  
-bazel_dep(name = "libjpeg_turbo", version = "3.1.3.bcr.6")  
 bazel_dep(name = "libmodbus", version = "3.1.12")  
 bazel_dep(name = "libxml2-go", version = "0.0.0-20250331-c934e3f.bcr.1")
 bazel_dep(name = "libxml2", version = "2.14.4.bcr.1")  # TODO(b/441702501): Remove when aravis updates this transitive dependency to 2.14 to support clang 21
@@ -553,7 +549,6 @@ bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_pkg", version = "1.3.0")
 bazel_dep(name = "rules_qt", version = "0.0.7")  
 bazel_dep(name = "rules_shell", version = "0.8.0")  
-bazel_dep(name = "rules_swift", version = "2.9.0")  # bumping transitive dependency to resolve compatibility level conflict with flatbuffers
 bazel_dep(name = "sdformat", version = "16.1.0")
 bazel_dep(name = "soplex", version = "8.0.3")  # bumping transitive dependency to update boost to 1.89.0
 bazel_dep(name = "stb", version = "0.0.0-20251026-f1c79c0")
@@ -573,7 +568,6 @@ bazel_dep(name = "wsg32", version = "0.0.0-20250117-f73c045")
 bazel_dep(name = "xacro", version = "2.0.12")  
 bazel_dep(name = "yaml-cpp", version = "0.9.0.bcr.1")  
 bazel_dep(name = "zenoh-c", version = "1.7.2.bcr.1")
-bazel_dep(name = "zenoh-cpp", version = "1.7.2.bcr.1")
 bazel_dep(name = "zlib", version = "1.3.2")  
 
 
