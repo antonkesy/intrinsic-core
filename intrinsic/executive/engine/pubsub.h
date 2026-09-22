@@ -130,7 +130,7 @@ class ClipsPubSub {
 
   util::Clock& clock_;
 
-  intrinsic::PubSub pubsub_;
+  std::optional<intrinsic::PubSub> pubsub_;
 
   absl::flat_hash_map<std::string, std::unique_ptr<ClipsPublisher>> publishers_
       ABSL_GUARDED_BY(publishers_mutex_);

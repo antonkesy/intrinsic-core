@@ -49,6 +49,9 @@
 #include "third_party/imported/cpp_libraries/clock/clock.h"
 
 ABSL_FLAG(bool, pubsub_publish, false, "Enables publishing via pubsub");
+ABSL_FLAG(bool, clear_capture_results_kvstore, false,
+          "Enables clearing the capture results in the KV store on operation "
+          "reset/delete");
 
 namespace intrinsic::executive {
 
@@ -83,7 +86,14 @@ ClipsPubSub::ClipsPubSub(clips::ProtobufManager* absl_nonnull proto_manager,
                          util::Clock* absl_nonnull clock)
     : clock_(*clock),
       max_publisher_age_(max_publisher_age),
-      proto_manager_(proto_manager) {}
+      proto_manager_(proto_manager) {
+  // Only create this if actually needed, Zenoh initialization is expensive
+  // (~500ms) and thus undesirable, e.g., in most tests.
+  if (absl::GetFlag(FLAGS_pubsub_publish) ||
+      absl::GetFlag(FLAGS_clear_capture_results_kvstore)) {
+    pubsub_.emplace();
+  }
+}
 
 absl::Status ClipsPubSub::Init(
     clips::EnvironmentFunctionFacade* absl_nonnull facade) {
@@ -110,8 +120,16 @@ absl::Status ClipsPubSub::Init(
 
   INTR_RETURN_IF_ERROR(facade->AddFunction(
       kPubSubClearKvCaptureResults, std::function([this]() -> clips::Symbol {
+        if (!absl::GetFlag(FLAGS_clear_capture_results_kvstore)) {
+          return clips::Symbol::True();
+        }
+        if (!pubsub_.has_value()) {
+          LOG(ERROR) << "PubSub is not initialized. Cannot clear KV store.";
+          return clips::Symbol::False();
+        }
         INTR_ASSIGN_OR_RETURN(
-            KeyValueStore kvstore, pubsub_.KeyValueStore(kCaptureResultsPrefix),
+            KeyValueStore kvstore,
+            pubsub_->KeyValueStore(kCaptureResultsPrefix),
             _.LogError().With(Return(clips::Symbol::False())));
 
         LOG(INFO) << "Deleting all keys in KV Store: " << kCaptureResultsPrefix;
@@ -227,9 +245,13 @@ absl::Status ClipsPubSub::CreateOrUpdatePublishers(absl::string_view topic_name)
   }
 
   if (!topic_found && !topic_name.empty()) {
+    if (!pubsub_.has_value()) {
+      return absl::FailedPreconditionError(
+          "PubSub is not initialized. Cannot create publisher.");
+    }
     INTR_ASSIGN_OR_RETURN(
         intrinsic::Publisher publisher,
-        pubsub_.CreatePublisher(topic_name, intrinsic::TopicConfig()));
+        pubsub_->CreatePublisher(topic_name, intrinsic::TopicConfig()));
     publishers_[topic_name] =
         std::make_unique<ClipsPublisher>(std::move(publisher), &clock_);
   }

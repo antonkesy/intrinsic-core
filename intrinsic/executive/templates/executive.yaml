@@ -75,6 +75,7 @@ spec:
             {{- end }}
             {{- if .Values.feature_options.enable_executive_pubsub }}
             - --pubsub_publish
+            - --clear_capture_results_kvstore
             {{- end }}
             {{- if .Values.feature_options.enable_executive_validate_on_create }}
             - --validate_on_import
