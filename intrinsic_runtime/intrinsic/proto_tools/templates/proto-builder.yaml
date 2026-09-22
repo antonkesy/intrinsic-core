@@ -34,7 +34,7 @@ spec:
           image: {{ .Values.registry }}{{ .Values.images.proto_builder }}
           args:
             - /intrinsic_runtime/intrinsic/proto_tools/builder/proto_builder
-            - --service_port=8080
+            - --port=8080
           securityContext:
             readOnlyRootFilesystem: true
       securityContext:

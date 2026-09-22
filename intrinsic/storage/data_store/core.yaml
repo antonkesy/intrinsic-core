@@ -34,7 +34,7 @@ spec:
           image: {{ .Values.registry }}{{ .Values.images.hot_shared_state }}
           args:
             - /intrinsic/storage/hot_shared_state/hot_shared_state_main
-            - --port_hss=9777
+            - --port=9777
             - --port_intrinsic_db=9757  # DO NOT EXPOSE to the outside world!
             - --cloud_intrinsic_db_address={{ .Values.domain }}:443
             - --polymorphic_data_frontend_address=localhost:9747  # Change if the PDF is moved to a different pod.

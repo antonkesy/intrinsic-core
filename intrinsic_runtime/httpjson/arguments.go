@@ -65,7 +65,7 @@ func Get() *CLIArguments {
 		instance = &CLIArguments{}
 
 		// Register flags globally because that's what intrinsic.Init() uses
-		flag.Int64Var(&instance.HttpPort, "http_port", 8080, "Which port to handle HTTP/JSON requests on.")
+		flag.Int64Var(&instance.HttpPort, "port", 8080, "Which port to handle HTTP/JSON requests on.")
 		flag.Int64Var(&instance.GRPCPort, "grpc_port", 8082, "Which port to handle gRPC requests on.")
 		flag.Float64Var(&instance.TraceProbability, "trace_probability", 0.0, "The fraction of requests to upload to Stackdriver Trace.")
 		flag.Int64Var(&instance.PrometheusPort, "opencensus_metrics_port", 9101, "Which port to serve the prometheus endpoint on.")

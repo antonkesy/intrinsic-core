@@ -51,7 +51,7 @@ var (
 	boltPath                = flag.String("bolt_path", "", "Path to the BoltDB file.")
 	cloudIntrinsicDBAddress = flag.String("cloud_intrinsic_db_address", "", "Address of the cloud IntrinsicDB deployment.")
 	pdfAddress              = flag.String("polymorphic_data_frontend_address", "", "Address of the onprem polymorphic data frontend.")
-	portHSS                 = flag.Int("port_hss", 0, "The hot shared state server port")
+	portHSS                 = flag.Int("port", 0, "The hot shared state server port")
 	portIntrinsicDB         = flag.Int("port_intrinsic_db", 0, "The IntrinsicDB server port")
 	// Temp flag for disabling the cluster doc backup
 	disableClusterDocBackup = flag.Bool("disable_cluster_doc_backup", false, "Whether to disable the cluster doc backup (b/330691458).")

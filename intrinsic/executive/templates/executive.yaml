@@ -57,7 +57,7 @@ spec:
             - --solution_service_address=solution-service.app-intrinsic-base.svc.cluster.local:8082
             - --world_id=world
             - --grpc_client_connection_timeout=5m
-            - --clips_executive_service_port=8080
+            - --port=8080
             - --clips_dirs=intrinsic/executive/clips
             - --opencensus_metrics_port=9101
             - --opencensus_tracing={{ .Values.opencensus_tracing }}

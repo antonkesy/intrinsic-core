@@ -40,7 +40,7 @@ spec:
           args:
             - /intrinsic_runtime/intrinsic/proto_tools/registry/proto-registry
             {{ if .Values.app_deployment_id }}
-            - --service_port=8080
+            - --port=8080
             - --opencensus_metrics_port=9101
             - --opencensus_tracing={{ .Values.opencensus_tracing }}
             - --skill_registry_address=skill-registry.app-intrinsic-base.svc.cluster.local:8080

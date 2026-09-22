@@ -46,7 +46,7 @@ It is run as part of the Intrinsic platform.
 #include "intrinsic/util/status/status_specs.h"
 #include "intrinsic/util/thread/thread.h"
 
-ABSL_FLAG(int32_t, clips_executive_service_port, 8080,
+ABSL_FLAG(int32_t, port, 8080,
           "Port to listen on for CLIPS executive service.");
 ABSL_FLAG(absl::Duration, shutdown_grace_period, absl::Seconds(10),
           "Time to wait for graceful cancellation on shutdown");
@@ -78,8 +78,8 @@ int main(int argc, char** argv) {
             << "Failed to initialize extended status specs.")
       .With(intrinsic::Return(EXIT_FAILURE));
 
-  const std::string server_address = absl::StrFormat(
-      "[::]:%d", absl::GetFlag(FLAGS_clips_executive_service_port));
+  const std::string server_address =
+      absl::StrFormat("[::]:%d", absl::GetFlag(FLAGS_port));
 
   INTR_ASSIGN_OR_RETURN(
       std::unique_ptr<intrinsic::executive::ClipsExecutiveService>

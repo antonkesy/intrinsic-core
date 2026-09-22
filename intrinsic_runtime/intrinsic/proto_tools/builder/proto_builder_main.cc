@@ -26,13 +26,13 @@
 #include "intrinsic_runtime/intrinsic/proto_tools/builder/proto_builder_service.h"
 #include "intrinsic/icon/release/portable/init_intrinsic.h"
 
-ABSL_FLAG(int32_t, service_port, 8080, "Port to listen on for gRPC service.");
+ABSL_FLAG(int32_t, port, 8080, "Port to listen on for gRPC service.");
 
 int main(int argc, char* argv[]) {
   InitIntrinsic(argv[0], argc, argv);
 
   const std::string server_address =
-      absl::StrFormat("[::]:%d", absl::GetFlag(FLAGS_service_port));
+      absl::StrFormat("[::]:%d", absl::GetFlag(FLAGS_port));
 
   grpc::ServerBuilder builder;
   builder.AddListeningPort(server_address,
