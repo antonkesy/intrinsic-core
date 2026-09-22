@@ -467,3 +467,31 @@
   (modify ?op (run-metadata-proto-start-tree-id ?start-tree-id)
               (run-metadata-proto-start-node-id ?start-node-id))
 )
+
+(defrule run-metadata-proto-update-start-time
+  (declare (salience ?*SALIENCE-HIGHER*))
+  (time-measurement (operation-name ?operation-name)
+                    (start-time $?start-time))
+  ?op <- (operation-envelope (name ?operation-name)
+                             (run-metadata-proto-start-time $?proto-start-time&:(neq ?proto-start-time ?start-time)))
+ =>
+  (if (eq ?start-time (create$ 0 0))
+    then
+      (run-metadata-proto-clear-field "start_time" ?operation-name)
+    else
+      (bind ?ts-proto (time-to-timestamp-proto ?start-time))
+      (run-metadata-proto-update-field "start_time" ?ts-proto ?operation-name)
+      (pb-remove ?ts-proto)
+  )
+  (modify ?op (run-metadata-proto-start-time ?start-time))
+)
+
+(defrule run-metadata-proto-clear-start-time
+  (declare (salience ?*SALIENCE-HIGHER*))
+  (not (time-measurement (operation-name ?operation-name)))
+  ?op <- (operation-envelope (name ?operation-name)
+                             (run-metadata-proto-start-time $?proto-start-time&:(neq ?proto-start-time (create$ 0 0))))
+ =>
+  (run-metadata-proto-clear-field "start_time" ?operation-name)
+  (modify ?op (run-metadata-proto-start-time 0 0))
+)

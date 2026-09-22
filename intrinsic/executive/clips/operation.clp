@@ -166,6 +166,11 @@
   ; up-to-date
   (slot run-metadata-proto-scene-id (type STRING))
 
+  ; Tracks the state of start-time in the metadata proto so we can keep it
+  ; up-to-date
+  (multislot run-metadata-proto-start-time (type INTEGER) (cardinality 2 2)
+             (default 0 0))
+
   ; An ExtendedStatus proto created or propagated up on failure.
   (slot extended-status-proto-id (type INTEGER))
 
