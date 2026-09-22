@@ -8,13 +8,15 @@ Intrinsic Core™ provides an open, local runtime, SDK, and hardware agnostic, r
 - A pre-configured, local runtime that standardizes setup, with core robotics capabilities and services integrated to work together.
 - Pre-built robotics capabilities, including grasp planning, AI perception, a native digital twin and more - ready to use out of the box.
 - Seamless ROS 2 interoperability that bridges modern C++/Bazel development with the broader ROS ecosystem.
-- A hardware-agnostic, real-time control framework with a unified hardware abstraction layer to swap robot arms and grippers without driver rewrites. [Documentation](developer_resources/learn/tutorials/icon/icon_introduction)
-- An open reference solution built on Intrinsic Core, providing a functional machine tending template with a zero-refactor path from prototype to deployment. [Documentation](https://github.com/intrinsic-ai/intrinsic-omts)
+- A hardware-agnostic, real-time control framework with a unified hardware abstraction layer to swap robot arms and grippers without driver rewrites.
+- An open reference solution built on Intrinsic Core, providing a functional machine tending template with a zero-refactor path from prototype to deployment. [Open Machine Tending Solution](https://github.com/intrinsic-ai/intrinsic-omts)
+
+## Installation and setup
+
+See the [Getting Started guide](https://github.com/intrinsic-ai/intrinsic-core/tree/main/developer_resources/learn/tutorials/getting_started.md) for full installation and setup instructions.
 
 ## Intrinsic Core Architecture
 ![Intrinsic Core Architecture](developer_resources/img/intrinsic_core_architecture.png)
-
-📖 [Documentation & community](https://developer.intrinsic.ai): For  tutorials, guides, and a community forum for support and troubleshooting, visit the Intrinsic developer community.
 
 ## Intrinsic Core modules
 
@@ -38,14 +40,12 @@ Intrinsic Core also includes an open-source Machine Tending reference design [in
 - Operating system: Ubuntu 24.04 LTS (Noble) or Ubuntu 26.04 LTS (Ubuntu 22.04 LTS supported)
 - ROS 2 distribution: ROS 2 Lyrical Luth
 
-## Installation
-
-For detailed installation guide, please see the [Installation Documentation](/developer_resources/learn/tutorials/getting_started.md).
-
 ## Resources and related repositories
 
 🌐 [Intrinsic developer community](https://developer.intrinsic.ai): Guides, tutorials, a community forum to ask questions, share projects, and get support, and be the first to hear about new tools and features.
 
+- [Tutorials](https://github.com/intrinsic-ai/intrinsic-core/tree/main/developer_resources/learn/tutorials): Step-by-step guides to get started, customize physical layouts, visualize the robot, and more.
+- [Glossary](https://github.com/intrinsic-ai/intrinsic-core/blob/main/developer_resources/learn/glossary/general_terms.md): Technical definitions of Intrinsic Core and OMTS.
 - [intrinsic-omts](https://github.com/intrinsic-ai/intrinsic-omts): Open Machine Tending Solution (OMTS), an open-source reference design built on Intrinsic Core for a manufacturing use case. 
 - [intrinsic-moveit](https://github.com/intrinsic-ai/intrinsic-moveit): MoveIt 2 integration for Intrinsic motion and grasp planning.
 - [intrinsic-inference](https://github.com/intrinsic-ai/intrinsic-inference): Local ML model inference service and ROS 2 node integration.
