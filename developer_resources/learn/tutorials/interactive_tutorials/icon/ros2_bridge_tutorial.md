@@ -171,8 +171,8 @@ driver:
 
    This snippet uses substitution to let the Intrinsic platform parameterize
    your wrapped driver. Check [the definition of these
-   parameters](https://github.com/intrinsic-ai/icon-hwm-controller/blob/main/icon_hwm_controller/src/icon_hwm_controller_parameters.yaml,
-   ) for documentation on each of them. You will add launch arguments later to
+   parameters](https://github.com/intrinsic-ai/icon-hwm-controller/blob/main/icon_hwm_controller/src/icon_hwm_controller_parameters.yaml)
+   for documentation on each of them. You will add launch arguments later to
    provide the variables that the configuration uses.
 
    There are also a few parameters that the platform will *not* provide, so you
@@ -221,14 +221,14 @@ driver:
 8. Convert your robot's description to an `.sdf` file, and use that to create an
    [`intrinsic_scene_object`](/intrinsic/assets/scene_objects/build_defs/scene_object.bzl#L115). There
    are detailed instructions for this in the [Convert 3D models into
-   SDF](developer_resources/assets/create_new_assets/convert_3d_models.md)
+   SDF](../../../../assets/create_new_assets/convert_3d_models.md)
    tutorial, but you can shortcut some of the steps outlined there by converting
    from URDF to SDF.
 
 9. Combine the service and scene object assets into a single
    [`intrinsic_hardware_device`](/intrinsic/assets/hardware_devices/build_defs/hardware_device.bzl#L24). For
    an example hardware device rule, look at
-   [`kr6_r900_2_fake_hardware_module`](/incode/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/BUILD#L306)
+   [`kr6_r900_2_fake_hardware_module`](/intrinsic_control/intrinsic/icon/hardware_modules/kuka_rsi/BUILD#L306)
 
 10. Sideload your `HardwareDevice` into your Intrinsic solution using `inctl`.
 
@@ -936,7 +936,7 @@ for `ServiceManifest` and its submessages to see some of the advanced options,
 like offering
 [gRPC](/intrinsic_apis/intrinsic/assets/services/proto/service_manifest.proto#L58)
 and
-[HTTP](/intrinsic/assets/services/proto/service_manifest.proto#L77)
+[HTTP](/intrinsic_apis/intrinsic/assets/services/proto/service_manifest.proto#L77)
 servers.
 
 <details>

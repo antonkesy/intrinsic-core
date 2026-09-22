@@ -200,9 +200,8 @@ As mentioned in the overview, the ICON service hosts control algorithms
 
 That last example shows how powerful an action can be.
 
-There are a number of built-in actions, but you can also [build your
-own](http:://todo.example/custom-action-tutorial) using the Intrinsic Core
-source code.
+There are a number of built-in actions, but you can also build your own
+using the Intrinsic Core source code.
 
 Actions take parameters at construction time and keep them for their
 lifetime. Actions can also receive streaming inputs from, and send streaming

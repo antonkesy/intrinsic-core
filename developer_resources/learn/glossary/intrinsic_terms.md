@@ -75,6 +75,14 @@ the [executive](#executive).
 Behavior trees are parameterizable and may be made reusable as their own
 [process node](#process-node)s, nestable in other [process](#process)es.
 
+### Bundle (bundle.tar)
+
+A `.bundle.tar` archive produced by Bazel that packages an [asset](#asset)
+(such as a [skill](#skill), [service](#service),
+[scene object](#scene-object), or [hardware device](#hardware-device)) together
+with its manifest and container images or data files, ready to be installed onto
+a cluster with [`inctl` (`inctl asset install`)](#inctl-intrinsic-control-cli).
+
 ### Catalog
 
 A hosted database that holds [asset](#asset)s intended for reuse between users
@@ -177,6 +185,15 @@ Skills can call, configure, and run custom ICON actions in the
 [real-time control service](#real-time-control-service-rtcs) from a
 non-real-time context, and have them executed in a real-time control loop.
 
+### `inctl` (Intrinsic Control CLI)
+
+The command line interface tool used to inspect and operate an
+[Intrinsic Core](#intrinsic-core) or
+[Intrinsic Enterprise](#intrinsic-enterprise) cluster, including installing
+[asset](#asset) [bundles](#bundle-bundletar), managing [service](#service)
+instances, resetting the [world](#world), and interacting with
+[ICON](#intrinsic-real-time-control-framework-icon).
+
 ### Intrinsic Core
 
 The open-source distribution of the Intrinsic platform, installed on a Linux
@@ -249,6 +266,15 @@ For Intrinsic Core, this is a Linux machine that you provide and administer, and
 that must meet the real-time requirements of the robots it controls. On
 [Intrinsic Enterprise](#intrinsic-enterprise), it is an approved IPC running
 [IntrinsicOS](#intrinsicos).
+
+### Open Machine Tending Solution (OMTS)
+
+An open-source reference [solution](#solution) built on
+[Intrinsic Core](#intrinsic-core)
+([`intrinsic-omts`](https://github.com/intrinsic-ai/intrinsic-omts)) that
+demonstrates an end-to-end CNC machine tending application using pre-configured
+[asset](#asset)s, [skill](#skill)s, 6-DoF pose estimation, motion planning, and
+real-time force-controlled manipulation.
 
 ### Package
 
