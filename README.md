@@ -8,7 +8,7 @@ Intrinsic Core™ provides an open, local runtime, SDK, and hardware agnostic, r
 - A pre-configured, local runtime that standardizes setup, with core robotics capabilities and services integrated to work together.
 - Pre-built robotics capabilities, including grasp planning, AI perception, a native digital twin and more - ready to use out of the box.
 - Seamless ROS 2 interoperability that bridges modern C++/Bazel development with the broader ROS ecosystem.
-- A hardware-agnostic, real-time control framework with a unified hardware abstraction layer to swap robot arms and grippers without driver rewrites. [Documentation](developer_resources/learn/tutorials/interactive_tutorials/icon/icon_introduction/icon_introduction.md)
+- A hardware-agnostic, real-time control framework with a unified hardware abstraction layer to swap robot arms and grippers without driver rewrites. [Documentation](developer_resources/learn/tutorials/icon/icon_introduction)
 - An open reference solution built on Intrinsic Core, providing a functional machine tending template with a zero-refactor path from prototype to deployment. [Documentation](https://github.com/intrinsic-ai/intrinsic-omts)
 
 ## Intrinsic Core Architecture

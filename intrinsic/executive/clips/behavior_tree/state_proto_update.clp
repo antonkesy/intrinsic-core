@@ -401,3 +401,14 @@
   (run-metadata-proto-update-field "scene_id" ?scene-id ?operation-name)
   (modify ?op (run-metadata-proto-scene-id ?scene-id))
 )
+
+(defrule run-metadata-proto-update-state
+  (declare (salience ?*SALIENCE-HIGHER*))
+  ?op <- (operation-envelope (name ?operation-name)
+                      (state ?state)
+                      (run-metadata-proto-state ~?state)
+  )
+ =>
+  (run-metadata-proto-update-field "operation_state" ?state ?operation-name)
+  (modify ?op (run-metadata-proto-state ?state))
+)

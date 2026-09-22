@@ -36,6 +36,13 @@
                                             SUCCEEDED FAILED CANCELED)
                             (default ACCEPTED))
 
+  ; Tracks the state of the operation in the metadata proto so we can keep it
+  ; up-to-date
+  (slot run-metadata-proto-state (type SYMBOL)
+        (allowed-values ACCEPTED PREPARING RUNNING CANCELING SUSPENDING
+                        SUSPENDED SUCCEEDED FAILED CANCELED)
+        (default ACCEPTED))
+
   (slot execution-mode (type SYMBOL) (allowed-values NORMAL STEP-WISE)
                        (default NORMAL))
 

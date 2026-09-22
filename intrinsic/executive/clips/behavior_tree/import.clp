@@ -1496,6 +1496,10 @@
   (bind ?s-metadata-proto (pb-create "intrinsic_proto.executive.RunMetadata"))
   (pb-set-field ?s-metadata-proto "behavior_tree" ?bt-proto)
 
+  ; Set the initial values on the proto to match the default values of the
+  ; operation-envelope slots and their run-metadata-proto-* default slots.
+  (pb-set-field ?s-metadata-proto "operation_state" ACCEPTED)
+
   (bind ?tree-import-result
     (behavior-tree-import-top-level-proto ?bt-proto ?operation-name
                                           ?s-metadata-proto "behavior_tree"))
