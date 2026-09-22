@@ -1499,6 +1499,10 @@
   ; Set the initial values on the proto to match the default values of the
   ; operation-envelope slots and their run-metadata-proto-* default slots.
   (pb-set-field ?s-metadata-proto "operation_state" ACCEPTED)
+  (pb-set-field ?s-metadata-proto "execution_mode"
+                (operation-execution-mode-to-proto-mode NORMAL))
+  (pb-set-field ?s-metadata-proto "simulation_mode"
+                (operation-sim-mode-to-proto-mode REALITY))
 
   (bind ?tree-import-result
     (behavior-tree-import-top-level-proto ?bt-proto ?operation-name

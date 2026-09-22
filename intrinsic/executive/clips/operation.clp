@@ -46,8 +46,20 @@
   (slot execution-mode (type SYMBOL) (allowed-values NORMAL STEP-WISE)
                        (default NORMAL))
 
+  ; Tracks the state of execution-mode in the metadata proto so we can keep it
+  ; up-to-date
+  (slot run-metadata-proto-execution-mode (type SYMBOL)
+        (allowed-values NORMAL STEP-WISE)
+        (default NORMAL))
+
   (slot simulation-mode (type SYMBOL) (allowed-values REALITY PREVIEW FAST-PREVIEW)
                         (default REALITY))
+
+  ; Tracks the state of simulation-mode in the metadata proto so we can keep it
+  ; up-to-date
+  (slot run-metadata-proto-simulation-mode (type SYMBOL)
+        (allowed-values REALITY PREVIEW FAST-PREVIEW)
+        (default REALITY))
 
   (slot skill-trace-handling (type SYMBOL)
              (allowed-values UNSPECIFIED LINK EMBED)

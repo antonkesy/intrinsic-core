@@ -412,3 +412,29 @@
   (run-metadata-proto-update-field "operation_state" ?state ?operation-name)
   (modify ?op (run-metadata-proto-state ?state))
 )
+
+(defrule run-metadata-proto-update-execution-mode
+  (declare (salience ?*SALIENCE-HIGHER*))
+  ?op <- (operation-envelope (name ?operation-name)
+                      (execution-mode ?execution-mode)
+                      (run-metadata-proto-execution-mode ~?execution-mode)
+  )
+ =>
+  (run-metadata-proto-update-field "execution_mode"
+                                   (operation-execution-mode-to-proto-mode ?execution-mode)
+                                   ?operation-name)
+  (modify ?op (run-metadata-proto-execution-mode ?execution-mode))
+)
+
+(defrule run-metadata-proto-update-simulation-mode
+  (declare (salience ?*SALIENCE-HIGHER*))
+  ?op <- (operation-envelope (name ?operation-name)
+                      (simulation-mode ?simulation-mode)
+                      (run-metadata-proto-simulation-mode ~?simulation-mode)
+  )
+ =>
+  (run-metadata-proto-update-field "simulation_mode"
+                                   (operation-sim-mode-to-proto-mode ?simulation-mode)
+                                   ?operation-name)
+  (modify ?op (run-metadata-proto-simulation-mode ?simulation-mode))
+)
