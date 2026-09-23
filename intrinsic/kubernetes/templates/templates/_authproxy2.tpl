@@ -102,6 +102,8 @@ kind: ReferenceGrant
 metadata:
   name: {{ $refGrantName }}
   namespace: {{ .targetNamespace }}
+  annotations:
+    synk.cloudrobotics.com/allow-cross-namespace: "true"
   labels:
     app.kubernetes.io/name: {{ .context.Chart.Name }}
 spec:
