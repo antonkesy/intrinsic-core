@@ -514,15 +514,24 @@
         ; error field.
       )
       (case CANCELED then
-        ; TODO(b/493547558): Handle the CANCELED state, which must set done and the
-        ; error field.
+        (bind ?error-proto (pb-create "google.rpc.Status"))
+        ; 1 is the CANCELLED status code.
+        (pb-set-field ?error-proto "code" 1)
+        (pb-set-field ?error-proto "message"
+                      "User cancellation of behavior tree finished.")
+        (pb-set-field ?operation-proto "error" ?error-proto)
+        (pb-remove ?error-proto)
+
+        (pb-set-field ?operation-proto "done" TRUE)
       )
       (default
         ; Non-terminal states: ACCEPTED, PREPARING, RUNNING, SUSPENDING,
         ; SUSPENDED, CANCELING.
         (pb-clear-field ?operation-proto "response")
+        (pb-clear-field ?operation-proto "error")
         (pb-set-field ?operation-proto "done" FALSE)
       )
     )
   )
 )
+
