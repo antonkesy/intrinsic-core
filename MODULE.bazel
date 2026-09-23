@@ -672,7 +672,7 @@ oci.pull(
 )
 oci.pull(
     name = "terraform_base",
-    digest = "sha256:c9a9d991c113f3bda5269de1506983d45ce1409dfe702df433acf10a5ea9f6bc",
+    digest = "sha256:985cdc6c1d9b0a65b83377f666efd2f740b47f02ac55be1ced3d18f7d3b0e829",
     image = "us-central1-docker.pkg.dev/intrinsic-mirror/intrinsic-mirror-dockerhub/hashicorp/terraform",
     platforms = ["linux/amd64"],
     tag = "1.16",  # tag needs to be specified for renovatebot to sync the digest
