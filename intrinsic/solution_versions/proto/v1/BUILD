@@ -20,7 +20,6 @@ load("//bazel:protos.bzl", "proto_library")
 proto_library(
     name = "solution_version_service_proto",
     srcs = ["solution_version_service.proto"],
-    visibility = ["//incode/agent/agents/solution/protos:__pkg__"],
     deps = [
         ":solution_diff_proto",
         "//intrinsic/assets/proto/v1:solution_proto",
@@ -70,7 +69,6 @@ go_proto_library(
         "//intrinsic/modified_solution:__subpackages__",
         "//intrinsic/solution_versions:__subpackages__",
         "//intrinsic/tools/inctl/cmd:__subpackages__",
-        "//incode/agent/agents/solution/protos:__pkg__",
         "//incode/cloud/devicemanager:__subpackages__",
         "//incode/frontend:__subpackages__",
     ],
